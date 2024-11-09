@@ -10,35 +10,44 @@ import { GitHubLogoIcon } from "@radix-ui/react-icons";
 import { useState } from "react";
 
 export default function SignInPage() {
-  const [step, setStep] = useState<"signIn" | "linkSent">("signIn");
+  const { signIn } = useAuthActions();
+  const { toast } = useToast();
+  const [step, setStep] = useState<"signUp" | "signIn">("signIn");
 
   return (
     <div className="flex min-h-screen w-full container my-auto mx-auto">
       <div className="max-w-[384px] mx-auto flex flex-col my-auto gap-4 pb-8">
-        {step === "signIn" ? (
-          <>
-            <h2 className="font-semibold text-2xl tracking-tight">
-              Sign in or create an account
-            </h2>
-            <SignInWithGitHub />
-            <SignInMethodDivider />
-            <SignInWithMagicLink handleLinkSent={() => setStep("linkSent")} />
-          </>
-        ) : (
-          <>
-            <h2 className="font-semibold text-2xl tracking-tight">
-              Check your email
-            </h2>
-            <p>A sign-in link has been sent to your email address.</p>
-            <Button
-              className="p-0 self-start"
-              variant="link"
-              onClick={() => setStep("signIn")}
-            >
-              Cancel
-            </Button>
-          </>
-        )}
+        <h2 className="font-semibold text-2xl tracking-tight">
+          Sign in or create an account
+        </h2>
+        <SignInWithGitHub />
+        {/*
+        <SignInMethodDivider />
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            const formData = new FormData(event.currentTarget);
+            signIn("password", formData)
+              .then(() => setStep(step === "signIn" ? "signUp" : "signIn"))
+              .catch((error) => {
+                console.error(error);
+                toast({
+                  title: "Could not log in",
+                  variant: "destructive",
+                });
+              });
+          }}
+        >
+          <label htmlFor="email">Email</label>
+          <Input name="email" placeholder="Email" type="text" />
+          <label htmlFor="password">Password</label>
+          <Input name="password" placeholder="Password" type="password" />
+          <input name="flow" type="hidden" value={step} />
+          <Button type="submit">
+            {step === "signIn" ? "Sign in" : "Sign up"}
+          </Button>
+        </form>
+        */}
       </div>
     </div>
   );
