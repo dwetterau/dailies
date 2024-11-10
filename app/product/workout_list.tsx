@@ -6,18 +6,30 @@ import { FormEvent, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { EntityType } from "@/convex/entities";
+import { assert } from "@/lib/utils";
 
 export function WorkoutList({ viewer }: { viewer: Id<"users"> }) {
   const [newEntityName, setNewEntityName] = useState("");
+  const [newEntityType, setNewEntityType] = useState<null | EntityType>(null);
   const entities = useQuery(api.entities.list);
   const createEntity = useMutation(api.entities.create);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    assert(newEntityType);
+    createEntity({ name: newEntityName, type: newEntityType }).catch(
+      (error) => {
+        console.error("Failed to send message:", error);
+      }
+    );
     setNewEntityName("");
-    createEntity({ name: newEntityName }).catch((error) => {
-      console.error("Failed to send message:", error);
-    });
   };
 
   return (
@@ -29,7 +41,25 @@ export function WorkoutList({ viewer }: { viewer: Id<"users"> }) {
             onChange={(event) => setNewEntityName(event.target.value)}
             placeholder="New entity name…"
           />
-          <Button type="submit" disabled={newEntityName === ""}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="secondary">Change type</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {Object.values(EntityType).map((type) => (
+                <DropdownMenuItem
+                  key={type}
+                  onClick={() => setNewEntityType(type)}
+                >
+                  {type}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button
+            type="submit"
+            disabled={newEntityName === "" && newEntityType !== null}
+          >
             Create
           </Button>
         </form>

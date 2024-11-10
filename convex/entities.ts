@@ -13,13 +13,33 @@ export const list = query({
   },
 });
 
+export enum EntityType {
+  WORKOUT = "workout",
+}
+
+function getEnumType(typeString: string): EntityType {
+  for (const option of Object.values(EntityType)) {
+    if (option === typeString) {
+      return option;
+    }
+  }
+  throw new Error(`Invalid type: ${typeString}`);
+}
+
 export const create = mutation({
-  args: { name: v.string() },
-  handler: async (ctx, { name }) => {
+  args: {
+    name: v.string(),
+    type: v.union(...Object.values(EntityType).map((type) => v.literal(type))),
+  },
+  handler: async (ctx, { name, type }) => {
     const userId = await getAuthUserId(ctx);
     if (userId === null) {
       throw new Error("Not signed in");
     }
-    await ctx.db.insert("entities", { name, ownerId: userId });
+    await ctx.db.insert("entities", {
+      name,
+      ownerId: userId,
+      type,
+    });
   },
 });
