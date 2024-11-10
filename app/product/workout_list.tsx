@@ -6,14 +6,9 @@ import { FormEvent, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { EntityType } from "@/convex/entities";
 import { assert } from "@/lib/utils";
+import { SelectMenu } from "@/components/ui/select";
 
 export function WorkoutList({ viewer }: { viewer: Id<"users"> }) {
   const [newEntityName, setNewEntityName] = useState("");
@@ -41,21 +36,14 @@ export function WorkoutList({ viewer }: { viewer: Id<"users"> }) {
             onChange={(event) => setNewEntityName(event.target.value)}
             placeholder="New entity name…"
           />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="secondary">Change type</Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {Object.values(EntityType).map((type) => (
-                <DropdownMenuItem
-                  key={type}
-                  onClick={() => setNewEntityType(type)}
-                >
-                  {type}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <SelectMenu
+            choices={Object.values(EntityType)}
+            currentChoice={newEntityType ?? undefined}
+            buttonText={"Select a type"}
+            onSelect={(newValue: string) =>
+              setNewEntityType(newValue as EntityType)
+            }
+          />
           <Button
             type="submit"
             disabled={newEntityName === "" && newEntityType !== null}
@@ -67,7 +55,7 @@ export function WorkoutList({ viewer }: { viewer: Id<"users"> }) {
       {entities && (
         <ol>
           {entities.entities.map((e) => (
-            <div className="p-4 border-b">
+            <div key={e._id} className="p-4 border-b">
               {e.name} - Created by: {e.ownerId}
             </div>
           ))}
