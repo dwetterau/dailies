@@ -1,21 +1,27 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { defineTable } from "convex/server";
+
+export enum EntityType {
+  WORKOUT = "workout",
+}
+
+export const ENTITIES_SCHEMA = defineTable({
+  ownerId: v.id("users"),
+  name: v.string(),
+  type: v.union(...Object.values(EntityType).map((type) => v.literal(type))),
+});
 
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    // TODO: Paginate this when needed?
-    const entities = await ctx.db.query("entities").take(100);
+    const entities = await ctx.db.query("entities").collect();
     return {
       entities,
     };
   },
 });
-
-export enum EntityType {
-  WORKOUT = "workout",
-}
 
 function getEnumType(typeString: string): EntityType {
   for (const option of Object.values(EntityType)) {
