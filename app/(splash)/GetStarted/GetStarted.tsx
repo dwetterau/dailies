@@ -23,7 +23,7 @@ export const GetStarted = () => {
         </div>
         <div className="mb-16 flex justify-center gap-4">
           <Button asChild size="lg">
-            <Link href="/product">Get Started</Link>
+            <Link href="/workouts">Get Started</Link>
           </Button>
         </div>
       </div>

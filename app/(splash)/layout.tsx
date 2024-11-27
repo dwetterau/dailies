@@ -22,7 +22,7 @@ export default function SplashPageLayout({
       <main className="flex grow flex-col">{children}</main>
       <footer className="border-t">
         <div className="container py-4 text-sm leading-loose">
-          🔌♨️🍞🚀🪐{" - "}
+          ♨️🍞🚀🪐{" - "}
           <FooterLink href="https://www.github.com/dwetterau/dailies">
             GitHub
           </FooterLink>
@@ -47,7 +47,7 @@ function FooterLink({ href, children }: { href: string; children: ReactNode }) {
 function SplashPageNav() {
   return (
     <>
-      <Link href="/product">
+      <Link href="/workouts">
         <Button>Get Started</Button>
       </Link>
     </>

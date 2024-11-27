@@ -19,7 +19,7 @@ export const SelectMenu = ({
 }) => {
   return (
     <Select.Root value={currentChoice} onValueChange={onSelect}>
-      <Select.Trigger className="bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 h-9 px-4 py-2 inline-flex items-center justify-center whitespace-nowrap rounded">
+      <Select.Trigger className="bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 h-9 px-4 py-2 inline-flex items-center justify-center whitespace-nowrap rounded text-sm font-medium">
         <Select.Value placeholder={buttonText} />
         <Select.Icon className="pl-1">
           <ChevronDownIcon />

@@ -1,4 +1,4 @@
-import { WorkoutList } from "@/app/product/workout_list";
+import { WorkoutList } from "@/app/workouts/workout_list";
 import { UserMenu } from "@/components/UserMenu";
 import { api } from "@/convex/_generated/api";
 import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
