@@ -2,15 +2,20 @@
 
 import { Doc, Id } from "@/convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
-import { FormEvent, useState } from "react";
+import { FormEvent, useCallback, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { EntityType } from "@/convex/entities";
-import { assert } from "@/lib/utils";
+import { assert, formatTimestamp } from "@/lib/utils";
 import { SelectMenu } from "@/components/ui/select";
+import { flatten } from "lodash";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Cross2Icon } from "@radix-ui/react-icons";
+import {
+  ChevronDownIcon,
+  ChevronRightIcon,
+  Cross2Icon,
+} from "@radix-ui/react-icons";
 import { EventType } from "@/convex/events";
 
 export function WorkoutList({ viewer }: { viewer: Id<"users"> }) {
@@ -69,17 +74,57 @@ const EntityRow = ({
   entity: Doc<"entities">;
 }) => {
   const events = useQuery(api.events.list, { entityId: _id });
+  const [isCollapsed, setIsCollapsed] = useState(true);
+
+  const handleCollapseClick = useCallback(() => {
+    setIsCollapsed((prevIsCollapsed) => !prevIsCollapsed);
+  }, []);
 
   return (
-    <div className="p-4 border-b text-secondary-foreground flex justify-between items-center">
-      <span>
-        {name} - <span className="bg-secondary rounded p-1">{type}</span>
-        {events && ` - (${events.length})`}
-      </span>
-      <AddEventButton entityId={_id} />
+    <div className="border-b">
+      <div className="py-4 pr-4 text-secondary-foreground flex justify-between items-center">
+        <span>
+          <CollapseButton
+            isCollapsed={isCollapsed}
+            onClick={handleCollapseClick}
+          />
+          {name} - <span className="bg-secondary rounded p-1">{type}</span>
+          {events && ` - (${events.length})`}
+        </span>
+        <AddEventButton entityId={_id} />
+      </div>
+      {!isCollapsed && (
+        <div className="inline-grid grid-cols-4 auto-cols-auto auto-rows-auto gap-2 pl-10 pr-4 py-4">
+          {flatten(
+            events?.map((e) => [
+              <div key={`${e._id}-date`}>
+                {formatTimestamp(e._creationTime)}:{" "}
+              </div>,
+              <div key={`${e._id}-sets`}>{e.details.numSets} set(s) of</div>,
+              <div key={`${e._id}-reps`}>{e.details.numReps} rep(s)</div>,
+              <div key={`${e._id}-weight`}>@ {e.details.weight} lbs</div>,
+            ])
+          )}
+        </div>
+      )}
     </div>
   );
 };
+
+function CollapseButton({
+  isCollapsed,
+  onClick,
+}: {
+  isCollapsed: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <Button onClick={onClick} variant={"ghost"} className="mx-2 px-2">
+      {isCollapsed && <ChevronRightIcon />}
+      {!isCollapsed && <ChevronDownIcon />}
+    </Button>
+  );
+}
 
 const AddEventButton = ({ entityId }: { entityId: Id<"entities"> }) => {
   const [isOpen, setIsOpen] = useState(false);
