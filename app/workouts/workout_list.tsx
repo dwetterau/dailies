@@ -16,7 +16,7 @@ import { EventType } from "@/convex/events";
 export function WorkoutList({ viewer }: { viewer: Id<"users"> }) {
   const [newEntityName, setNewEntityName] = useState("");
   const [newEntityType, setNewEntityType] = useState<null | EntityType>(null);
-  const entities = useQuery(api.entities.list);
+  const entities = useQuery(api.entities.list, { type: EntityType.WORKOUT });
   const createEntity = useMutation(api.entities.create);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -47,10 +47,7 @@ export function WorkoutList({ viewer }: { viewer: Id<"users"> }) {
               setNewEntityType(newValue as EntityType)
             }
           />
-          <Button
-            type="submit"
-            disabled={newEntityName === "" && newEntityType !== null}
-          >
+          <Button type="submit" disabled={!newEntityName}>
             Create
           </Button>
         </form>
@@ -74,9 +71,12 @@ const EntityRow = ({
   const events = useQuery(api.events.list, { entityId: _id });
 
   return (
-    <div className="p-4 border-b text-secondary-foreground">
-      {name} - <span className="bg-secondary rounded p-1">{type}</span>
-      {events && ` - (${events.length})`} <AddEventButton entityId={_id} />
+    <div className="p-4 border-b text-secondary-foreground flex justify-between items-center">
+      <span>
+        {name} - <span className="bg-secondary rounded p-1">{type}</span>
+        {events && ` - (${events.length})`}
+      </span>
+      <AddEventButton entityId={_id} />
     </div>
   );
 };

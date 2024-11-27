@@ -7,16 +7,25 @@ export enum EntityType {
   WORKOUT = "workout",
 }
 
+const entityTypesSchema = v.union(
+  ...Object.values(EntityType).map((type) => v.literal(type))
+);
+
 export const ENTITIES_SCHEMA = defineTable({
   ownerId: v.id("users"),
   name: v.string(),
-  type: v.union(...Object.values(EntityType).map((type) => v.literal(type))),
+  type: entityTypesSchema,
 });
 
 export const list = query({
-  args: {},
-  handler: async (ctx) => {
-    const entities = await ctx.db.query("entities").collect();
+  args: {
+    type: entityTypesSchema,
+  },
+  handler: async (ctx, { type }) => {
+    const entities = await ctx.db
+      .query("entities")
+      .filter((q) => q.eq(q.field("type"), type))
+      .collect();
     return {
       entities,
     };
@@ -35,7 +44,7 @@ function getEnumType(typeString: string): EntityType {
 export const create = mutation({
   args: {
     name: v.string(),
-    type: v.union(...Object.values(EntityType).map((type) => v.literal(type))),
+    type: entityTypesSchema,
   },
   handler: async (ctx, { name, type }) => {
     const userId = await getAuthUserId(ctx);
