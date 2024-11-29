@@ -26,6 +26,7 @@ export const WORKOUT_DETAILS_SCHEMA = v.object({
 export const EVENTS_SCHEMA = defineTable({
   ownerId: v.id("users"),
   entityId: v.id("entities"),
+  date: v.string(),
   details: v.union(WORKOUT_DETAILS_SCHEMA),
 }).index("by_entity_id", ["entityId"]);
 
@@ -52,8 +53,9 @@ export const create = mutation({
   args: {
     entityId: v.id("entities"),
     details: v.union(WORKOUT_DETAILS_SCHEMA),
+    date: v.string(),
   },
-  handler: async (ctx, { entityId, details }) => {
+  handler: async (ctx, { entityId, details, date }) => {
     const userId = await getAuthUserId(ctx);
     if (userId === null) {
       throw new Error("Not signed in");
@@ -61,6 +63,7 @@ export const create = mutation({
     await ctx.db.insert("events", {
       ownerId: userId,
       entityId,
+      date,
       details,
     });
   },

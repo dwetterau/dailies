@@ -17,6 +17,7 @@ import {
   Cross2Icon,
 } from "@radix-ui/react-icons";
 import { EventType } from "@/convex/events";
+import Datepicker from "react-tailwindcss-datepicker";
 
 export function WorkoutList({ viewer }: { viewer: Id<"users"> }) {
   const [newEntityName, setNewEntityName] = useState("");
@@ -98,7 +99,7 @@ const EntityRow = ({
           {flatten(
             events?.map((e) => [
               <div key={`${e._id}-date`}>
-                {formatTimestamp(e._creationTime)}:{" "}
+                {formatTimestamp(new Date(e.date))}:{" "}
               </div>,
               <div key={`${e._id}-sets`}>{e.details.numSets} set(s) of</div>,
               <div key={`${e._id}-reps`}>{e.details.numReps} rep(s)</div>,
@@ -129,7 +130,17 @@ function CollapseButton({
 const AddEventButton = ({ entityId }: { entityId: Id<"entities"> }) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  const [weight, setWeight] = useState<number | undefined>(undefined);
+  const [weight, setWeight] = useState<number | "">("");
+  const [dateRange, setDateRange] = useState<{
+    startDate: null | Date;
+    endDate: null | Date;
+  } | null>(() => {
+    const x = new Date();
+    return {
+      startDate: x,
+      endDate: x,
+    };
+  });
   const createEvent = useMutation(api.events.create);
 
   return (
@@ -139,16 +150,24 @@ const AddEventButton = ({ entityId }: { entityId: Id<"entities"> }) => {
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black bg-opacity-50" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-8 rounded shadow-lg">
+        <Dialog.Content
+          onOpenAutoFocus={(e) => {
+            // Disable autofocus to disable the datepicker from automatically opening
+            e.preventDefault();
+          }}
+          className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-8 rounded shadow-lg"
+        >
           <Dialog.Title className="text-2xl">Add a new event</Dialog.Title>
           <Dialog.Description className="pb-2">
             What did you do?
           </Dialog.Description>
           <form
             onSubmit={(event) => {
-              assert(weight);
+              assert(typeof weight === "number");
+              assert(dateRange?.startDate);
               createEvent({
                 entityId,
+                date: dateRange.startDate.toISOString(),
                 details: {
                   type: EventType.WORKOUT,
                   weight,
@@ -160,8 +179,21 @@ const AddEventButton = ({ entityId }: { entityId: Id<"entities"> }) => {
               event.preventDefault();
             }}
           >
+            <Datepicker
+              asSingle={true}
+              useRange={false}
+              displayFormat="MM/DD/YYYY"
+              value={dateRange}
+              onChange={setDateRange}
+              placeholder={"When did this take place?"}
+              required={true}
+              inputClassName={
+                "h-9 border border-input shadow-sm rounded-md px-3 py-1 text-sm placeholdder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              }
+            />
             <label htmlFor="weight">Weight</label>
             <Input
+              autoFocus={false}
               name="weight"
               type="number"
               step="0.01"
