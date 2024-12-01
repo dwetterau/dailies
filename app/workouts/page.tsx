@@ -1,4 +1,5 @@
-"use client"
+"use client";
+
 import { WorkoutList } from "@/app/workouts/workout_list";
 import { UserMenu } from "@/components/UserMenu";
 import { api } from "@/convex/_generated/api";
@@ -6,7 +7,8 @@ import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { useEffect, useState } from "react";
 import { Id } from "@/convex/_generated/dataModel";
 import { useAuth0 } from "@auth0/auth0-react";
-import { assert } from "@/lib/utils";
+import { assert, assertIsNotNull } from "@/lib/utils";
+import { Loading } from "@/components/Loading";
 
 function useStoreUserEffect() {
   const { isLoading, isAuthenticated } = useConvexAuth();
@@ -35,10 +37,21 @@ function useStoreUserEffect() {
 }
 
 export default function ProductPage() {
-  const viewer = useQuery(api.users.viewer)
-  assert(viewer)
    // This is a strange place for this, but it needs to be within the provider
-  useStoreUserEffect();
+  const {isLoading, isAuthenticated} = useStoreUserEffect();
+
+  if (isLoading || !isAuthenticated) {
+    return <Loading /> 
+  }
+  return <LoggedInWorkoutsPage />
+}
+
+
+function LoggedInWorkoutsPage() {
+  const viewer = useQuery(api.users.viewer);
+  if (!viewer) {
+    return <Loading /> 
+  }
 
   return (
     <main className="flex max-h-screen grow flex-col overflow-hidden">

@@ -1,6 +1,5 @@
 "use client";
 
-// import { ConvexAuthNextjsProvider } from "@convex-dev/auth/nextjs";
 import { ConvexReactClient } from "convex/react";
 import { ReactNode } from "react";
 import { Auth0Provider } from "@auth0/auth0-react"
@@ -19,10 +18,13 @@ export default function ConvexClientProvider({
     <Auth0Provider 
         domain={"dev-0a4aznywud2xhrvr.us.auth0.com"} 
         clientId={"ZX9DQwHS3QrzVSvtarUa5h5UyKinGClN"} 
-        authorizationParams={{redirect_uri: window.location.origin}}>
-          <ConvexProviderWithAuth0 client={convex}>
-            {children}
-          </ConvexProviderWithAuth0>
+        authorizationParams={{redirect_uri: typeof window !== 'undefined' ? window.location.origin : undefined}}
+        useRefreshTokens={true}
+        cacheLocation="localstorage"
+      >
+        <ConvexProviderWithAuth0 client={convex}>
+          {children}
+        </ConvexProviderWithAuth0>
     </Auth0Provider>
   );
 }

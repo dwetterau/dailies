@@ -48,7 +48,6 @@ export const viewer = query({
     if (identity === null) {
       throw new Error("Not signed in");
     }
-    const { tokenIdentifier, name, email } = identity;
     const user = await ctx.db
       .query("users")
       .withIndex("by_token", (q) =>
@@ -56,7 +55,7 @@ export const viewer = query({
       )
       .unique();
     if (!user) {
-      throw new Error("Unauthenticated call to mutation");
+      throw new Error("User not found");
     }
     return user;
   },
