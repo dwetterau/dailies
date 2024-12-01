@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		4F44A80B2CFCD17900694873 /* ConvexMobile in Frameworks */ = {isa = PBXBuildFile; productRef = 4F44A80A2CFCD17900694873 /* ConvexMobile */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		4F44A7ED2CFCCFDC00694873 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -24,7 +28,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		4F44A7DC2CFCCFDC00694873 /* dailies.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = dailies.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4F44A7DC2CFCCFDC00694873 /* dailes dev.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "dailes dev.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4F44A7EC2CFCCFDC00694873 /* dailiesTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = dailiesTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4F44A7F62CFCCFDC00694873 /* dailiesUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = dailiesUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -52,6 +56,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4F44A80B2CFCD17900694873 /* ConvexMobile in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -85,7 +90,7 @@
 		4F44A7DD2CFCCFDC00694873 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				4F44A7DC2CFCCFDC00694873 /* dailies.app */,
+				4F44A7DC2CFCCFDC00694873 /* dailes dev.app */,
 				4F44A7EC2CFCCFDC00694873 /* dailiesTests.xctest */,
 				4F44A7F62CFCCFDC00694873 /* dailiesUITests.xctest */,
 			);
@@ -95,9 +100,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		4F44A7DB2CFCCFDC00694873 /* dailies */ = {
+		4F44A7DB2CFCCFDC00694873 /* dailes dev */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 4F44A8002CFCCFDC00694873 /* Build configuration list for PBXNativeTarget "dailies" */;
+			buildConfigurationList = 4F44A8002CFCCFDC00694873 /* Build configuration list for PBXNativeTarget "dailes dev" */;
 			buildPhases = (
 				4F44A7D82CFCCFDC00694873 /* Sources */,
 				4F44A7D92CFCCFDC00694873 /* Frameworks */,
@@ -110,11 +115,12 @@
 			fileSystemSynchronizedGroups = (
 				4F44A7DE2CFCCFDC00694873 /* dailies */,
 			);
-			name = dailies;
+			name = "dailes dev";
 			packageProductDependencies = (
+				4F44A80A2CFCD17900694873 /* ConvexMobile */,
 			);
 			productName = dailies;
-			productReference = 4F44A7DC2CFCCFDC00694873 /* dailies.app */;
+			productReference = 4F44A7DC2CFCCFDC00694873 /* dailes dev.app */;
 			productType = "com.apple.product-type.application";
 		};
 		4F44A7EB2CFCCFDC00694873 /* dailiesTests */ = {
@@ -195,12 +201,15 @@
 			);
 			mainGroup = 4F44A7D32CFCCFDC00694873;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				4F44A8092CFCD17900694873 /* XCRemoteSwiftPackageReference "convex-swift" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 4F44A7DD2CFCCFDC00694873 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				4F44A7DB2CFCCFDC00694873 /* dailies */,
+				4F44A7DB2CFCCFDC00694873 /* dailes dev */,
 				4F44A7EB2CFCCFDC00694873 /* dailiesTests */,
 				4F44A7F52CFCCFDC00694873 /* dailiesUITests */,
 			);
@@ -258,12 +267,12 @@
 /* Begin PBXTargetDependency section */
 		4F44A7EE2CFCCFDC00694873 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 4F44A7DB2CFCCFDC00694873 /* dailies */;
+			target = 4F44A7DB2CFCCFDC00694873 /* dailes dev */;
 			targetProxy = 4F44A7ED2CFCCFDC00694873 /* PBXContainerItemProxy */;
 		};
 		4F44A7F82CFCCFDC00694873 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 4F44A7DB2CFCCFDC00694873 /* dailies */;
+			target = 4F44A7DB2CFCCFDC00694873 /* dailes dev */;
 			targetProxy = 4F44A7F72CFCCFDC00694873 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -530,7 +539,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		4F44A8002CFCCFDC00694873 /* Build configuration list for PBXNativeTarget "dailies" */ = {
+		4F44A8002CFCCFDC00694873 /* Build configuration list for PBXNativeTarget "dailes dev" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4F44A8012CFCCFDC00694873 /* Debug */,
@@ -558,6 +567,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		4F44A8092CFCD17900694873 /* XCRemoteSwiftPackageReference "convex-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/get-convex/convex-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.5.4;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		4F44A80A2CFCD17900694873 /* ConvexMobile */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4F44A8092CFCD17900694873 /* XCRemoteSwiftPackageReference "convex-swift" */;
+			productName = ConvexMobile;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 4F44A7D42CFCCFDC00694873 /* Project object */;
 }

@@ -1,6 +1,6 @@
 import ConvexClientProvider from "@/components/ConvexClientProvider";
 import { cn } from "@/lib/utils";
-import { ChatBubbleIcon, HomeIcon, ReaderIcon } from "@radix-ui/react-icons";
+import { HomeIcon } from "@radix-ui/react-icons";
 import Link from "next/link";
 import { ReactNode } from "react";
 
@@ -15,7 +15,7 @@ export default function ProductLayout({ children }: { children: ReactNode }) {
   );
 }
 
-function ProductMenu() {
+function ProductMenu() { 
   return (
     <aside className="w-48 border-r bg-muted/40 p-2">
       <nav className="flex h-full max-h-screen flex-col gap-2">

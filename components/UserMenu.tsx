@@ -10,7 +10,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useAuthActions } from "@convex-dev/auth/react";
+//import { useAuthActions } from "@convex-dev/auth/react";
+import { useAuth0 } from "@auth0/auth0-react";
 import { PersonIcon } from "@radix-ui/react-icons";
 import { ReactNode } from "react";
 
@@ -40,8 +41,10 @@ export function UserMenu({ children }: { children: ReactNode }) {
 }
 
 function SignOutButton() {
-  const { signOut } = useAuthActions();
+  const { logout } = useAuth0(); 
   return (
-    <DropdownMenuItem onClick={() => void signOut()}>Sign out</DropdownMenuItem>
+    <DropdownMenuItem onClick={() => void logout({
+      logoutParams: { returnTo: window.location.origin }
+    })}>Sign out</DropdownMenuItem>
   );
 }
