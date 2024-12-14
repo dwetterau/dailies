@@ -7,7 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		4F44A80B2CFCD17900694873 /* ConvexMobile in Frameworks */ = {isa = PBXBuildFile; productRef = 4F44A80A2CFCD17900694873 /* ConvexMobile */; };
+		4FFF0EAB2D0E143300806225 /* ConvexMobile in Frameworks */ = {isa = PBXBuildFile; productRef = 4FFF0EAA2D0E143300806225 /* ConvexMobile */; };
+		4FFF0EAE2D0E146500806225 /* ConvexAuth0 in Frameworks */ = {isa = PBXBuildFile; productRef = 4FFF0EAD2D0E146500806225 /* ConvexAuth0 */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -31,6 +32,7 @@
 		4F44A7DC2CFCCFDC00694873 /* dailes dev.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "dailes dev.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4F44A7EC2CFCCFDC00694873 /* dailiesTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = dailiesTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4F44A7F62CFCCFDC00694873 /* dailiesUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = dailiesUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		4FDB03C42D06582000C8FE64 /* dailes dev.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "dailes dev.entitlements"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -56,7 +58,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4F44A80B2CFCD17900694873 /* ConvexMobile in Frameworks */,
+				4FFF0EAE2D0E146500806225 /* ConvexAuth0 in Frameworks */,
+				4FFF0EAB2D0E143300806225 /* ConvexMobile in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -80,9 +83,11 @@
 		4F44A7D32CFCCFDC00694873 = {
 			isa = PBXGroup;
 			children = (
+				4FDB03C42D06582000C8FE64 /* dailes dev.entitlements */,
 				4F44A7DE2CFCCFDC00694873 /* dailies */,
 				4F44A7EF2CFCCFDC00694873 /* dailiesTests */,
 				4F44A7F92CFCCFDC00694873 /* dailiesUITests */,
+				4FDB03B62CFEA1BE00C8FE64 /* Frameworks */,
 				4F44A7DD2CFCCFDC00694873 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -95,6 +100,13 @@
 				4F44A7F62CFCCFDC00694873 /* dailiesUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		4FDB03B62CFEA1BE00C8FE64 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -117,7 +129,8 @@
 			);
 			name = "dailes dev";
 			packageProductDependencies = (
-				4F44A80A2CFCD17900694873 /* ConvexMobile */,
+				4FFF0EAA2D0E143300806225 /* ConvexMobile */,
+				4FFF0EAD2D0E146500806225 /* ConvexAuth0 */,
 			);
 			productName = dailies;
 			productReference = 4F44A7DC2CFCCFDC00694873 /* dailes dev.app */;
@@ -202,7 +215,8 @@
 			mainGroup = 4F44A7D32CFCCFDC00694873;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				4F44A8092CFCD17900694873 /* XCRemoteSwiftPackageReference "convex-swift" */,
+				4FFF0EA92D0E143300806225 /* XCRemoteSwiftPackageReference "convex-swift" */,
+				4FFF0EAC2D0E146500806225 /* XCRemoteSwiftPackageReference "convex-swift-auth0" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 4F44A7DD2CFCCFDC00694873 /* Products */;
@@ -402,10 +416,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_ENTITLEMENTS = "dailes dev.entitlements";
+				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"dailies/Preview Content\"";
-				DEVELOPMENT_TEAM = A528B8ZZF3;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -420,6 +435,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = tech.davidw.dailies;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -431,10 +447,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_ENTITLEMENTS = "dailes dev.entitlements";
+				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"dailies/Preview Content\"";
-				DEVELOPMENT_TEAM = A528B8ZZF3;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -449,6 +466,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = tech.davidw.dailies;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -569,21 +587,34 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		4F44A8092CFCD17900694873 /* XCRemoteSwiftPackageReference "convex-swift" */ = {
+		4FFF0EA92D0E143300806225 /* XCRemoteSwiftPackageReference "convex-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/get-convex/convex-swift";
+			repositoryURL = "https://github.com/get-convex/convex-swift.git";
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 0.5.4;
 			};
 		};
+		4FFF0EAC2D0E146500806225 /* XCRemoteSwiftPackageReference "convex-swift-auth0" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/get-convex/convex-swift-auth0";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.3.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		4F44A80A2CFCD17900694873 /* ConvexMobile */ = {
+		4FFF0EAA2D0E143300806225 /* ConvexMobile */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 4F44A8092CFCD17900694873 /* XCRemoteSwiftPackageReference "convex-swift" */;
+			package = 4FFF0EA92D0E143300806225 /* XCRemoteSwiftPackageReference "convex-swift" */;
 			productName = ConvexMobile;
+		};
+		4FFF0EAD2D0E146500806225 /* ConvexAuth0 */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4FFF0EAC2D0E146500806225 /* XCRemoteSwiftPackageReference "convex-swift-auth0" */;
+			productName = ConvexAuth0;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
