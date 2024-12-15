@@ -1,16 +1,11 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Toaster } from "@/components/ui/toaster";
-import { useToast } from "@/components/ui/use-toast";
 import { useAuth0 } from "@auth0/auth0-react"
 import { PersonIcon } from "@radix-ui/react-icons";
-import { useState } from "react";
 
 export default function SignInPage() {
   const { loginWithRedirect } = useAuth0();
-  const { toast } = useToast();
-  const [step, setStep] = useState<"signUp" | "signIn">("signIn");
 
   return (
     <div className="flex min-h-screen w-full container my-auto mx-auto">

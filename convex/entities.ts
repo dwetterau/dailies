@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { defineTable } from "convex/server";
+import { getUserIdFromContextAsync } from "./users";
 
 export enum EntityType {
   WORKOUT = "workout",
@@ -21,10 +22,13 @@ export const list = query({
     type: entityTypesSchema,
   },
   handler: async (ctx, { type }) => {
-    // TODO: Fetch these based on the logged in user!
+    const ownerId = await getUserIdFromContextAsync(ctx)
     const entities = await ctx.db
       .query("entities")
-      .filter((q) => q.eq(q.field("type"), type))
+      .filter((q) => q.and(
+        q.eq(q.field("ownerId"), ownerId), 
+        q.eq(q.field("type"), type),
+      ))
       .collect();
     return {
       entities,
@@ -36,9 +40,16 @@ export const get = query({
   args: {
     id: v.id('entities') 
   },
-  handler: async (ctx, { id} ) => {
-    const entity = await ctx.db.get(id)
-    return entity;
+  handler: async (ctx, {id}) => {
+    const ownerId = await getUserIdFromContextAsync(ctx)
+    const entities = await ctx.db
+      .query("entities")
+      .filter((q) => q.and(
+        q.eq(q.field("ownerId"), ownerId), 
+        q.eq(q.field("_id"), id)),
+      )
+      .collect();
+    return entities[0] ?? null;
   }
 })
 
@@ -57,23 +68,10 @@ export const create = mutation({
     type: entityTypesSchema,
   },
   handler: async (ctx, { name, type }) => {
-
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Unauthenticated call to mutation");
-    }
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_token", (q) =>
-        q.eq("tokenIdentifier", identity.tokenIdentifier),
-      )
-      .unique();
-    if (!user) {
-      throw new Error("Unauthenticated call to mutation");
-    }
+    const ownerId = await getUserIdFromContextAsync(ctx)
     await ctx.db.insert("entities", {
       name,
-      ownerId: user._id,
+      ownerId,
       type,
     });
   },

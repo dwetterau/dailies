@@ -24,7 +24,6 @@ export async function getUserIdFromContextAsync<DataModel extends GenericDataMod
     if (!user) {
       throw new Error("Unauthenticated call to mutation");
     }
-
     return user._id as Id<'users'>
 }
 

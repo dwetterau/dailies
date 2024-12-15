@@ -1,15 +1,5 @@
-import { ConvexLogo } from "@/app/(splash)/GetStarted/ConvexLogo";
-import { Code } from "@/components/Code";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  CodeIcon,
-  MagicWandIcon,
-  PlayIcon,
-  StackIcon,
-} from "@radix-ui/react-icons";
 import Link from "next/link";
-import { ReactNode } from "react";
 
 export const GetStarted = () => {
   return (

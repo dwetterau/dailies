@@ -165,7 +165,6 @@ const AddEventButton = ({ entityId }: { entityId: Id<"entities"> }) => {
             onSubmit={(event) => {
               assert(typeof weight === "number");
               assert(dateRange?.startDate);
-              debugger;
               createEvent({
                 entityId,
                 date: dateRange.startDate.toISOString(),

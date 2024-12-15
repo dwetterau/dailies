@@ -2,6 +2,7 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { defineTable } from "convex/server";
+import { getUserIdFromContextAsync } from "./users";
 
 export enum EventType {
   WORKOUT = "workout",
@@ -35,9 +36,13 @@ export const EVENTS_SCHEMA = defineTable({
 export const list = query({
   args: { entityId: v.id("entities") },
   handler: async (ctx, { entityId }) => {
+    const ownerId = await getUserIdFromContextAsync(ctx)
     return await ctx.db
       .query("events")
-      .filter((q) => q.eq(q.field("entityId"), entityId))
+      .filter((q) => q.and(
+        q.eq(q.field("ownerId"), ownerId),
+        q.eq(q.field("entityId"), entityId)
+      ))
       .collect();
   },
 });
@@ -58,21 +63,9 @@ export const create = mutation({
     date: v.string(),
   },
   handler: async (ctx, { entityId, details, date }) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Unauthenticated call to mutation");
-    }
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_token", (q) =>
-        q.eq("tokenIdentifier", identity.tokenIdentifier),
-      )
-      .unique();
-    if (!user) {
-      throw new Error("Unauthenticated call to mutation");
-    }
+    const ownerId = await getUserIdFromContextAsync(ctx)
     await ctx.db.insert("events", {
-      ownerId: user._id,
+      ownerId,
       entityId,
       date,
       details,
