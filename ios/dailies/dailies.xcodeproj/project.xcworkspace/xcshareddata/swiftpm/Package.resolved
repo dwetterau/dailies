@@ -1,5 +1,5 @@
 {
-  "originHash" : "ffb7f93d4544ef6b0f07b3d56994f135897ec99b9e8817e1781458de0c839f91",
+  "originHash" : "39dac002f023041be23d1ed49e28b1953eec62030649fedfd427c903a75314c5",
   "pins" : [
     {
       "identity" : "auth0.swift",
@@ -44,15 +44,6 @@
       "state" : {
         "revision" : "b694f155907b189bc82e93586695a26f558c742f",
         "version" : "1.2.0"
-      }
-    },
-    {
-      "identity" : "swiftui-router",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/frzi/swiftui-router",
-      "state" : {
-        "revision" : "e0cb32b54bb429aa43ce30240b0036bf223a62a3",
-        "version" : "1.4.0"
       }
     }
   ],

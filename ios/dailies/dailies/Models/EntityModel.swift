@@ -7,7 +7,7 @@
 import Combine
 import SwiftUI
 
-struct Entity: Decodable {
+struct Entity: Decodable, Hashable {
     let _id: String
     let ownerId: String
     let name: String

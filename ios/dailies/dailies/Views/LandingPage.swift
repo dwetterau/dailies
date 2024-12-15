@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import SwiftUIRouter
 
 struct LandingPage: View {
     @StateObject var authModel = AuthModel()
@@ -25,13 +24,8 @@ struct LandingPage: View {
                         }
                     }.padding()
                 case .authenticated(_):
-                    SwitchRoutes {
-                        Route("entity/:id") { info in
-                            EntityPage(entityId: info.parameters["id"]!)
-                        }
-                        Route {
-                            EntityListPage()
-                        }
+                    NavigationStack {
+                        EntityListPage()
                     }
                 }
             }

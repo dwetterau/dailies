@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		4FFF0EAB2D0E143300806225 /* ConvexMobile in Frameworks */ = {isa = PBXBuildFile; productRef = 4FFF0EAA2D0E143300806225 /* ConvexMobile */; };
 		4FFF0EAE2D0E146500806225 /* ConvexAuth0 in Frameworks */ = {isa = PBXBuildFile; productRef = 4FFF0EAD2D0E146500806225 /* ConvexAuth0 */; };
-		4FFF0EB12D0F62A700806225 /* SwiftUIRouter in Frameworks */ = {isa = PBXBuildFile; productRef = 4FFF0EB02D0F62A700806225 /* SwiftUIRouter */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -59,7 +58,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4FFF0EB12D0F62A700806225 /* SwiftUIRouter in Frameworks */,
 				4FFF0EAE2D0E146500806225 /* ConvexAuth0 in Frameworks */,
 				4FFF0EAB2D0E143300806225 /* ConvexMobile in Frameworks */,
 			);
@@ -133,7 +131,6 @@
 			packageProductDependencies = (
 				4FFF0EAA2D0E143300806225 /* ConvexMobile */,
 				4FFF0EAD2D0E146500806225 /* ConvexAuth0 */,
-				4FFF0EB02D0F62A700806225 /* SwiftUIRouter */,
 			);
 			productName = dailies;
 			productReference = 4F44A7DC2CFCCFDC00694873 /* dailes dev.app */;
@@ -220,7 +217,6 @@
 			packageReferences = (
 				4FFF0EA92D0E143300806225 /* XCRemoteSwiftPackageReference "convex-swift" */,
 				4FFF0EAC2D0E146500806225 /* XCRemoteSwiftPackageReference "convex-swift-auth0" */,
-				4FFF0EAF2D0F62A700806225 /* XCRemoteSwiftPackageReference "swiftui-router" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 4F44A7DD2CFCCFDC00694873 /* Products */;
@@ -607,14 +603,6 @@
 				minimumVersion = 0.3.0;
 			};
 		};
-		4FFF0EAF2D0F62A700806225 /* XCRemoteSwiftPackageReference "swiftui-router" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/frzi/swiftui-router";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.4.0;
-			};
-		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -627,11 +615,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 4FFF0EAC2D0E146500806225 /* XCRemoteSwiftPackageReference "convex-swift-auth0" */;
 			productName = ConvexAuth0;
-		};
-		4FFF0EB02D0F62A700806225 /* SwiftUIRouter */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 4FFF0EAF2D0F62A700806225 /* XCRemoteSwiftPackageReference "swiftui-router" */;
-			productName = SwiftUIRouter;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
