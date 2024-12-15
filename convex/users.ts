@@ -1,11 +1,32 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { defineTable } from "convex/server";
+import { defineTable, GenericDataModel, GenericMutationCtx, GenericQueryCtx } from "convex/server";
+import { Id } from "./_generated/dataModel";
 
 export const USERS_SCHEMA =  defineTable({
   name: v.string(),
   tokenIdentifier: v.string(),
 }).index("by_token", ["tokenIdentifier"])
+
+export async function getUserIdFromContextAsync<DataModel extends GenericDataModel>(
+  ctx: GenericMutationCtx<DataModel> | GenericQueryCtx<DataModel>
+): Promise<Id<'users'>> {
+  const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Unauthenticated call to mutation");
+    }
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) =>
+        q.eq("tokenIdentifier", identity.tokenIdentifier as any),
+      )
+      .unique();
+    if (!user) {
+      throw new Error("Unauthenticated call to mutation");
+    }
+
+    return user._id as Id<'users'>
+}
 
 export const store = mutation({
   args: {},
