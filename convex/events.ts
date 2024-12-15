@@ -9,18 +9,20 @@ export enum EventType {
 
 export const WORKOUT_DETAILS_SCHEMA = v.object({
   type: v.literal(EventType.WORKOUT),
-  weight: v.number(),
-  numReps: v.number(),
-  numSets: v.number(),
-  overrides: v.optional(
-    v.array(
-      v.object({
-        weight: v.number(),
-        repIndex: v.number(),
-        setIndex: v.number(),
-      })
-    )
-  ),
+  payload: v.object({
+    weight: v.number(),
+    numReps: v.number(),
+    numSets: v.number(),
+    overrides: v.optional(
+      v.array(
+        v.object({
+          weight: v.number(),
+          repIndex: v.number(),
+          setIndex: v.number(),
+        })
+      )
+    ),
+  })
 });
 
 export const EVENTS_SCHEMA = defineTable({
@@ -56,12 +58,21 @@ export const create = mutation({
     date: v.string(),
   },
   handler: async (ctx, { entityId, details, date }) => {
-    const userId = await getAuthUserId(ctx);
-    if (userId === null) {
-      throw new Error("Not signed in");
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Unauthenticated call to mutation");
+    }
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) =>
+        q.eq("tokenIdentifier", identity.tokenIdentifier),
+      )
+      .unique();
+    if (!user) {
+      throw new Error("Unauthenticated call to mutation");
     }
     await ctx.db.insert("events", {
-      ownerId: userId,
+      ownerId: user._id,
       entityId,
       date,
       details,

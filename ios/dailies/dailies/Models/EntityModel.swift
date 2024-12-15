@@ -25,12 +25,19 @@ class EntityModel: ObservableObject {
     @Published
     var entity: Entity = emptyEntity
     
+    @Published
+    var events: Array<Event> = []
+    
     init(entityId id: String) {
         Task {
             client.subscribe(to: "entities:get", with: ["id": id], yielding: Entity.self)
                 .replaceError(with: emptyEntity)
                 .receive(on: DispatchQueue.main)
                 .assign(to: &$entity)
+            client.subscribe(to: "events:list", with: ["entityId": id], yielding: Array<Event>.self)
+                .replaceError(with: [])
+                .receive(on: DispatchQueue.main)
+                .assign(to: &$events)
         }
     }
 }

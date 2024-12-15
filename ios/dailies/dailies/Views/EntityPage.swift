@@ -19,6 +19,11 @@ struct EntityPage: View {
     var body: some View {
         VStack {
             Text(entity.entity.name).font(.title)
+            List {
+                ForEach(entity.events, id: \._id) { event in
+                    Text(event.date)
+                }
+            }
         }
         .padding()
     }

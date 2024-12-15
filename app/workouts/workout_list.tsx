@@ -101,9 +101,9 @@ const EntityRow = ({
               <div key={`${e._id}-date`}>
                 {formatTimestamp(new Date(e.date))}:{" "}
               </div>,
-              <div key={`${e._id}-sets`}>{e.details.numSets} set(s) of</div>,
-              <div key={`${e._id}-reps`}>{e.details.numReps} rep(s)</div>,
-              <div key={`${e._id}-weight`}>@ {e.details.weight} lbs</div>,
+              <div key={`${e._id}-sets`}>{e.details.payload.numSets} set(s) of</div>,
+              <div key={`${e._id}-reps`}>{e.details.payload.numReps} rep(s)</div>,
+              <div key={`${e._id}-weight`}>@ {e.details.payload.weight} lbs</div>,
             ])
           )}
         </div>
@@ -165,14 +165,17 @@ const AddEventButton = ({ entityId }: { entityId: Id<"entities"> }) => {
             onSubmit={(event) => {
               assert(typeof weight === "number");
               assert(dateRange?.startDate);
+              debugger;
               createEvent({
                 entityId,
                 date: dateRange.startDate.toISOString(),
                 details: {
                   type: EventType.WORKOUT,
-                  weight,
-                  numReps: 1,
-                  numSets: 1,
+                  payload: {
+                    weight,
+                    numReps: 1,
+                    numSets: 1,
+                  }
                 },
               });
               setIsOpen(false);
