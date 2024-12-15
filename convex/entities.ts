@@ -21,6 +21,7 @@ export const list = query({
     type: entityTypesSchema,
   },
   handler: async (ctx, { type }) => {
+    // TODO: Fetch these based on the logged in user!
     const entities = await ctx.db
       .query("entities")
       .filter((q) => q.eq(q.field("type"), type))
@@ -30,6 +31,16 @@ export const list = query({
     };
   },
 });
+
+export const get = query({
+  args: {
+    id: v.id('entities') 
+  },
+  handler: async (ctx, { id} ) => {
+    const entity = await ctx.db.get(id)
+    return entity;
+  }
+})
 
 function getEnumType(typeString: string): EntityType {
   for (const option of Object.values(EntityType)) {
