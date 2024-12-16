@@ -5,6 +5,8 @@
 //  Created by David Wetterau on 12/15/24.
 //
 
+import ConvexMobile
+
 struct Event: Decodable, Hashable {
     let _id: String
     let ownerId: String
@@ -13,7 +15,7 @@ struct Event: Decodable, Hashable {
     let details: EventType
 }
 
-enum EventType: Codable, Hashable {
+enum EventType: Codable, Hashable, ConvexEncodable {
     case workout(WorkoutDetails)
     
     enum CodingKeys: String, CodingKey {

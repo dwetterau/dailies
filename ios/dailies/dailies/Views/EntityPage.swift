@@ -11,9 +11,9 @@ struct EntityPage: View {
     @StateObject private var entity: EntityModel
     private let entityId: String
     
-    init(entityId id: String) {
-        entityId = id;
-        _entity = StateObject(wrappedValue: EntityModel(entityId: id));
+    init(entityId: String) {
+        self.entityId = entityId;
+        self._entity = StateObject(wrappedValue: EntityModel(entityId: entityId));
     }
     
     var body: some View {
@@ -26,5 +26,12 @@ struct EntityPage: View {
             }
         }
         .padding()
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                NavigationLink(destination: EditEntryPage(entityId: self.entityId)) {
+                    Text("Add")
+                }
+            }
+        }
     }
 }
