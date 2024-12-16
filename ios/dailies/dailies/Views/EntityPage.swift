@@ -17,15 +17,17 @@ struct EntityPage: View {
     }
     
     var body: some View {
-        VStack {
-            Text(entity.entity.name).font(.title)
-            List {
-                ForEach(entity.events, id: \._id) { event in
+        List {
+            ForEach(entity.events, id: \._id) { event in
+                NavigationLink(value: event) {
                     Text(event.date)
                 }
             }
         }
-        .padding()
+        .navigationTitle(entity.entity.name)
+        .navigationDestination(for: Event.self) { event in
+            EditEntryPage(event: event)
+        }
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 NavigationLink(destination: EditEntryPage(entityId: self.entityId)) {

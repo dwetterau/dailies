@@ -17,14 +17,36 @@ struct EditEntryPage: View {
     @Environment(\.dismiss) private var dismiss
    
     private let entityId: String
+    private let eventId: String?
     
     init(entityId: String) {
         self.entityId = entityId
+        self.eventId = nil;
+    }
+    
+    init(event: Event) {
+        self.entityId = event.entityId;
+        self.eventId = event._id;
+        
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = isoFormatter.date(from: event.date) {
+            self._date = State(initialValue: date);
+        } else {
+            print("unable to parse date: \(event.date)")
+        }
+        
+        switch event.details {
+        case .workout(let workoutDetails):
+            self._weight = State(initialValue: workoutDetails.weight)
+            self._numReps = State(initialValue: workoutDetails.numReps)
+            self._numSets = State(initialValue: workoutDetails.numSets)
+        }
     }
     
     var body: some View {
         Form {
-            Section(header: Text("Section header?")) {
+            Section {
                     DatePicker(
                         "Date",
                         selection: $date,
@@ -50,7 +72,8 @@ struct EditEntryPage: View {
                 Button(action: handleSubmit) {
                     Text("Save")
                         .fontWeight(.bold)
-                }.disabled(weight == nil || numReps == nil || numSets == nil)
+                // TODO: Support saving edits
+                }.disabled(eventId != nil || weight == nil || numReps == nil || numSets == nil)
             }
         }
     }
