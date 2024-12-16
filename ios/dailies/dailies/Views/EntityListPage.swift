@@ -18,7 +18,7 @@ struct EntityListPage: View {
                 }
             }
         }.navigationDestination(for: Entity.self) { entity in
-            EntityPage(entityId: entity._id)
+            EntityPage(entity: entity)
         }.navigationTitle("Entities")
     }
 }

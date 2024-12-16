@@ -9,11 +9,9 @@ import SwiftUI
 
 struct EntityPage: View {
     @StateObject private var entity: EntityModel
-    private let entityId: String
     
-    init(entityId: String) {
-        self.entityId = entityId;
-        self._entity = StateObject(wrappedValue: EntityModel(entityId: entityId));
+    init(entity: Entity) {
+        self._entity = StateObject(wrappedValue: EntityModel(entity: entity));
     }
     
     var body: some View {
@@ -30,7 +28,7 @@ struct EntityPage: View {
         }
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                NavigationLink(destination: EditEntryPage(entityId: self.entityId)) {
+                NavigationLink(destination: EditEntryPage(entityId: self.entity.entity._id)) {
                     Text("Add")
                 }
             }
