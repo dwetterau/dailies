@@ -13,7 +13,7 @@ export async function getUserIdFromContextAsync<DataModel extends GenericDataMod
 ): Promise<Id<'users'>> {
   const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
-      throw new Error("Unauthenticated call to mutation");
+      throw new Error("Unauthenticated call to endpoint requiring authentication");
     }
     const user = await ctx.db
       .query("users")
@@ -22,7 +22,7 @@ export async function getUserIdFromContextAsync<DataModel extends GenericDataMod
       )
       .unique();
     if (!user) {
-      throw new Error("Unauthenticated call to mutation");
+      throw new Error("Unauthenticated call to endpoint requiring authentication");
     }
     return user._id as Id<'users'>
 }

@@ -24,7 +24,22 @@ class AuthModel: ObservableObject {
     
     func login() {
         Task {
-            await client.login()
+            let result = await client.login()
+            switch result {
+            case .success:
+                break
+            case .failure(let error):
+                print("An unknown error occurred while trying to login \(error)")
+            }
+            
+            do {
+                try await client.mutation("users:store")
+            } catch ClientError.ConvexError(let data) {
+                let errorMessage = try! JSONDecoder().decode(String.self, from: Data(data.utf8))
+                print(errorMessage)
+            } catch {
+                print("An unknown error occurred: \(error)")
+            }
         }
     }
 }
