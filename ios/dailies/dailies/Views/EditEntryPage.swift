@@ -1,64 +1,64 @@
 //
-//  EditEntryPag.swift
+//  EditEntryPage.swift
 //  dailies
 //
 //  Created by David Wetterau on 12/15/24.
 //
 
-import SwiftUI
 import ConvexMobile
+import SwiftUI
 
 struct EditEntryPage: View {
-    @State private var date: Date = Date()
+    @State private var date: Date = .init()
     @State private var weight: Double? = nil
     @State private var numReps: Int? = nil
     @State private var numSets: Int? = nil
-    
+
     @Environment(\.dismiss) private var dismiss
-   
+
     private let entityId: String
     private let eventId: String?
-    
+
     init(entityId: String) {
         self.entityId = entityId
-        self.eventId = nil;
+        eventId = nil
     }
-    
+
     init(event: Event) {
-        self.entityId = event.entityId;
-        self.eventId = event._id;
-        
+        entityId = event.entityId
+        eventId = event._id
+
         let isoFormatter = ISO8601DateFormatter()
         isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         if let date = isoFormatter.date(from: event.date) {
-            self._date = State(initialValue: date);
+            _date = State(initialValue: date)
         } else {
             print("unable to parse date: \(event.date)")
         }
-        
+
         switch event.details {
-        case .workout(let workoutDetails):
-            self._weight = State(initialValue: workoutDetails.weight)
-            self._numReps = State(initialValue: workoutDetails.numReps)
-            self._numSets = State(initialValue: workoutDetails.numSets)
+        case let .workout(workoutDetails):
+            _weight = State(initialValue: workoutDetails.weight)
+            _numReps = State(initialValue: workoutDetails.numReps)
+            _numSets = State(initialValue: workoutDetails.numSets)
         }
     }
-    
+
     var body: some View {
         Form {
             Section {
-                    DatePicker(
-                        "Date",
-                        selection: $date,
-                        in: ...Date(),
-                        displayedComponents: .date
-                    )
+                DatePicker(
+                    "Date",
+                    selection: $date,
+                    in: ...Date(),
+                    displayedComponents: .date
+                )
             }
-            
+
             Section(header: Text("Workout details")) {
                 TextField("Weight (lbs)", value: $weight, format: .number)
                     .keyboardType(.decimalPad)
-                
+
                 TextField("# Reps", value: $numReps, format: .number)
                     .keyboardType(.numberPad)
 
@@ -72,12 +72,12 @@ struct EditEntryPage: View {
                 Button(action: handleSubmit) {
                     Text("Save")
                         .fontWeight(.bold)
-                // TODO: Support saving edits
+                    // TODO: Support saving edits
                 }.disabled(eventId != nil || weight == nil || numReps == nil || numSets == nil)
             }
         }
     }
-    
+
     private func handleSubmit() {
         guard weight != nil, numReps != nil, numSets != nil else {
             // TODO: show some warning message about them being required?
@@ -85,7 +85,7 @@ struct EditEntryPage: View {
         }
         let isoFormatter = ISO8601DateFormatter()
         isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        
+
         Task {
             do {
                 try await client.mutation("events:create", with: [
@@ -95,7 +95,7 @@ struct EditEntryPage: View {
                         WorkoutDetails(weight: weight!, numReps: numReps!, numSets: numSets!, overrides: nil)
                     ),
                 ])
-            } catch ClientError.ConvexError(let data) {
+            } catch let ClientError.ConvexError(data) {
                 let errorMessage = try! JSONDecoder().decode(String.self, from: Data(data.utf8))
                 print(errorMessage)
                 return

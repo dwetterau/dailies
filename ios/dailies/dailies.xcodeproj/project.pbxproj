@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4FF7BCC42D13CDE4008BCC71 /* .swiftformat in Resources */ = {isa = PBXBuildFile; fileRef = 4FF7BCC32D13CDE1008BCC71 /* .swiftformat */; };
 		4FFF0EAB2D0E143300806225 /* ConvexMobile in Frameworks */ = {isa = PBXBuildFile; productRef = 4FFF0EAA2D0E143300806225 /* ConvexMobile */; };
 		4FFF0EAE2D0E146500806225 /* ConvexAuth0 in Frameworks */ = {isa = PBXBuildFile; productRef = 4FFF0EAD2D0E146500806225 /* ConvexAuth0 */; };
 /* End PBXBuildFile section */
@@ -33,6 +34,7 @@
 		4F44A7EC2CFCCFDC00694873 /* dailiesTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = dailiesTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4F44A7F62CFCCFDC00694873 /* dailiesUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = dailiesUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4FDB03C42D06582000C8FE64 /* dailes dev.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "dailes dev.entitlements"; sourceTree = "<group>"; };
+		4FF7BCC32D13CDE1008BCC71 /* .swiftformat */ = {isa = PBXFileReference; lastKnownFileType = text; path = .swiftformat; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -83,6 +85,7 @@
 		4F44A7D32CFCCFDC00694873 = {
 			isa = PBXGroup;
 			children = (
+				4FF7BCC32D13CDE1008BCC71 /* .swiftformat */,
 				4FDB03C42D06582000C8FE64 /* dailes dev.entitlements */,
 				4F44A7DE2CFCCFDC00694873 /* dailies */,
 				4F44A7EF2CFCCFDC00694873 /* dailiesTests */,
@@ -119,7 +122,6 @@
 				4F44A7D82CFCCFDC00694873 /* Sources */,
 				4F44A7D92CFCCFDC00694873 /* Frameworks */,
 				4F44A7DA2CFCCFDC00694873 /* Resources */,
-				4FF7BCC22D13CB6C008BCC71 /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -236,6 +238,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4FF7BCC42D13CDE4008BCC71 /* .swiftformat in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -254,26 +257,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
-
-/* Begin PBXShellScriptBuildPhase section */
-		4FF7BCC22D13CB6C008BCC71 /* ShellScript */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "if which swiftformat > /dev/null; then\n    swiftformat .\nelse\n    echo \"warning: SwiftFormat not installed. Install using 'brew install swiftformat'\"\nfi\n";
-		};
-/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		4F44A7D82CFCCFDC00694873 /* Sources */ = {

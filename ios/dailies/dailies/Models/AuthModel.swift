@@ -12,29 +12,29 @@ import SwiftUI
 
 class AuthModel: ObservableObject {
     @Published var authState: AuthState<Credentials> = .loading
-    
+
     init() {
         client.authState.replaceError(with: .unauthenticated)
             .receive(on: DispatchQueue.main)
             .assign(to: &$authState)
-         Task {
+        Task {
             await client.loginFromCache()
         }
     }
-    
+
     func login() {
         Task {
             let result = await client.login()
             switch result {
             case .success:
                 break
-            case .failure(let error):
+            case let .failure(error):
                 print("An unknown error occurred while trying to login \(error)")
             }
-            
+
             do {
                 try await client.mutation("users:store")
-            } catch ClientError.ConvexError(let data) {
+            } catch let ClientError.ConvexError(data) {
                 let errorMessage = try! JSONDecoder().decode(String.self, from: Data(data.utf8))
                 print(errorMessage)
             } catch {

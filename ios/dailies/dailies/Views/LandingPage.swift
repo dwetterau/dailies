@@ -9,9 +9,9 @@ import SwiftUI
 
 struct LandingPage: View {
     @StateObject var authModel = AuthModel()
-    
+
     var body: some View {
-        Color.white.ignoresSafeArea().overlay{
+        Color.white.ignoresSafeArea().overlay {
             Group {
                 switch authModel.authState {
                 case .loading:
@@ -23,7 +23,7 @@ struct LandingPage: View {
                             Text("Login").font(.title)
                         }
                     }.padding()
-                case .authenticated(_):
+                case .authenticated:
                     NavigationStack {
                         EntityListPage()
                     }

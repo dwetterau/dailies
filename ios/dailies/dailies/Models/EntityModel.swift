@@ -18,24 +18,24 @@ struct Entity: Decodable, Hashable {
 let emptyEntity = Entity(_id: "", ownerId: "", name: "", type: "")
 
 struct Entities: Decodable {
-    let entities: Array<Entity>
+    let entities: [Entity]
 }
 
 class EntityModel: ObservableObject {
     @Published
     var entity: Entity = emptyEntity
-    
+
     @Published
-    var events: Array<Event> = []
-    
+    var events: [Event] = []
+
     init(entity: Entity) {
-        self.entity = entity;
+        self.entity = entity
         Task {
             client.subscribe(to: "entities:get", with: ["id": entity._id], yielding: Entity.self)
                 .replaceError(with: emptyEntity)
                 .receive(on: DispatchQueue.main)
                 .assign(to: &$entity)
-            client.subscribe(to: "events:list", with: ["entityId": entity._id], yielding: Array<Event>.self)
+            client.subscribe(to: "events:list", with: ["entityId": entity._id], yielding: [Event].self)
                 .replaceError(with: [])
                 .receive(on: DispatchQueue.main)
                 .assign(to: &$events)
@@ -45,8 +45,8 @@ class EntityModel: ObservableObject {
 
 class EntityListModel: ObservableObject {
     @Published
-    var entities: Entities = Entities(entities: [])
-    
+    var entities: Entities = .init(entities: [])
+
     init() {
         Task {
             client.subscribe(to: "entities:list", with: ["type": "workout"], yielding: Entities.self)
@@ -55,5 +55,4 @@ class EntityListModel: ObservableObject {
                 .assign(to: &$entities)
         }
     }
-        
 }

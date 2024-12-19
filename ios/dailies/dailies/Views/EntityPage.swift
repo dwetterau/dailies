@@ -1,5 +1,5 @@
 //
-//  ContentView.swift
+//  EntityPage.swift
 //  dailies
 //
 //  Created by David Wetterau on 12/1/24.
@@ -9,11 +9,11 @@ import SwiftUI
 
 struct EntityPage: View {
     @StateObject private var entity: EntityModel
-    
+
     init(entity: Entity) {
-        self._entity = StateObject(wrappedValue: EntityModel(entity: entity));
+        _entity = StateObject(wrappedValue: EntityModel(entity: entity))
     }
-    
+
     var body: some View {
         List {
             ForEach(entity.events, id: \._id) { event in
