@@ -15,7 +15,9 @@ import type {
 } from "convex/server";
 import type * as entities from "../entities.js";
 import type * as events from "../events.js";
+import type * as flashCards from "../flashCards.js";
 import type * as http from "../http.js";
+import type * as tokens from "../tokens.js";
 import type * as users from "../users.js";
 
 /**
@@ -29,7 +31,9 @@ import type * as users from "../users.js";
 declare const fullApi: ApiFromModules<{
   entities: typeof entities;
   events: typeof events;
+  flashCards: typeof flashCards;
   http: typeof http;
+  tokens: typeof tokens;
   users: typeof users;
 }>;
 export declare const api: FilterApi<
