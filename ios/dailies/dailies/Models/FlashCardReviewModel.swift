@@ -5,10 +5,11 @@
 //  Created by David Wetterau on 12/22/24.
 //
 
+import Combine
 import ConvexMobile
 import SwiftUI
 
-struct FlashCard: Decodable, Hashable {
+struct FlashCard: Decodable, Hashable, Encodable {
     let _id: String
     let ownerId: String
     let remoteId: String
@@ -18,6 +19,8 @@ struct FlashCard: Decodable, Hashable {
     let reviewStatus: String?
 }
 
+let flashCardFileName = "offlineFlashCards.json"
+
 class FlashCardReviewModel: ObservableObject {
     @Published
     var flashCards: [FlashCard] = []
@@ -25,13 +28,66 @@ class FlashCardReviewModel: ObservableObject {
     @Published
     public var isSaving: Bool = false
 
+    // Used to stay subscribed to the query for cards
+    private var cancellables = Set<AnyCancellable>()
+
     init() {
+        var isInitialLocalDiskLoad = false
+        if let loadedFlashCards: [FlashCard] = loadFromDisk(filename: flashCardFileName, type: FlashCard.self) {
+            print("Loaded \(loadedFlashCards.count) flash cards from disk")
+            flashCards = loadedFlashCards
+            isInitialLocalDiskLoad = true
+        }
+
         Task {
             client.subscribe(to: "flashCards:listCards", yielding: [FlashCard].self)
                 .replaceError(with: [])
                 .receive(on: DispatchQueue.main)
+                .scan(flashCards) { currentFlashCards, newFlashCards in
+                    if isInitialLocalDiskLoad {
+                        print("have \(currentFlashCards.count) local flashcards to merge in")
+
+                        var mergedFlashCards: [FlashCard] = []
+                        var idToReviewStatus: [String: String] = [:]
+                        for card in currentFlashCards {
+                            if card.reviewStatus != nil {
+                                idToReviewStatus[card._id] = card.reviewStatus
+                            }
+                        }
+                        // Also add in the ones from the server, but skip over any duplicates
+                        for card in newFlashCards {
+                            if let reviewStatus = idToReviewStatus[card._id] {
+                                mergedFlashCards.append(FlashCard(
+                                    _id: card._id,
+                                    ownerId: card.ownerId,
+                                    remoteId: card.remoteId,
+                                    side1: card.side1,
+                                    side2: card.side2,
+                                    details: card.details,
+                                    reviewStatus: reviewStatus
+                                ))
+                            } else {
+                                mergedFlashCards.append(card)
+                            }
+                        }
+
+                        isInitialLocalDiskLoad = false
+                        return mergedFlashCards
+                    }
+                    return newFlashCards
+                }
                 .assign(to: &$flashCards)
         }
+
+        // TODO: We could split out the status from the rest of the cards, and then we only have
+        // to save the status frequently.
+        $flashCards
+            .sink { newValue in
+                // TODO: Don't always blindly overwrite - otherwise coming online will delete
+                // any staged changes.
+                saveToDisk(newValue, filename: flashCardFileName)
+            }
+            .store(in: &cancellables)
     }
 
     public func getCurrentCard() -> FlashCard? {
@@ -91,5 +147,43 @@ class FlashCardReviewModel: ObservableObject {
                 self.isSaving = false
             }
         }
+    }
+}
+
+func saveToDisk<T: Codable>(_ objects: [T], filename: String) {
+    let fileManager = FileManager.default
+    guard let directory = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else {
+        print("Error: Unable to access document directory")
+        return
+    }
+
+    let fileURL = directory.appendingPathComponent(filename)
+
+    do {
+        let data = try JSONEncoder().encode(objects)
+        try data.write(to: fileURL)
+        // print("Saved data to \(fileURL)")
+    } catch {
+        print("Error saving data: \(error)")
+    }
+}
+
+func loadFromDisk<T: Codable>(filename: String, type _: T.Type) -> [T]? {
+    let fileManager = FileManager.default
+    guard let directory = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else {
+        print("Error: Unable to access document directory")
+        return nil
+    }
+
+    let fileURL = directory.appendingPathComponent(filename)
+
+    do {
+        let data = try Data(contentsOf: fileURL)
+        let objects = try JSONDecoder().decode([T].self, from: data)
+        print("Loaded data from \(fileURL)")
+        return objects
+    } catch {
+        print("Error loading data: \(error)")
+        return nil
     }
 }
