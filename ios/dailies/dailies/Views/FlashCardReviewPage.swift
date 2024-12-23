@@ -8,9 +8,13 @@
 import SwiftUI
 
 struct FlashCardReviewPage: View {
+    @ObservedObject var viewModel = FlashCardReviewModel()
+
     var body: some View {
         VStack {
-            Text("Hello world")
+            if let card = viewModel.getCurrentCard() {
+                FlashCardView(card)
+            }
         }
         .navigationTitle("Flash Cards")
         .toolbar {
@@ -20,7 +24,7 @@ struct FlashCardReviewPage: View {
                         // TODO: Initiate a sync
                     }
                 }) {
-                    Text("Lqoad").padding(.trailing, 10)
+                    Text("Load").padding(.trailing, 10)
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
