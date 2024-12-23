@@ -188,28 +188,47 @@ export const startSyncCards = mutation({
 })
 
 export const startSaveReviewStatus = mutation({
-    args: {},
-    handler: async (ctx, {}) => {
+    args: {
+        cards: v.array(v.object({
+            id: v.id('flashCards'),
+            reviewStatus: v.union(
+                v.literal(ReviewStatus.EASY),
+                v.literal(ReviewStatus.NORMAL),
+                v.literal(ReviewStatus.DIFFICULT),
+                v.literal(ReviewStatus.WRONG),
+            ),
+        }))
+    },
+    handler: async (ctx, args) => {
         const ownerId = await getUserIdFromContextAsync(ctx)
         const token = await getTokenIfExists(ctx, { tokenType: TokenType.AIRTABLE })
         if (!token) {
             throw new Error("no token found for sync")
         }
-        const cardsWithReviewStatus = await ctx.db
+
+        const cardsWithoutReviewStatus = await ctx.db
             .query("flashCards")
             .filter((q) => q.and(
                 q.eq(q.field("ownerId"), ownerId),
-                q.neq(q.field("reviewStatus"), null),
+                q.eq(q.field("reviewStatus"), null),
             ))
             .collect();
 
-        const cardsToSync = cardsWithReviewStatus
-            .map((card) => ({
-                id: card._id,
-                remoteId: card.remoteId,
-                // null values were filtered out by the query
-                reviewStatus: card.reviewStatus as ReviewStatus,
-            }));
+        const authorizedCardIdToCard = new Map(cardsWithoutReviewStatus.map((card) => [card._id, card]));
+        const cardsToSync = [];
+        for (const card of args.cards) {
+            const existingCard = authorizedCardIdToCard.get(card.id);
+            if (!existingCard) {
+                continue
+            }
+            await ctx.db.patch(card.id, { reviewStatus: card.reviewStatus })
+            cardsToSync.push({
+                id: card.id,
+                remoteId: existingCard.remoteId,
+                reviewStatus: card.reviewStatus,
+            })
+        }
+
         if (cardsToSync.length) {
             await ctx.scheduler.runAfter(
                 0, 

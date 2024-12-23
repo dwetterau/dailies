@@ -13,7 +13,8 @@ struct FlashCardReviewPage: View {
     var body: some View {
         VStack {
             if let card = viewModel.getCurrentCard() {
-                FlashCardView(card)
+                FlashCardView(card).padding(.top, 200)
+                Spacer()
                 VStack(spacing: 10) {
                     HStack(spacing: 10) {
                         Button(action: {
@@ -71,7 +72,7 @@ struct FlashCardReviewPage: View {
                                 .shadow(radius: 5)
                         }
                     }
-                }.padding(.top, 20)
+                }.padding(.bottom, 200)
             }
         }
         .navigationTitle("Flash Cards")
@@ -87,9 +88,7 @@ struct FlashCardReviewPage: View {
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Button(action: {
-                    Task {
-                        // TODO: Initiate a sync
-                    }
+                    viewModel.saveReviewStatuses()
                 }) {
                     Text("Save")
                 }

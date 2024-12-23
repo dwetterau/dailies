@@ -51,4 +51,26 @@ class FlashCardReviewModel: ObservableObject {
             return card
         }
     }
+
+    public func saveReviewStatuses() {
+        let cardsToSave: ConvexEncodable = flashCards.filter { card in
+            card.reviewStatus != nil
+        }.map { card in
+            ["id": card._id, "reviewStatus": card.reviewStatus!]
+        }
+        Task {
+            do {
+                try await client.mutation("flashCards:startSaveReviewStatus", with: [
+                    "cards": cardsToSave,
+                ])
+            } catch let ClientError.ConvexError(data) {
+                let errorMessage = try! JSONDecoder().decode(String.self, from: Data(data.utf8))
+                print(errorMessage)
+                return
+            } catch {
+                print("An unknown error occurred: \(error)")
+                return
+            }
+        }
+    }
 }
