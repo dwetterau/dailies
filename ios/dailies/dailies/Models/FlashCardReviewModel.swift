@@ -51,6 +51,20 @@ class FlashCardReviewModel: ObservableObject {
             return card
         }
     }
+    
+    public func getStatusString() -> String {
+        if (flashCards.count == 0) {
+            return "No cards loaded"
+        }
+        let numReviewedCards = flashCards.filter() { card in
+            card.reviewStatus != nil
+        }.count
+        let numTotalCards = flashCards.count
+        let percentReviewed = 100 * (Double(numReviewedCards) / Double(numTotalCards))
+        
+        return "\(numReviewedCards)/\(numTotalCards) - \(String(format: "%.2f", percentReviewed))%"
+        
+    }
 
     public func saveReviewStatuses() {
         let cardsToSave: ConvexEncodable = flashCards.filter { card in
