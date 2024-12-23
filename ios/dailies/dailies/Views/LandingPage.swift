@@ -25,7 +25,7 @@ struct LandingPage: View {
                     }.padding()
                 case .authenticated:
                     NavigationStack {
-                        HomePage()
+                        HomePage(authModel: authModel)
                     }
                 }
             }

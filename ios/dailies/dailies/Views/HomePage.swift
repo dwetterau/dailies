@@ -8,6 +8,12 @@
 import SwiftUI
 
 struct HomePage: View {
+    var authModel: AuthModel
+
+    init(authModel: AuthModel) {
+        self.authModel = authModel
+    }
+
     var body: some View {
         NavigationStack {
             VStack {
@@ -40,6 +46,13 @@ struct HomePage: View {
                             .padding(.horizontal, 30)
                             .shadow(radius: 10)
                     }
+                    Spacer()
+                    Button(action: {
+                        authModel.logout()
+                    }) {
+                        Text("Logout")
+                            .padding(.top, 20)
+                    }
                 }
                 .padding(.top, 100) // Spacing from the top
                 .navigationDestination(for: String.self) { destination in
@@ -62,5 +75,5 @@ struct HomePage: View {
 }
 
 #Preview {
-    HomePage()
+    HomePage(authModel: AuthModel())
 }

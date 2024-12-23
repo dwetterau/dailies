@@ -14,6 +14,64 @@ struct FlashCardReviewPage: View {
         VStack {
             if let card = viewModel.getCurrentCard() {
                 FlashCardView(card)
+                VStack(spacing: 10) {
+                    HStack(spacing: 10) {
+                        Button(action: {
+                            viewModel
+                                .setCurrentCardReviewStatus("Easy")
+                        }) {
+                            Text("Easy")
+                                .frame(maxWidth: .infinity, minHeight: 60)
+                                .font(.title2)
+                                .background(.blue)
+                                .foregroundColor(.white)
+                                .cornerRadius(12)
+                                .padding(.leading, 30)
+                                .shadow(radius: 5)
+                        }
+                        Button(action: {
+                            viewModel
+                                .setCurrentCardReviewStatus("Normal")
+                        }) {
+                            Text("Normal")
+                                .frame(maxWidth: .infinity, minHeight: 60)
+                                .font(.title2)
+                                .background(.green)
+                                .foregroundColor(.white)
+                                .cornerRadius(12)
+                                .padding(.trailing, 30)
+                                .shadow(radius: 5)
+                        }
+                    }
+                    HStack(spacing: 10) {
+                        Button(action: {
+                            viewModel
+                                .setCurrentCardReviewStatus("Difficult")
+                        }) {
+                            Text("Difficult")
+                                .frame(maxWidth: .infinity, minHeight: 60)
+                                .font(.title2)
+                                .background(.purple)
+                                .foregroundColor(.white)
+                                .cornerRadius(12)
+                                .padding(.leading, 30)
+                                .shadow(radius: 5)
+                        }
+                        Button(action: {
+                            viewModel
+                                .setCurrentCardReviewStatus("Wrong")
+                        }) {
+                            Text("Wrong")
+                                .frame(maxWidth: .infinity, minHeight: 60)
+                                .font(.title2)
+                                .background(.red)
+                                .foregroundColor(.white)
+                                .cornerRadius(12)
+                                .padding(.trailing, 30)
+                                .shadow(radius: 5)
+                        }
+                    }
+                }.padding(.top, 20)
             }
         }
         .navigationTitle("Flash Cards")
@@ -24,7 +82,7 @@ struct FlashCardReviewPage: View {
                         // TODO: Initiate a sync
                     }
                 }) {
-                    Text("Load").padding(.trailing, 10)
+                    Text("Load").padding(.trailing, 5)
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
@@ -33,7 +91,7 @@ struct FlashCardReviewPage: View {
                         // TODO: Initiate a sync
                     }
                 }) {
-                    Text("Save").padding(.leading, 2)
+                    Text("Save")
                 }
             }
         }

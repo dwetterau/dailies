@@ -18,7 +18,23 @@ class AuthModel: ObservableObject {
             .receive(on: DispatchQueue.main)
             .assign(to: &$authState)
         Task {
-            await client.loginFromCache()
+            let result = await client.loginFromCache()
+            switch result {
+            case .success:
+                print("Successfully logged in (from cache)")
+            case let .failure(error):
+                if error as? CredentialsManagerError == CredentialsManagerError.noCredentials {
+                    print("No credentials in store found.")
+                } else {
+                    print("Other error: \(error)")
+                }
+            }
+        }
+    }
+
+    func logout() {
+        Task {
+            await client.logout()
         }
     }
 
@@ -27,7 +43,7 @@ class AuthModel: ObservableObject {
             let result = await client.login()
             switch result {
             case .success:
-                break
+                print("Successfully logged in")
             case let .failure(error):
                 print("An unknown error occurred while trying to login \(error)")
             }
