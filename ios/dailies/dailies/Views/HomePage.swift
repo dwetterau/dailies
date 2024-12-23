@@ -9,23 +9,54 @@ import SwiftUI
 
 struct HomePage: View {
     var body: some View {
-        VStack{
-            NavigationLink(value: "workouts") {
-                Text("Workouts")
+        NavigationStack {
+            VStack {
+                // Title Section
+                Text("Dailies")
+                    .font(.system(size: 40, weight: .bold, design: .rounded))
+                    .foregroundColor(.primary)
+                    .padding(.top, 100) // Spacing from the top
+
+                // Buttons Section
+                VStack(spacing: 20) {
+                    NavigationLink(value: "workouts") {
+                        Text("Workouts")
+                            .font(.title)
+                            .frame(maxWidth: .infinity, minHeight: 60)
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                            .padding(.horizontal, 30)
+                            .shadow(radius: 10)
+                    }
+
+                    NavigationLink(value: "flashCards") {
+                        Text("Flash Cards")
+                            .font(.title)
+                            .frame(maxWidth: .infinity, minHeight: 60)
+                            .background(Color.green)
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                            .padding(.horizontal, 30)
+                            .shadow(radius: 10)
+                    }
+                }
+                .padding(.top, 100) // Spacing from the top
+                .navigationDestination(for: String.self) { destination in
+                    switch destination {
+                    case "workouts":
+                        EntityListPage()
+                    case "flashCards":
+                        FlashCardReviewPage()
+                    default:
+                        Text("Unknown destination \(destination)")
+                    }
+                }
+                Spacer()
             }
-            NavigationLink(value: "flashCards") {
-                Text("Flash Cards")
-            }
-        }
-        .navigationDestination(for: String.self) { destination in
-            switch destination {
-            case "workouts":
-                EntityListPage()
-            case "flashCards":
-                FlashCardReviewPage()
-            default:
-                Text("Unknown destination \(destination)")
-            }
+            .padding()
+            .background(Color(.systemBackground)) // Default background
+            .edgesIgnoringSafeArea(.all) // To allow the background to fill the screen
         }
     }
 }

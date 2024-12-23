@@ -14,21 +14,19 @@ struct FlashCardReviewPage: View {
         }
         .navigationTitle("Flash Cards")
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
+            ToolbarItem(placement: .topBarTrailing) {
                 Button(action: {
                     Task {
                         // TODO: Initiate a sync
-                        
                     }
                 }) {
-                    Text("Load")
+                    Text("Lqoad").padding(.trailing, 10)
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Button(action: {
                     Task {
                         // TODO: Initiate a sync
-                        
                     }
                 }) {
                     Text("Save").padding(.leading, 2)
@@ -49,7 +47,7 @@ struct PreviewContentWrapper: View {
 }
 
 #Preview {
-    NavigationStack{
+    NavigationStack {
         PreviewContentWrapper()
     }
 }
