@@ -27,6 +27,8 @@ class FlashCardReviewModel: ObservableObject {
 
     @Published
     public var isSaving: Bool = false
+    @Published
+    public var isLoading: Bool = false
 
     // Used to stay subscribed to the query for cards
     private var cancellables = Set<AnyCancellable>()
@@ -44,9 +46,9 @@ class FlashCardReviewModel: ObservableObject {
                 .replaceError(with: [])
                 .receive(on: DispatchQueue.main)
                 .scan(flashCards) { currentFlashCards, newFlashCards in
+                    // TODO: I could do this in all cases, but need to think through the actual save case where it
+                    // deletes items.
                     if isInitialLocalDiskLoad {
-                        print("have \(currentFlashCards.count) local flashcards to merge in")
-
                         var mergedFlashCards: [FlashCard] = []
                         var idToReviewStatus: [String: String] = [:]
                         for card in currentFlashCards {
@@ -145,6 +147,24 @@ class FlashCardReviewModel: ObservableObject {
             }
             await MainActor.run {
                 self.isSaving = false
+            }
+        }
+    }
+
+    public func loadMoreFlashCards(completion: @escaping () -> Void) {
+        isLoading = true
+        Task {
+            do {
+                try await client.mutation("flashCards:startSyncCards")
+                completion()
+            } catch let ClientError.ConvexError(data) {
+                let errorMessage = try! JSONDecoder().decode(String.self, from: Data(data.utf8))
+                print(errorMessage)
+            } catch {
+                print("An unknown error occurred: \(error)")
+            }
+            await MainActor.run {
+                self.isLoading = false
             }
         }
     }

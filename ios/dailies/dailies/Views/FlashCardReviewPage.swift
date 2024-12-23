@@ -12,6 +12,7 @@ struct FlashCardReviewPage: View {
     @ObservedObject var viewModel = FlashCardReviewModel()
 
     @State var showSaveSuccessToast = false
+    @State var showLoadSuccessToast = false
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -87,8 +88,8 @@ struct FlashCardReviewPage: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button(action: {
-                    Task {
-                        // TODO: Initiate a sync
+                    viewModel.loadMoreFlashCards {
+                        showLoadSuccessToast = true
                     }
                 }) {
                     Text("Load").padding(.trailing, 5)
@@ -106,6 +107,9 @@ struct FlashCardReviewPage: View {
         }
         .toast(isPresenting: $showSaveSuccessToast) {
             AlertToast(type: .complete(.green), title: "Saved!")
+        }
+        .toast(isPresenting: $showLoadSuccessToast) {
+            AlertToast(type: .complete(.green), title: "Loaded!")
         }
     }
 }
