@@ -22,6 +22,9 @@ class FlashCardReviewModel: ObservableObject {
     @Published
     var flashCards: [FlashCard] = []
 
+    @Published
+    public var isSaving: Bool = false
+
     init() {
         Task {
             client.subscribe(to: "flashCards:listCards", yielding: [FlashCard].self)
@@ -51,39 +54,41 @@ class FlashCardReviewModel: ObservableObject {
             return card
         }
     }
-    
+
     public func getStatusString() -> String {
-        if (flashCards.count == 0) {
+        if flashCards.count == 0 {
             return "No cards loaded"
         }
-        let numReviewedCards = flashCards.filter() { card in
+        let numReviewedCards = flashCards.filter { card in
             card.reviewStatus != nil
         }.count
         let numTotalCards = flashCards.count
         let percentReviewed = 100 * (Double(numReviewedCards) / Double(numTotalCards))
-        
+
         return "\(numReviewedCards)/\(numTotalCards) - \(String(format: "%.2f", percentReviewed))%"
-        
     }
 
-    public func saveReviewStatuses() {
+    public func saveReviewStatuses(completion: @escaping () -> Void) {
         let cardsToSave: ConvexEncodable = flashCards.filter { card in
             card.reviewStatus != nil
         }.map { card in
             ["id": card._id, "reviewStatus": card.reviewStatus!]
         }
+        isSaving = true
         Task {
             do {
                 try await client.mutation("flashCards:startSaveReviewStatus", with: [
                     "cards": cardsToSave,
                 ])
+                completion()
             } catch let ClientError.ConvexError(data) {
                 let errorMessage = try! JSONDecoder().decode(String.self, from: Data(data.utf8))
                 print(errorMessage)
-                return
             } catch {
                 print("An unknown error occurred: \(error)")
-                return
+            }
+            await MainActor.run {
+                self.isSaving = false
             }
         }
     }

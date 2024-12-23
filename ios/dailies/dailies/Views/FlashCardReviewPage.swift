@@ -5,10 +5,13 @@
 //  Created by David Wetterau on 12/22/24.
 //
 
+import AlertToast
 import SwiftUI
 
 struct FlashCardReviewPage: View {
     @ObservedObject var viewModel = FlashCardReviewModel()
+
+    @State var showSaveSuccessToast = false
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -93,11 +96,16 @@ struct FlashCardReviewPage: View {
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Button(action: {
-                    viewModel.saveReviewStatuses()
+                    viewModel.saveReviewStatuses {
+                        showSaveSuccessToast = true
+                    }
                 }) {
                     Text("Save")
-                }
+                }.disabled(viewModel.isSaving)
             }
+        }
+        .toast(isPresenting: $showSaveSuccessToast) {
+            AlertToast(type: .complete(.green), title: "Saved!")
         }
     }
 }

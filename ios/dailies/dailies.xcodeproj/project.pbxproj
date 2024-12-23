@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4F0B15992D19F45D00735BD4 /* AlertToast in Frameworks */ = {isa = PBXBuildFile; productRef = 4F0B15982D19F45D00735BD4 /* AlertToast */; };
 		4FF7BCC42D13CDE4008BCC71 /* .swiftformat in Resources */ = {isa = PBXBuildFile; fileRef = 4FF7BCC32D13CDE1008BCC71 /* .swiftformat */; };
 		4FFF0EAB2D0E143300806225 /* ConvexMobile in Frameworks */ = {isa = PBXBuildFile; productRef = 4FFF0EAA2D0E143300806225 /* ConvexMobile */; };
 		4FFF0EAE2D0E146500806225 /* ConvexAuth0 in Frameworks */ = {isa = PBXBuildFile; productRef = 4FFF0EAD2D0E146500806225 /* ConvexAuth0 */; };
@@ -60,6 +61,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4F0B15992D19F45D00735BD4 /* AlertToast in Frameworks */,
 				4FFF0EAE2D0E146500806225 /* ConvexAuth0 in Frameworks */,
 				4FFF0EAB2D0E143300806225 /* ConvexMobile in Frameworks */,
 			);
@@ -134,6 +136,7 @@
 			packageProductDependencies = (
 				4FFF0EAA2D0E143300806225 /* ConvexMobile */,
 				4FFF0EAD2D0E146500806225 /* ConvexAuth0 */,
+				4F0B15982D19F45D00735BD4 /* AlertToast */,
 			);
 			productName = dailies;
 			productReference = 4F44A7DC2CFCCFDC00694873 /* dailes dev.app */;
@@ -220,6 +223,7 @@
 			packageReferences = (
 				4FFF0EA92D0E143300806225 /* XCRemoteSwiftPackageReference "convex-swift" */,
 				4FFF0EAC2D0E146500806225 /* XCRemoteSwiftPackageReference "convex-swift-auth0" */,
+				4F0B15972D19F45D00735BD4 /* XCRemoteSwiftPackageReference "AlertToast" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 4F44A7DD2CFCCFDC00694873 /* Products */;
@@ -593,6 +597,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		4F0B15972D19F45D00735BD4 /* XCRemoteSwiftPackageReference "AlertToast" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/elai950/AlertToast";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.3.9;
+			};
+		};
 		4FFF0EA92D0E143300806225 /* XCRemoteSwiftPackageReference "convex-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/get-convex/convex-swift.git";
@@ -612,6 +624,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		4F0B15982D19F45D00735BD4 /* AlertToast */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4F0B15972D19F45D00735BD4 /* XCRemoteSwiftPackageReference "AlertToast" */;
+			productName = AlertToast;
+		};
 		4FFF0EAA2D0E143300806225 /* ConvexMobile */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 4FFF0EA92D0E143300806225 /* XCRemoteSwiftPackageReference "convex-swift" */;
