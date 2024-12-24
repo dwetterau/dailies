@@ -60,7 +60,7 @@ struct ReviewStats: Decodable, Encodable {
             return nil
         }
         let percentCorrect = 100 * (Double(numCorrect) / Double(numReviewed))
-        return "\(String(format: "%.2f", percentCorrect))% correct"
+        return "\(numReviewed) reviewed - \(String(format: "%.2f", percentCorrect))%"
     }
 }
 
@@ -171,15 +171,13 @@ class FlashCardReviewModel: ObservableObject {
 
     public func getCardCountStats() -> String {
         if flashCards.count == 0 {
-            return "No cards"
+            return "0 loaded"
         }
         let numReviewedCards = flashCards.filter { card in
             card.reviewStatus != nil
         }.count
         let numTotalCards = flashCards.count
-        let percentReviewed = 100 * (Double(numReviewedCards) / Double(numTotalCards))
-
-        return "\(numReviewedCards)/\(numTotalCards) - \(String(format: "%.2f", percentReviewed))% reviewed"
+        return "\(numReviewedCards)/\(numTotalCards) loaded"
     }
 
     public func getReviewStatsString() -> String? {
