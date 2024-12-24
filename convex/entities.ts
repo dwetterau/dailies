@@ -4,7 +4,11 @@ import { defineTable } from "convex/server";
 import { getUserIdFromContextAsync } from "./users";
 
 export enum EntityType {
-  WORKOUT = "workout",
+  EXERCISE = "exercise",
+  LEARNING = "learning",
+  CARE = "care",
+  THINKING = "thinking",
+  TIDYING = "tidying",
 }
 
 const entityTypesSchema = v.union(
@@ -15,6 +19,8 @@ export const ENTITIES_SCHEMA = defineTable({
   ownerId: v.id("users"),
   name: v.string(),
   type: entityTypesSchema,
+  isRequiredDaily: v.boolean(),
+  // TODO: Add a "resetAfterInterval" field - so that weekly events don't reset daily
 });
 
 export const list = query({
@@ -73,6 +79,7 @@ export const create = mutation({
       name,
       ownerId,
       type,
+      isRequiredDaily: false,
     });
   },
 });

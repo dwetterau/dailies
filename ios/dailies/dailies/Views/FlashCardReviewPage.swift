@@ -80,9 +80,13 @@ struct FlashCardReviewPage: View {
                     }.padding(.bottom, 200)
                 }
             }
-            Text(viewModel.getStatusString())
+            Text(viewModel.getCardCountStats())
                 .frame(maxWidth: .infinity, alignment: .topLeading)
                 .padding()
+            if let reviewStatsString = viewModel.getReviewStatsString() {
+                Text(reviewStatsString).frame(maxWidth: .infinity, alignment: .topTrailing)
+                    .padding()
+            }
         }
         .navigationTitle("Flash Cards")
         .toolbar {

@@ -126,21 +126,30 @@ export const syncCurrentCards = internalMutation({
             ))
             .collect();
 
-        const airtableIdsInConvex = new Set(cardsInConvex.map((card) => card.remoteId));
+        const existingCardsByRemoteId = new Map(cardsInConvex.map((card) => [card.remoteId, card]));
         let newFlashCards = [];
         for (const record of records) {
-            if (airtableIdsInConvex.has(record.id)) {
-                // TODO: Sync the changes back? Or overwrite some things?
-                continue;
-            }
-            newFlashCards.push({
+            const newCard = {
                 ownerId,
                 remoteId: record.id,
                 side1: record.fields["Japanese"],
                 side2: (record.fields["English"] ?? "") + " " + (record.fields["Hiragana"] ?? ""),
                 details: record.fields["Notes"] ?? "",
                 reviewStatus: record.fields["Review Status"] ?? null,
-            })
+            }
+            if (existingCardsByRemoteId.has(record.id)) {
+                const existingCard = existingCardsByRemoteId.get(record.id)!;
+                if (
+                    existingCard.side1 === newCard.side1 && 
+                    existingCard.side2 === newCard.side2 && 
+                    existingCard.details === newCard.details
+                ) {
+                    continue;
+                }
+                await ctx.db.patch(existingCard._id, newCard)
+                continue
+            }
+            newFlashCards.push(newCard)
         }
 
         for (const newFlashCard of newFlashCards) {

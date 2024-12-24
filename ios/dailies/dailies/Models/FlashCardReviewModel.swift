@@ -21,9 +21,56 @@ struct FlashCard: Decodable, Hashable, Encodable {
 
 let flashCardFileName = "offlineFlashCards.json"
 
+struct ReviewStats: Decodable, Encodable {
+    let numReviewed: Int
+    let numCorrect: Int
+    // Encoded in ISO8601
+    let dateString: String
+
+    init() {
+        numReviewed = 0
+        numCorrect = 0
+
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        dateString = isoFormatter.string(from: Date())
+    }
+
+    init(numReviewed: Int, numCorrect: Int, dateString: String) {
+        self.numReviewed = numReviewed
+        self.numCorrect = numCorrect
+        self.dateString = dateString
+    }
+
+    func addReview(isCorrect: Bool) -> ReviewStats {
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+
+        let storedDate = isoFormatter.date(from: dateString)!
+        let numCorrectDelta = isCorrect ? 1 : 0
+        if !Calendar.current.isDate(storedDate, inSameDayAs: Date()) {
+            return ReviewStats(numReviewed: 1, numCorrect: numCorrectDelta, dateString: isoFormatter.string(from: Date()))
+        } else {
+            return ReviewStats(numReviewed: numReviewed + 1, numCorrect: numCorrect + numCorrectDelta, dateString: dateString)
+        }
+    }
+
+    func getReviewStatusString() -> String? {
+        if numReviewed == 0 {
+            return nil
+        }
+        let percentCorrect = 100 * (Double(numCorrect) / Double(numReviewed))
+        return "\(String(format: "%.2f", percentCorrect))% correct"
+    }
+}
+
+let flashCardReviewStatsFileName = "offlineFlashCardReviewStats.json"
+
 class FlashCardReviewModel: ObservableObject {
     @Published
     var flashCards: [FlashCard] = []
+    @Published
+    var reviewStats = ReviewStats()
 
     @Published
     public var isSaving: Bool = false
@@ -35,10 +82,14 @@ class FlashCardReviewModel: ObservableObject {
 
     init() {
         var isInitialLocalDiskLoad = false
-        if let loadedFlashCards: [FlashCard] = loadFromDisk(filename: flashCardFileName, type: FlashCard.self) {
+        if let loadedFlashCards: [FlashCard] = loadFromDisk(filename: flashCardFileName, type: [FlashCard].self) {
             print("Loaded \(loadedFlashCards.count) flash cards from disk")
             flashCards = loadedFlashCards
             isInitialLocalDiskLoad = true
+        }
+        if let loadedReviewStats: ReviewStats = loadFromDisk(filename: flashCardReviewStatsFileName, type: ReviewStats.self) {
+            print("Loaded reviewStats from disk")
+            reviewStats = loadedReviewStats
         }
 
         Task {
@@ -90,6 +141,10 @@ class FlashCardReviewModel: ObservableObject {
                 saveToDisk(newValue, filename: flashCardFileName)
             }
             .store(in: &cancellables)
+
+        $reviewStats.sink { newValue in
+            saveToDisk(newValue, filename: flashCardReviewStatsFileName)
+        }.store(in: &cancellables)
     }
 
     public func getCurrentCard() -> FlashCard? {
@@ -111,11 +166,12 @@ class FlashCardReviewModel: ObservableObject {
             }
             return card
         }
+        reviewStats = reviewStats.addReview(isCorrect: status != "Wrong")
     }
 
-    public func getStatusString() -> String {
+    public func getCardCountStats() -> String {
         if flashCards.count == 0 {
-            return "No cards loaded"
+            return "No cards"
         }
         let numReviewedCards = flashCards.filter { card in
             card.reviewStatus != nil
@@ -123,7 +179,11 @@ class FlashCardReviewModel: ObservableObject {
         let numTotalCards = flashCards.count
         let percentReviewed = 100 * (Double(numReviewedCards) / Double(numTotalCards))
 
-        return "\(numReviewedCards)/\(numTotalCards) - \(String(format: "%.2f", percentReviewed))%"
+        return "\(numReviewedCards)/\(numTotalCards) - \(String(format: "%.2f", percentReviewed))% reviewed"
+    }
+
+    public func getReviewStatsString() -> String? {
+        return reviewStats.getReviewStatusString()
     }
 
     public func saveReviewStatuses(completion: @escaping () -> Void) {
@@ -170,7 +230,7 @@ class FlashCardReviewModel: ObservableObject {
     }
 }
 
-func saveToDisk<T: Codable>(_ objects: [T], filename: String) {
+func saveToDisk<T: Codable>(_ objects: T, filename: String) {
     let fileManager = FileManager.default
     guard let directory = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else {
         print("Error: Unable to access document directory")
@@ -188,7 +248,7 @@ func saveToDisk<T: Codable>(_ objects: [T], filename: String) {
     }
 }
 
-func loadFromDisk<T: Codable>(filename: String, type _: T.Type) -> [T]? {
+func loadFromDisk<T: Codable>(filename: String, type _: T.Type) -> T? {
     let fileManager = FileManager.default
     guard let directory = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else {
         print("Error: Unable to access document directory")
@@ -199,7 +259,7 @@ func loadFromDisk<T: Codable>(filename: String, type _: T.Type) -> [T]? {
 
     do {
         let data = try Data(contentsOf: fileURL)
-        let objects = try JSONDecoder().decode([T].self, from: data)
+        let objects = try JSONDecoder().decode(T.self, from: data)
         print("Loaded data from \(fileURL)")
         return objects
     } catch {
