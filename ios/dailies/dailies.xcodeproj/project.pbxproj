@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		4F0B15992D19F45D00735BD4 /* AlertToast in Frameworks */ = {isa = PBXBuildFile; productRef = 4F0B15982D19F45D00735BD4 /* AlertToast */; };
+		4F4BCF972D1A415A0000D545 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4F4BCF962D1A415A0000D545 /* Assets.xcassets */; };
 		4FF7BCC42D13CDE4008BCC71 /* .swiftformat in Resources */ = {isa = PBXBuildFile; fileRef = 4FF7BCC32D13CDE1008BCC71 /* .swiftformat */; };
 		4FFF0EAB2D0E143300806225 /* ConvexMobile in Frameworks */ = {isa = PBXBuildFile; productRef = 4FFF0EAA2D0E143300806225 /* ConvexMobile */; };
 		4FFF0EAE2D0E146500806225 /* ConvexAuth0 in Frameworks */ = {isa = PBXBuildFile; productRef = 4FFF0EAD2D0E146500806225 /* ConvexAuth0 */; };
@@ -34,6 +35,7 @@
 		4F44A7DC2CFCCFDC00694873 /* dailes dev.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "dailes dev.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4F44A7EC2CFCCFDC00694873 /* dailiesTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = dailiesTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4F44A7F62CFCCFDC00694873 /* dailiesUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = dailiesUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		4F4BCF962D1A415A0000D545 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		4FDB03C42D06582000C8FE64 /* dailes dev.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "dailes dev.entitlements"; sourceTree = "<group>"; };
 		4FF7BCC32D13CDE1008BCC71 /* .swiftformat */ = {isa = PBXFileReference; lastKnownFileType = text; path = .swiftformat; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -87,6 +89,7 @@
 		4F44A7D32CFCCFDC00694873 = {
 			isa = PBXGroup;
 			children = (
+				4F4BCF962D1A415A0000D545 /* Assets.xcassets */,
 				4FF7BCC32D13CDE1008BCC71 /* .swiftformat */,
 				4FDB03C42D06582000C8FE64 /* dailes dev.entitlements */,
 				4F44A7DE2CFCCFDC00694873 /* dailies */,
@@ -243,6 +246,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4FF7BCC42D13CDE4008BCC71 /* .swiftformat in Resources */,
+				4F4BCF972D1A415A0000D545 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
