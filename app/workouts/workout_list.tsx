@@ -6,7 +6,7 @@ import { FormEvent, useCallback, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { EntityType } from "@/convex/entities";
+import { EntityCategory, EntityType } from "@/convex/entities";
 import { assert, formatTimestamp } from "@/lib/utils";
 import { SelectMenu } from "@/components/ui/select";
 import { flatten } from "lodash";
@@ -28,7 +28,8 @@ export function WorkoutList({ viewer }: { viewer: Id<"users"> }) {
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     assert(newEntityType);
-    createEntity({ name: newEntityName, type: newEntityType }).catch(
+    // TODO: Pass in the category
+    createEntity({ category: EntityCategory.EXERCISE, name: newEntityName, type: newEntityType }).catch(
       (error) => {
         console.error("Failed to create entity:", error);
       }

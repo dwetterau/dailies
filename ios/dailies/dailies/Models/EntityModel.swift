@@ -11,11 +11,11 @@ struct Entity: Decodable, Hashable {
     let _id: String
     let ownerId: String
     let name: String
-    // "workout"
+    let category: String
     let type: String
 }
 
-let emptyEntity = Entity(_id: "", ownerId: "", name: "", type: "")
+let emptyEntity = Entity(_id: "", ownerId: "", name: "", category: "", type: "")
 
 struct Entities: Decodable {
     let entities: [Entity]
@@ -70,13 +70,11 @@ class EntityListModel: ObservableObject {
 
     public func getExerciseEntities() -> [Entity] {
         entities.entities.filter { entity in
-            entity.type == "exercise"
+            entity.category == "exercise"
         }
     }
 
     public func getFlashCardEntityId() -> String? {
-        // TODO: We'll need another layer in here - maybe the type needs to be specific and a new category
-        // can help define the groups
-        entities.entities.first(where: { $0.type == "learning" })?._id
+        entities.entities.first(where: { $0.category == "learning" && $0.type == "flashCards" })?._id
     }
 }
