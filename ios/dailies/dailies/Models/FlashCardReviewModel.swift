@@ -72,18 +72,14 @@ class FlashCardReviewModel: ObservableObject {
     public var isLoading: Bool = false
 
     private var entityId: String
-    // Used to avoid re-adding cards we're actively clearing out.
-    var cardIdsToExclude: Set<String> = []
     // Used to stay subscribed to the query for cards
     private var cancellables = Set<AnyCancellable>()
 
     init(entityId: String) {
         self.entityId = entityId
-        var isInitialLocalDiskLoad = false
         if let loadedFlashCards: [FlashCard] = loadFromDisk(filename: flashCardFileName, type: [FlashCard].self) {
             print("Loaded \(loadedFlashCards.count) flash cards from disk")
             flashCards = loadedFlashCards
-            isInitialLocalDiskLoad = true
         }
         if let loadedReviewStats: ReviewStats = loadFromDisk(filename: flashCardReviewStatsFileName, type: ReviewStats.self) {
             print("Loaded reviewStats from disk")
@@ -120,7 +116,6 @@ class FlashCardReviewModel: ObservableObject {
                         }
                     }
 
-                    isInitialLocalDiskLoad = false
                     return mergedFlashCards
                 }
                 .assign(to: &$flashCards)
@@ -130,8 +125,6 @@ class FlashCardReviewModel: ObservableObject {
         // to save the status frequently.
         $flashCards
             .sink { newValue in
-                // TODO: Don't always blindly overwrite - otherwise coming online will delete
-                // any staged changes.
                 saveToDisk(newValue, filename: flashCardFileName)
             }
             .store(in: &cancellables)
@@ -184,7 +177,6 @@ class FlashCardReviewModel: ObservableObject {
         }.map { card in
             ["id": card._id, "reviewStatus": card.reviewStatus!]
         }
-        cardIdsToExclude = Set(flashCards.filter { card in card.reviewStatus != nil }.map { $0._id })
         isSaving = true
         Task {
             do {
@@ -226,43 +218,5 @@ class FlashCardReviewModel: ObservableObject {
                 self.isLoading = false
             }
         }
-    }
-}
-
-func saveToDisk<T: Codable>(_ objects: T, filename: String) {
-    let fileManager = FileManager.default
-    guard let directory = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else {
-        print("Error: Unable to access document directory")
-        return
-    }
-
-    let fileURL = directory.appendingPathComponent(filename)
-
-    do {
-        let data = try JSONEncoder().encode(objects)
-        try data.write(to: fileURL)
-        // print("Saved data to \(fileURL)")
-    } catch {
-        print("Error saving data: \(error)")
-    }
-}
-
-func loadFromDisk<T: Codable>(filename: String, type _: T.Type) -> T? {
-    let fileManager = FileManager.default
-    guard let directory = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else {
-        print("Error: Unable to access document directory")
-        return nil
-    }
-
-    let fileURL = directory.appendingPathComponent(filename)
-
-    do {
-        let data = try Data(contentsOf: fileURL)
-        let objects = try JSONDecoder().decode(T.self, from: data)
-        print("Loaded data from \(fileURL)")
-        return objects
-    } catch {
-        print("Error loading data: \(error)")
-        return nil
     }
 }
