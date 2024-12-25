@@ -1,7 +1,8 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { defineTable } from "convex/server";
+import { defineTable, GenericDatabaseReader, GenericDataModel, GenericMutationCtx, GenericQueryCtx } from "convex/server";
 import { getUserIdFromContextAsync } from "./users";
+import { DataModel, Doc, Id } from "./_generated/dataModel";
 
 export enum EventType {
   WORKOUT = "workout",
@@ -81,25 +82,27 @@ export const create = mutation({
   },
 });
 
-export const upsertDayEvent = mutation({
-  args: {
-    entityId: v.id("entities"),
-    date: v.string(),
-    details: v.union(WORKOUT_DETAILS_SCHEMA, FLASH_CARDS_SCHEMA),
-  },
-  handler: async (ctx, { entityId, details, date: _date }) => {
-    const ownerId = await getUserIdFromContextAsync(ctx)
-
+export const getCurrentEvent = async ({
+  db,
+  ownerId,
+  dateString,
+  entityId,
+}: {
+  db: GenericDatabaseReader<DataModel>
+  ownerId: Id<"users">,
+  dateString: string, 
+  entityId: Id<"entities">,
+}): Promise<Doc<"events"> | null> => {
     // TODO: Handle timezones better than this, not sure what the mobile app is going to be doing:
     // Extract the date portion (first 10 characters of the string)
-    const date = _date.slice(0, 10);
+    const date = dateString.slice(0, 10);
 
     // Calculate start and end of the day
     const startOfDay = `${date}T00:00:00.000Z`;
     const endOfDay = `${date}T23:59:59.999Z`;
 
     // Check if an event already exists for this day
-    const existingEvents = await ctx.db
+    const existingEvents = await db
       .query("events")
       .filter((q) => q.and(
         q.eq(q.field("ownerId"), ownerId),
@@ -108,8 +111,20 @@ export const upsertDayEvent = mutation({
         q.lte(q.field("date"), endOfDay),
       ))
       .collect();
-    if (existingEvents.length > 0) {
-      const existingEvent = existingEvents[0]!;
+    return existingEvents[0] ?? null;
+}
+
+export const upsertDayEvent = mutation({
+  args: {
+    entityId: v.id("entities"),
+    date: v.string(),
+    details: v.union(WORKOUT_DETAILS_SCHEMA, FLASH_CARDS_SCHEMA),
+  },
+  handler: async (ctx, { entityId, details, date }) => {
+    const ownerId = await getUserIdFromContextAsync(ctx)
+
+    const existingEvent = await getCurrentEvent({db: ctx.db, ownerId, dateString: date, entityId});
+    if (existingEvent) {
       await ctx.db.patch(existingEvent._id, {
         details,
       });
@@ -118,7 +133,7 @@ export const upsertDayEvent = mutation({
       await ctx.db.insert("events", {
         ownerId,
         entityId,
-        date: _date,
+        date,
         details,
       });
     }

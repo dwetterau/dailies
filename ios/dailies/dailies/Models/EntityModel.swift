@@ -19,6 +19,7 @@ let emptyEntity = Entity(_id: "", ownerId: "", name: "", type: "")
 
 struct Entities: Decodable {
     let entities: [Entity]
+    let entityIdToIsDone: [String: Bool]
 }
 
 class EntityModel: ObservableObject {
@@ -27,7 +28,6 @@ class EntityModel: ObservableObject {
 
     @Published
     var events: [Event] = []
-
     init(entity: Entity) {
         self.entity = entity
         Task {
@@ -61,11 +61,16 @@ class EntityModel: ObservableObject {
 
 class EntityListModel: ObservableObject {
     @Published
-    var entities: Entities = .init(entities: [])
+    var entities: Entities = .init(entities: [], entityIdToIsDone: [:])
 
     init() {
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let dateString = isoFormatter.string(from: Date())
         Task {
-            client.subscribe(to: "entities:list", yielding: Entities.self)
+            client.subscribe(to: "entities:list", with: [
+                "date": dateString,
+            ], yielding: Entities.self)
                 .handleEvents(receiveCompletion: { completion in
                     if case let .failure(error) = completion {
                         // Log the error
@@ -74,10 +79,14 @@ class EntityListModel: ObservableObject {
                         print("got response \(completion)")
                     }
                 })
-                .replaceError(with: Entities(entities: []))
+                .replaceError(with: Entities(entities: [], entityIdToIsDone: [:]))
                 .receive(on: DispatchQueue.main)
                 .assign(to: &$entities)
         }
+    }
+
+    public func isEntityDoneToday(entityId: String) -> Bool {
+        return entities.entityIdToIsDone[entityId] ?? false
     }
 
     public func getExerciseEntities() -> [Entity] {

@@ -2,6 +2,8 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { defineTable } from "convex/server";
 import { getUserIdFromContextAsync } from "./users";
+import { Id } from "./_generated/dataModel";
+import { EventType, getCurrentEvent } from "./events";
 
 export enum EntityType {
   EXERCISE = "exercise",
@@ -25,9 +27,10 @@ export const ENTITIES_SCHEMA = defineTable({
 
 export const list = query({
   args: {
+    date: v.optional(v.string()),
     type: v.optional(entityTypesSchema),
   },
-  handler: async (ctx, { type }) => {
+  handler: async (ctx, { date, type }) => {
     const ownerId = await getUserIdFromContextAsync(ctx)
     const entities = await ctx.db
       .query("entities")
@@ -36,8 +39,24 @@ export const list = query({
         ...(type ? [q.eq(q.field("type"), type)] : []),
       ))
       .collect();
+
+    const entityIdToIsDone: Record<Id<"entities">, boolean> = {};
+    if (date) {
+      for (const entity of entities) {
+        // TODO: Can this happen in parallel?
+        const currentEvent = await getCurrentEvent({db: ctx.db, ownerId, entityId: entity._id, dateString: date});
+        // TODO: Generalize this logic!
+        if (entity.type === EntityType.LEARNING && currentEvent?.details.type === EventType.FLASH_CARDS) {
+          entityIdToIsDone[entity._id] = currentEvent.details.payload.numReviewed >= 100;
+        }
+        if (entity.type === EntityType.EXERCISE) {
+          entityIdToIsDone[entity._id] = !!currentEvent;
+        }
+      }
+    }
     return {
       entities,
+      entityIdToIsDone,
     };
   },
 });

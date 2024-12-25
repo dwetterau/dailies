@@ -39,12 +39,12 @@ struct HomePage: View {
                             .shadow(radius: 10)
                     }
 
-                    if entityListModel.getFlashCardEntityId() != nil {
+                    if let flashCardEntityId = entityListModel.getFlashCardEntityId() {
                         NavigationLink(value: "flashCards") {
                             Text("Flash Cards")
                                 .font(.title)
                                 .frame(maxWidth: .infinity, minHeight: 60)
-                                .background(Color.green)
+                                .background(entityListModel.isEntityDoneToday(entityId: flashCardEntityId) ? Color.green : Color.gray)
                                 .foregroundColor(.white)
                                 .cornerRadius(12)
                                 .padding(.horizontal, 30)

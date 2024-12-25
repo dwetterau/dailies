@@ -1,14 +1,14 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { defineTable, GenericDataModel, GenericMutationCtx, GenericQueryCtx } from "convex/server";
-import { Id } from "./_generated/dataModel";
+import { DataModel, Id } from "./_generated/dataModel";
 
 export const USERS_SCHEMA =  defineTable({
   name: v.string(),
   tokenIdentifier: v.string(),
 }).index("by_token", ["tokenIdentifier"])
 
-export async function getUserIdFromContextAsync<DataModel extends GenericDataModel>(
+export async function getUserIdFromContextAsync(
   ctx: GenericMutationCtx<DataModel> | GenericQueryCtx<DataModel>
 ): Promise<Id<'users'>> {
   const identity = await ctx.auth.getUserIdentity();
@@ -18,13 +18,13 @@ export async function getUserIdFromContextAsync<DataModel extends GenericDataMod
     const user = await ctx.db
       .query("users")
       .withIndex("by_token", (q) =>
-        q.eq("tokenIdentifier", identity.tokenIdentifier as any),
+        q.eq("tokenIdentifier", identity.tokenIdentifier),
       )
       .unique();
     if (!user) {
       throw new Error("Unauthenticated call to endpoint requiring authentication");
     }
-    return user._id as Id<'users'>
+    return user._id
 }
 
 export const store = mutation({
