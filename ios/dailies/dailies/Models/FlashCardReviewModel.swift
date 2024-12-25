@@ -72,6 +72,8 @@ class FlashCardReviewModel: ObservableObject {
     public var isLoading: Bool = false
 
     private var entityId: String
+    // Used to avoid re-adding cards we're actively clearing out.
+    var cardIdsToExclude: Set<String> = []
     // Used to stay subscribed to the query for cards
     private var cancellables = Set<AnyCancellable>()
 
@@ -94,37 +96,32 @@ class FlashCardReviewModel: ObservableObject {
                 .replaceError(with: [])
                 .receive(on: DispatchQueue.main)
                 .scan(flashCards) { currentFlashCards, newFlashCards in
-                    // TODO: I could do this in all cases, but need to think through the actual save case where it
-                    // deletes items.
-                    if isInitialLocalDiskLoad {
-                        var mergedFlashCards: [FlashCard] = []
-                        var idToReviewStatus: [String: String] = [:]
-                        for card in currentFlashCards {
-                            if card.reviewStatus != nil {
-                                idToReviewStatus[card._id] = card.reviewStatus
-                            }
+                    var mergedFlashCards: [FlashCard] = []
+                    var idToReviewStatus: [String: String] = [:]
+                    for card in currentFlashCards {
+                        if card.reviewStatus != nil {
+                            idToReviewStatus[card._id] = card.reviewStatus
                         }
-                        // Also add in the ones from the server, but skip over any duplicates
-                        for card in newFlashCards {
-                            if let reviewStatus = idToReviewStatus[card._id] {
-                                mergedFlashCards.append(FlashCard(
-                                    _id: card._id,
-                                    ownerId: card.ownerId,
-                                    remoteId: card.remoteId,
-                                    side1: card.side1,
-                                    side2: card.side2,
-                                    details: card.details,
-                                    reviewStatus: reviewStatus
-                                ))
-                            } else {
-                                mergedFlashCards.append(card)
-                            }
-                        }
-
-                        isInitialLocalDiskLoad = false
-                        return mergedFlashCards
                     }
-                    return newFlashCards
+                    // Only ever use the ones from the server, but always prefer the local review STatus
+                    for card in newFlashCards {
+                        if let reviewStatus = idToReviewStatus[card._id] {
+                            mergedFlashCards.append(FlashCard(
+                                _id: card._id,
+                                ownerId: card.ownerId,
+                                remoteId: card.remoteId,
+                                side1: card.side1,
+                                side2: card.side2,
+                                details: card.details,
+                                reviewStatus: reviewStatus
+                            ))
+                        } else {
+                            mergedFlashCards.append(card)
+                        }
+                    }
+
+                    isInitialLocalDiskLoad = false
+                    return mergedFlashCards
                 }
                 .assign(to: &$flashCards)
         }
@@ -187,6 +184,7 @@ class FlashCardReviewModel: ObservableObject {
         }.map { card in
             ["id": card._id, "reviewStatus": card.reviewStatus!]
         }
+        cardIdsToExclude = Set(flashCards.filter { card in card.reviewStatus != nil }.map { $0._id })
         isSaving = true
         Task {
             do {
