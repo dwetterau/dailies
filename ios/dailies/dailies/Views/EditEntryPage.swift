@@ -41,6 +41,8 @@ struct EditEntryPage: View {
             _weight = State(initialValue: workoutDetails.weight)
             _numReps = State(initialValue: workoutDetails.numReps)
             _numSets = State(initialValue: workoutDetails.numSets)
+        default:
+            return
         }
     }
 

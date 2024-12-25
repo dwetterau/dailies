@@ -9,10 +9,14 @@ import AlertToast
 import SwiftUI
 
 struct FlashCardReviewPage: View {
-    @ObservedObject var viewModel = FlashCardReviewModel()
+    @StateObject var viewModel: FlashCardReviewModel
 
     @State var showSaveSuccessToast = false
     @State var showLoadSuccessToast = false
+
+    init(entityId: String) {
+        _viewModel = StateObject(wrappedValue: FlashCardReviewModel(entityId: entityId))
+    }
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -122,7 +126,7 @@ struct PreviewContentWrapper: View {
     var body: some View {
         NavigationStack {
             List {
-                NavigationLink("go", destination: FlashCardReviewPage())
+                NavigationLink("go", destination: FlashCardReviewPage(entityId: ""))
             }
         }
     }

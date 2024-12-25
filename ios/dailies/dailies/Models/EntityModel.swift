@@ -32,10 +32,26 @@ class EntityModel: ObservableObject {
         self.entity = entity
         Task {
             client.subscribe(to: "entities:get", with: ["id": entity._id], yielding: Entity.self)
+                .handleEvents(receiveCompletion: { completion in
+                    if case let .failure(error) = completion {
+                        // Log the error
+                        print("Error logged: \(error.localizedDescription)")
+                    } else {
+                        print("got response \(completion)")
+                    }
+                })
                 .replaceError(with: emptyEntity)
                 .receive(on: DispatchQueue.main)
                 .assign(to: &$entity)
             client.subscribe(to: "events:list", with: ["entityId": entity._id], yielding: [Event].self)
+                .handleEvents(receiveCompletion: { completion in
+                    if case let .failure(error) = completion {
+                        // Log the error
+                        print("Error logged: \(error.localizedDescription)")
+                    } else {
+                        print("got response \(completion)")
+                    }
+                })
                 .replaceError(with: [])
                 .receive(on: DispatchQueue.main)
                 .assign(to: &$events)
@@ -49,10 +65,30 @@ class EntityListModel: ObservableObject {
 
     init() {
         Task {
-            client.subscribe(to: "entities:list", with: ["type": "workout"], yielding: Entities.self)
+            client.subscribe(to: "entities:list", yielding: Entities.self)
+                .handleEvents(receiveCompletion: { completion in
+                    if case let .failure(error) = completion {
+                        // Log the error
+                        print("Error logged: \(error.localizedDescription)")
+                    } else {
+                        print("got response \(completion)")
+                    }
+                })
                 .replaceError(with: Entities(entities: []))
                 .receive(on: DispatchQueue.main)
                 .assign(to: &$entities)
         }
+    }
+
+    public func getExerciseEntities() -> [Entity] {
+        entities.entities.filter { entity in
+            entity.type == "exercise"
+        }
+    }
+
+    public func getFlashCardEntityId() -> String? {
+        // TODO: We'll need another layer in here - maybe the type needs to be specific and a new category
+        // can help define the groups
+        entities.entities.first(where: { $0.type == "learning" })?._id
     }
 }

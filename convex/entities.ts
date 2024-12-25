@@ -25,7 +25,7 @@ export const ENTITIES_SCHEMA = defineTable({
 
 export const list = query({
   args: {
-    type: entityTypesSchema,
+    type: v.optional(entityTypesSchema),
   },
   handler: async (ctx, { type }) => {
     const ownerId = await getUserIdFromContextAsync(ctx)
@@ -33,7 +33,7 @@ export const list = query({
       .query("entities")
       .filter((q) => q.and(
         q.eq(q.field("ownerId"), ownerId), 
-        q.eq(q.field("type"), type),
+        ...(type ? [q.eq(q.field("type"), type)] : []),
       ))
       .collect();
     return {

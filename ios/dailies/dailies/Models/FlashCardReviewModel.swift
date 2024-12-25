@@ -77,10 +77,12 @@ class FlashCardReviewModel: ObservableObject {
     @Published
     public var isLoading: Bool = false
 
+    private var entityId: String
     // Used to stay subscribed to the query for cards
     private var cancellables = Set<AnyCancellable>()
 
-    init() {
+    init(entityId: String) {
+        self.entityId = entityId
         var isInitialLocalDiskLoad = false
         if let loadedFlashCards: [FlashCard] = loadFromDisk(filename: flashCardFileName, type: [FlashCard].self) {
             print("Loaded \(loadedFlashCards.count) flash cards from disk")
@@ -196,15 +198,21 @@ class FlashCardReviewModel: ObservableObject {
                 try await client.mutation("flashCards:startSaveReviewStatus", with: [
                     "cards": cardsToSave,
                 ])
-                completion()
+                try await client.mutation("events:upsertDayEvent", with: [
+                    "entityId": self.entityId,
+                    "date": self.reviewStats.dateString,
+                    "details": EventType.flashCards(FlashCardsDetails(numReviewed: reviewStats.numReviewed, numCorrect: reviewStats.numCorrect)),
+                ])
             } catch let ClientError.ConvexError(data) {
                 let errorMessage = try! JSONDecoder().decode(String.self, from: Data(data.utf8))
                 print(errorMessage)
             } catch {
                 print("An unknown error occurred: \(error)")
             }
+
             await MainActor.run {
                 self.isSaving = false
+                completion()
             }
         }
     }

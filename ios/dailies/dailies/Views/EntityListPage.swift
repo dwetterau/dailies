@@ -8,11 +8,15 @@
 import SwiftUI
 
 struct EntityListPage: View {
-    @StateObject var viewModel = EntityListModel()
+    let entities: [Entity]
+
+    init(entities: [Entity]) {
+        self.entities = entities
+    }
 
     var body: some View {
         List {
-            ForEach(viewModel.entities.entities, id: \._id) { entity in
+            ForEach(self.entities, id: \._id) { entity in
                 NavigationLink(value: entity) {
                     Text(entity.name)
                 }

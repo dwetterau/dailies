@@ -8,10 +8,13 @@
 import SwiftUI
 
 struct HomePage: View {
+    @StateObject
+    var entityListModel: EntityListModel
     var authModel: AuthModel
 
     init(authModel: AuthModel) {
         self.authModel = authModel
+        _entityListModel = StateObject(wrappedValue: EntityListModel())
     }
 
     var body: some View {
@@ -36,15 +39,17 @@ struct HomePage: View {
                             .shadow(radius: 10)
                     }
 
-                    NavigationLink(value: "flashCards") {
-                        Text("Flash Cards")
-                            .font(.title)
-                            .frame(maxWidth: .infinity, minHeight: 60)
-                            .background(Color.green)
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
-                            .padding(.horizontal, 30)
-                            .shadow(radius: 10)
+                    if entityListModel.getFlashCardEntityId() != nil {
+                        NavigationLink(value: "flashCards") {
+                            Text("Flash Cards")
+                                .font(.title)
+                                .frame(maxWidth: .infinity, minHeight: 60)
+                                .background(Color.green)
+                                .foregroundColor(.white)
+                                .cornerRadius(12)
+                                .padding(.horizontal, 30)
+                                .shadow(radius: 10)
+                        }
                     }
                     Spacer()
                     Button(action: {
@@ -58,9 +63,13 @@ struct HomePage: View {
                 .navigationDestination(for: String.self) { destination in
                     switch destination {
                     case "workouts":
-                        EntityListPage()
+                        EntityListPage(entities: entityListModel.getExerciseEntities())
                     case "flashCards":
-                        FlashCardReviewPage()
+                        if let entityId = entityListModel.getFlashCardEntityId() {
+                            FlashCardReviewPage(entityId: entityId)
+                        } else {
+                            Text("Missing flash card entity")
+                        }
                     default:
                         Text("Unknown destination \(destination)")
                     }
