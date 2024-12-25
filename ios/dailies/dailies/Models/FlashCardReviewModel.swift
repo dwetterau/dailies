@@ -90,6 +90,7 @@ class FlashCardReviewModel: ObservableObject {
 
         Task {
             client.subscribe(to: "flashCards:listCards", yielding: [FlashCard].self)
+                .handleEvents(receiveCompletion: logHandlers("flashCards:listCards"))
                 .replaceError(with: [])
                 .receive(on: DispatchQueue.main)
                 .scan(flashCards) { currentFlashCards, newFlashCards in

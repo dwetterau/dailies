@@ -32,26 +32,12 @@ class EntityModel: ObservableObject {
         self.entity = entity
         Task {
             client.subscribe(to: "entities:get", with: ["id": entity._id], yielding: Entity.self)
-                .handleEvents(receiveCompletion: { completion in
-                    if case let .failure(error) = completion {
-                        // Log the error
-                        print("Error logged: \(error.localizedDescription)")
-                    } else {
-                        print("got response \(completion)")
-                    }
-                })
+                .handleEvents(receiveCompletion: logHandlers("entities:get"))
                 .replaceError(with: emptyEntity)
                 .receive(on: DispatchQueue.main)
                 .assign(to: &$entity)
             client.subscribe(to: "events:list", with: ["entityId": entity._id], yielding: [Event].self)
-                .handleEvents(receiveCompletion: { completion in
-                    if case let .failure(error) = completion {
-                        // Log the error
-                        print("Error logged: \(error.localizedDescription)")
-                    } else {
-                        print("got response \(completion)")
-                    }
-                })
+                .handleEvents(receiveCompletion: logHandlers("events:list"))
                 .replaceError(with: [])
                 .receive(on: DispatchQueue.main)
                 .assign(to: &$events)
@@ -71,14 +57,7 @@ class EntityListModel: ObservableObject {
             client.subscribe(to: "entities:list", with: [
                 "date": dateString,
             ], yielding: Entities.self)
-                .handleEvents(receiveCompletion: { completion in
-                    if case let .failure(error) = completion {
-                        // Log the error
-                        print("Error logged: \(error.localizedDescription)")
-                    } else {
-                        print("got response \(completion)")
-                    }
-                })
+                .handleEvents(receiveCompletion: logHandlers("entities:list"))
                 .replaceError(with: Entities(entities: [], entityIdToIsDone: [:]))
                 .receive(on: DispatchQueue.main)
                 .assign(to: &$entities)
