@@ -30,10 +30,7 @@ struct ReviewStats: Decodable, Encodable {
     init() {
         numReviewed = 0
         numCorrect = 0
-
-        let isoFormatter = ISO8601DateFormatter()
-        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        dateString = isoFormatter.string(from: Date())
+        dateString = getDateString()
     }
 
     init(numReviewed: Int, numCorrect: Int, dateString: String) {
@@ -43,13 +40,10 @@ struct ReviewStats: Decodable, Encodable {
     }
 
     func addReview(isCorrect: Bool) -> ReviewStats {
-        let isoFormatter = ISO8601DateFormatter()
-        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-
-        let storedDate = isoFormatter.date(from: dateString)!
+        let storedDate = getDateFromString(dateString)!
         let numCorrectDelta = isCorrect ? 1 : 0
         if !Calendar.current.isDate(storedDate, inSameDayAs: Date()) {
-            return ReviewStats(numReviewed: 1, numCorrect: numCorrectDelta, dateString: isoFormatter.string(from: Date()))
+            return ReviewStats(numReviewed: 1, numCorrect: numCorrectDelta, dateString: getDateString())
         } else {
             return ReviewStats(numReviewed: numReviewed + 1, numCorrect: numCorrect + numCorrectDelta, dateString: dateString)
         }

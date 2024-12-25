@@ -28,9 +28,7 @@ struct EditEntryPage: View {
         entityId = event.entityId
         eventId = event._id
 
-        let isoFormatter = ISO8601DateFormatter()
-        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let date = isoFormatter.date(from: event.date) {
+        if let date = getDateFromString(event.date) {
             _date = State(initialValue: date)
         } else {
             print("unable to parse date: \(event.date)")
@@ -85,14 +83,11 @@ struct EditEntryPage: View {
             // TODO: show some warning message about them being required?
             return
         }
-        let isoFormatter = ISO8601DateFormatter()
-        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-
         Task {
             do {
                 try await client.mutation("events:create", with: [
                     "entityId": entityId,
-                    "date": isoFormatter.string(from: date),
+                    "date": getStringFromDate(date),
                     "details": EventType.workout(
                         WorkoutDetails(weight: weight!, numReps: numReps!, numSets: numSets!, overrides: nil)
                     ),
