@@ -87,7 +87,8 @@ class FlashCardReviewModel: ObservableObject {
                 print("Loaded reviewStats from disk")
                 reviewStats = loadedReviewStats
             } else {
-                print("review status were too old, and ignored")
+                // TODO: We should try to save these
+                print("review stats were too old, and ignored")
             }
         }
 
