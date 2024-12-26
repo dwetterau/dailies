@@ -28,10 +28,8 @@ struct HomePage: View {
 
                 // Buttons Section
                 VStack(spacing: 20) {
-                    if let flashCardEntityId = entityListModel.getEntityId(forCategory: .learning, forType: .flashCards) {
-                        NavigationLink(value: "flashCards") {
-                            BigButton(buttonText: "Flash Cards", buttonCompleteColor: .green, isComplete: entityListModel.isEntityDoneToday(entityId: flashCardEntityId))
-                        }
+                    NavigationLink(value: "learningButton") {
+                        LearningPageButton(entityListModel: self.entityListModel)
                     }
                     NavigationLink(value: "careButton") {
                         CarePageButton(entityListModel: self.entityListModel)
@@ -52,12 +50,8 @@ struct HomePage: View {
                     switch destination {
                     case "exercise":
                         EntityListPage(entities: entityListModel.getExerciseEntities())
-                    case "flashCards":
-                        if let entityId = entityListModel.getEntityId(forCategory: .learning, forType: .flashCards) {
-                            FlashCardReviewPage(entityId: entityId)
-                        } else {
-                            Text("Missing flash card entity")
-                        }
+                    case "learningButton":
+                        LearningPage(entityListModel: entityListModel)
                     case "careButton":
                         CarePage(entityListModel: entityListModel)
                     default:

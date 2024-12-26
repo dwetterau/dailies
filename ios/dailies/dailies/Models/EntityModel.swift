@@ -19,7 +19,7 @@ enum EntityType: String, Codable {
     case workout
     case flashCards
     case hydration
-    case journal
+    case journaling
     case prescriptions
 }
 

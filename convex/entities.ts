@@ -21,7 +21,7 @@ export enum EntityType {
   WORKOUT = "workout",
   FLASH_CARDS = "flashCards",
   HYDRATION = "hydration",
-  WRITING = "writing",
+  JOURNALING = "journaling",
   PRESCRIPTIONS = "prescriptions",
 }
 
