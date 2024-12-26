@@ -124,6 +124,20 @@ export const getCurrentEvent = async ({
     return existingEvents[0] ?? null;
 }
 
+export const getCurrentDayEvent = query({
+  args: {
+    entityId: v.id("entities"),
+    timeRange: v.object({
+      startTimestamp: v.number(),
+      endTimestamp: v.number(),
+    }),
+  },
+  handler: async (ctx, {entityId, timeRange}) => {
+    const ownerId = await getUserIdFromContextAsync(ctx)
+    return await getCurrentEvent({db: ctx.db, ownerId, entityId, timeRange});
+  },
+})
+
 export const upsertDayEvent = mutation({
   args: {
     entityId: v.id("entities"),

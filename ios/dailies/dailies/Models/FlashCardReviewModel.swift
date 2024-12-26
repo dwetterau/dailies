@@ -76,13 +76,19 @@ class FlashCardReviewModel: ObservableObject {
 
     init(entityId: String) {
         self.entityId = entityId
+        let timeRange = getTimeRangeForDate(Date())
+
         if let loadedFlashCards: [FlashCard] = loadFromDisk(filename: flashCardFileName, type: [FlashCard].self) {
             print("Loaded \(loadedFlashCards.count) flash cards from disk")
             flashCards = loadedFlashCards
         }
         if let loadedReviewStats: ReviewStats = loadFromDisk(filename: flashCardReviewStatsFileName, type: ReviewStats.self) {
-            print("Loaded reviewStats from disk")
-            reviewStats = loadedReviewStats
+            if isInTimeRange(timeRange, loadedReviewStats.timestamp) {
+                print("Loaded reviewStats from disk")
+                reviewStats = loadedReviewStats
+            } else {
+                print("review status were too old, and ignored")
+            }
         }
 
         Task {
@@ -118,6 +124,30 @@ class FlashCardReviewModel: ObservableObject {
                     return mergedFlashCards
                 }
                 .assign(to: &$flashCards)
+            client.subscribe(to: "events:getCurrentDayEvent", with: [
+                "entityId": entityId,
+                "timeRange": [
+                    "startTimestamp": timeRange.start,
+                    "endTimestamp": timeRange.end,
+                ],
+            ], yielding: Event?.self)
+                .handleEvents(receiveCompletion: logHandlers("FlashCardReviewModel events:getCurrentDayEvent"))
+                .replaceError(with: nil)
+                .receive(on: DispatchQueue.main)
+                .combineLatest($reviewStats)
+                .map { newCurrentEvent, currentReviewStats in
+                    if let eventDetails = newCurrentEvent?.details {
+                        if case let .flashCards(flashCardsEvent) = eventDetails {
+                            return ReviewStats(
+                                numReviewed: max(currentReviewStats.numReviewed, flashCardsEvent.numReviewed),
+                                numCorrect: max(currentReviewStats.numCorrect, flashCardsEvent.numCorrect),
+                                timestamp: newCurrentEvent!.timestamp
+                            )
+                        }
+                    }
+                    return currentReviewStats
+                }
+                .assign(to: &$reviewStats)
         }
 
         // TODO: We could split out the status from the rest of the cards, and then we only have

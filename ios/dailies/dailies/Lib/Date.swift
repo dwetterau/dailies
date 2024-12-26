@@ -23,6 +23,10 @@ func getTimeRangeForDate(_ date: Date) -> (start: Float64, end: Float64) {
     )
 }
 
+func isInTimeRange(_ timeRange: (start: Float64, end: Float64), _ timestamp: Int) -> Bool {
+    return Float64(timestamp) >= timeRange.start && Float64(timestamp) < timeRange.end
+}
+
 func getTimestampFromDate(_ date: Date) -> Int {
     return Int(date.timeIntervalSince1970 * 1000)
 }
