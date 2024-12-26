@@ -50,15 +50,22 @@ class EntityListModel: ObservableObject {
     var entities: Entities = .init(entities: [], entityIdToIsDone: [:])
 
     init() {
-        let dateString = getDateString()
+        let timeRange = getTimeRangeForDate(Date())
         Task {
-            client.subscribe(to: "entities:list", with: [
-                "date": dateString,
-            ], yielding: Entities.self)
-                .handleEvents(receiveCompletion: logHandlers("entities:list"))
-                .replaceError(with: Entities(entities: [], entityIdToIsDone: [:]))
-                .receive(on: DispatchQueue.main)
-                .assign(to: &$entities)
+            client.subscribe(
+                to: "entities:list",
+                with: [
+                    "timeRange": [
+                        "startTimestamp": timeRange.start,
+                        "endTimestamp": timeRange.end,
+                    ],
+                ],
+                yielding: Entities.self
+            )
+            .handleEvents(receiveCompletion: logHandlers("entities:list"))
+            .replaceError(with: Entities(entities: [], entityIdToIsDone: [:]))
+            .receive(on: DispatchQueue.main)
+            .assign(to: &$entities)
         }
     }
 

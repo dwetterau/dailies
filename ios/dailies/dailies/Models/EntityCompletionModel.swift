@@ -10,29 +10,29 @@ import SwiftUI
 
 class EntityCompletionModel: ObservableObject {
     let entityId: String
-    let dateString: String
+    let timestamp: Int
     let numRequiredCompletions: Int
 
     @Published
     private var completions: Int = 0
-    
+
     @Published
     public private(set) var isSaving: Bool = false
 
     init(entityId: String, numRequiredCompletions: Int) {
         self.entityId = entityId
         self.numRequiredCompletions = numRequiredCompletions
-        self.dateString = getDateString()
+        timestamp = getCurrentTimestamp()
     }
-    
+
     public var isComplete: Bool {
         completions >= numRequiredCompletions
     }
 
     public func logCompletion(completionCallback: @escaping () -> Void) {
         completions += 1
-        if self.isComplete {
-            self.saveCompletionEvent(completionCallback)
+        if isComplete {
+            saveCompletionEvent(completionCallback)
         }
     }
 
@@ -42,14 +42,19 @@ class EntityCompletionModel: ObservableObject {
         }
         return "\(completions)/\(numRequiredCompletions)"
     }
-    
+
     private func saveCompletionEvent(_ completionCallback: @escaping () -> Void) {
         isSaving = true
+
+        let timeRange = getTimeRangeForDate(getDateFromTimestamp(timestamp))
         Task {
             do {
                 try await client.mutation("events:upsertDayEvent", with: [
                     "entityId": self.entityId,
-                    "date": self.dateString,
+                    "timeRange": [
+                        "startTimestamp": timeRange.start,
+                        "endTimestamp": timeRange.end,
+                    ],
                     "details": EventType.genericCompletion(
                         GenericCompletionDetails(
                             numCompletions: self.completions,

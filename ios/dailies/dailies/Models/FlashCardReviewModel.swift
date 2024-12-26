@@ -24,28 +24,27 @@ let flashCardFileName = "offlineFlashCards.json"
 struct ReviewStats: Decodable, Encodable {
     let numReviewed: Int
     let numCorrect: Int
-    // Encoded in ISO8601
-    let dateString: String
+    let timestamp: Int
 
     init() {
         numReviewed = 0
         numCorrect = 0
-        dateString = getDateString()
+        timestamp = getCurrentTimestamp()
     }
 
-    init(numReviewed: Int, numCorrect: Int, dateString: String) {
+    init(numReviewed: Int, numCorrect: Int, timestamp: Int) {
         self.numReviewed = numReviewed
         self.numCorrect = numCorrect
-        self.dateString = dateString
+        self.timestamp = timestamp
     }
 
     func addReview(isCorrect: Bool) -> ReviewStats {
-        let storedDate = getDateFromString(dateString)!
+        let storedDate = getDateFromTimestamp(timestamp)
         let numCorrectDelta = isCorrect ? 1 : 0
         if !Calendar.current.isDate(storedDate, inSameDayAs: Date()) {
-            return ReviewStats(numReviewed: 1, numCorrect: numCorrectDelta, dateString: getDateString())
+            return ReviewStats(numReviewed: 1, numCorrect: numCorrectDelta, timestamp: getCurrentTimestamp())
         } else {
-            return ReviewStats(numReviewed: numReviewed + 1, numCorrect: numCorrect + numCorrectDelta, dateString: dateString)
+            return ReviewStats(numReviewed: numReviewed + 1, numCorrect: numCorrect + numCorrectDelta, timestamp: timestamp)
         }
     }
 
@@ -172,12 +171,13 @@ class FlashCardReviewModel: ObservableObject {
     }
 
     public func saveReviewStatuses(completion: @escaping () -> Void) {
+        isSaving = true
         let cardsToSave: ConvexEncodable = flashCards.filter { card in
             card.reviewStatus != nil
         }.map { card in
             ["id": card._id, "reviewStatus": card.reviewStatus!]
         }
-        isSaving = true
+        let timeRange = getTimeRangeForDate(Date())
         Task {
             do {
                 try await client.mutation("flashCards:startSaveReviewStatus", with: [
@@ -185,7 +185,10 @@ class FlashCardReviewModel: ObservableObject {
                 ])
                 try await client.mutation("events:upsertDayEvent", with: [
                     "entityId": self.entityId,
-                    "date": self.reviewStats.dateString,
+                    "timeRange": [
+                        "startTimestamp": timeRange.start,
+                        "endTimestamp": timeRange.end,
+                    ],
                     "details": EventType.flashCards(FlashCardsDetails(numReviewed: reviewStats.numReviewed, numCorrect: reviewStats.numCorrect)),
                 ])
             } catch let ClientError.ConvexError(data) {

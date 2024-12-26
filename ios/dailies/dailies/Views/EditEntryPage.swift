@@ -27,12 +27,7 @@ struct EditEntryPage: View {
     init(event: Event) {
         entityId = event.entityId
         eventId = event._id
-
-        if let date = getDateFromString(event.date) {
-            _date = State(initialValue: date)
-        } else {
-            print("unable to parse date: \(event.date)")
-        }
+        _date = State(initialValue: getDateFromTimestamp(event.timestamp))
 
         switch event.details {
         case let .workout(workoutDetails):
@@ -87,7 +82,7 @@ struct EditEntryPage: View {
             do {
                 try await client.mutation("events:create", with: [
                     "entityId": entityId,
-                    "date": getStringFromDate(date),
+                    "timestamp": getTimestampFromDate(date),
                     "details": EventType.workout(
                         WorkoutDetails(weight: weight!, numReps: numReps!, numSets: numSets!, overrides: nil)
                     ),

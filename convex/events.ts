@@ -53,7 +53,7 @@ const allEventDetails = v.union(
 export const EVENTS_SCHEMA = defineTable({
   ownerId: v.id("users"),
   entityId: v.id("entities"),
-  date: v.string(),
+  timestamp: v.number(),
   details: allEventDetails,
 }).index("by_entity_id", ["entityId"]);
 
@@ -84,14 +84,14 @@ export const create = mutation({
   args: {
     entityId: v.id("entities"),
     details: allEventDetails,
-    date: v.string(),
+    timestamp: v.number(),
   },
-  handler: async (ctx, { entityId, details, date }) => {
+  handler: async (ctx, { entityId, details, timestamp}) => {
     const ownerId = await getUserIdFromContextAsync(ctx)
     await ctx.db.insert("events", {
       ownerId,
       entityId,
-      date,
+      timestamp,
       details,
     });
   },
@@ -100,30 +100,25 @@ export const create = mutation({
 export const getCurrentEvent = async ({
   db,
   ownerId,
-  dateString,
   entityId,
+  timeRange: {startTimestamp, endTimestamp},
 }: {
   db: GenericDatabaseReader<DataModel>
   ownerId: Id<"users">,
-  dateString: string, 
   entityId: Id<"entities">,
+  timeRange: {
+    startTimestamp: number, 
+    endTimestamp: number,
+  },
 }): Promise<Doc<"events"> | null> => {
-    // TODO: Handle timezones better than this, not sure what the mobile app is going to be doing:
-    // Extract the date portion (first 10 characters of the string)
-    const date = dateString.slice(0, 10);
-
-    // Calculate start and end of the day
-    const startOfDay = `${date}T00:00:00.000Z`;
-    const endOfDay = `${date}T23:59:59.999Z`;
-
     // Check if an event already exists for this day
     const existingEvents = await db
       .query("events")
       .filter((q) => q.and(
         q.eq(q.field("ownerId"), ownerId),
         q.eq(q.field("entityId"), entityId),
-        q.gte(q.field("date"), startOfDay),
-        q.lte(q.field("date"), endOfDay),
+        q.gte(q.field("timestamp"), startTimestamp),
+        q.lt(q.field("timestamp"), endTimestamp),
       ))
       .collect();
     return existingEvents[0] ?? null;
@@ -132,13 +127,17 @@ export const getCurrentEvent = async ({
 export const upsertDayEvent = mutation({
   args: {
     entityId: v.id("entities"),
-    date: v.string(),
+    timeRange: v.object({
+      startTimestamp: v.number(),
+      endTimestamp: v.number(),
+    }),
     details: allEventDetails,
   },
-  handler: async (ctx, { entityId, details, date }) => {
+  handler: async (ctx, { entityId, details, timeRange }) => {
+
     const ownerId = await getUserIdFromContextAsync(ctx)
 
-    const existingEvent = await getCurrentEvent({db: ctx.db, ownerId, dateString: date, entityId});
+    const existingEvent = await getCurrentEvent({db: ctx.db, ownerId, timeRange, entityId});
     if (existingEvent) {
       await ctx.db.patch(existingEvent._id, {
         details,
@@ -146,10 +145,10 @@ export const upsertDayEvent = mutation({
     } else {
       // No existing event for the day - create it
       await ctx.db.insert("events", {
-        ownerId,
-        entityId,
-        date,
         details,
+        entityId,
+        ownerId,
+        timestamp: timeRange.startTimestamp,
       });
     }
   },

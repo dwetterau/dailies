@@ -11,7 +11,7 @@ struct Event: Decodable, Hashable {
     let _id: String
     let ownerId: String
     let entityId: String
-    let date: String
+    let timestamp: Int
     let details: EventType
 }
 

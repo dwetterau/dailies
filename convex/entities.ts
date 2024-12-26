@@ -40,10 +40,13 @@ export const ENTITIES_SCHEMA = defineTable({
 
 export const list = query({
   args: {
-    date: v.optional(v.string()),
+    timeRange: v.optional(v.object({
+      startTimestamp: v.number(),
+      endTimestamp: v.number(),
+    })),
     type: v.optional(entityTypesSchema),
   },
-  handler: async (ctx, { date, type }) => {
+  handler: async (ctx, { timeRange, type }) => {
     const ownerId = await getUserIdFromContextAsync(ctx)
     const entities = await ctx.db
       .query("entities")
@@ -54,10 +57,10 @@ export const list = query({
       .collect();
 
     const entityIdToIsDone: Record<Id<"entities">, boolean> = {};
-    if (date) {
+    if (timeRange) {
       for (const entity of entities) {
         // TODO: Can this happen in parallel?
-        const currentEvent = await getCurrentEvent({db: ctx.db, ownerId, entityId: entity._id, dateString: date});
+        const currentEvent = await getCurrentEvent({db: ctx.db, ownerId, entityId: entity._id, timeRange});
         // TODO: Generalize this logic!
         switch (entity.type) {
             case EntityType.FLASH_CARDS: {

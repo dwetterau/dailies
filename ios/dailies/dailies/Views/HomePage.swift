@@ -33,7 +33,7 @@ struct HomePage: View {
                             Text("Flash Cards")
                                 .font(.title)
                                 .frame(maxWidth: .infinity, minHeight: 60)
-                                .background(entityListModel.isEntityDoneToday(entityId: flashCardEntityId) ? Color.green: Color.gray)
+                                .background(entityListModel.isEntityDoneToday(entityId: flashCardEntityId) ? Color.green : Color.gray)
                                 .foregroundColor(.white)
                                 .cornerRadius(12)
                                 .padding(.horizontal, 30)

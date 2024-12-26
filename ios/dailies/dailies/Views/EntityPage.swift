@@ -18,7 +18,7 @@ struct EntityPage: View {
         List {
             ForEach(entity.events, id: \._id) { event in
                 NavigationLink(value: event) {
-                    Text(event.date)
+                    Text("\(getDateFromTimestamp(event.timestamp))")
                 }
             }
         }

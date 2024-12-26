@@ -7,20 +7,30 @@
 
 import Foundation
 
-func getFormatter() -> ISO8601DateFormatter {
-    let isoFormatter = ISO8601DateFormatter()
-    isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-    return isoFormatter
+// Returns the first millisecond unix TS of the start of the current day, and that of the next day.
+func getTimeRangeForDate(_ date: Date) -> (start: Float64, end: Float64) {
+    // Get the start of the current day in the user's time zone
+    let calendar = Calendar.current
+    let startOfDay = calendar.startOfDay(for: date)
+
+    // Add 1 day to the current date and get the start of the next day
+    let startOfNextDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+
+    // Convert the time interval to milliseconds and return it as Int64
+    return (
+        start: Float64(startOfDay.timeIntervalSince1970 * 1000),
+        end: Float64(startOfNextDay.timeIntervalSince1970 * 1000)
+    )
 }
 
-func getDateString() -> String {
-    return getStringFromDate(Date())
+func getTimestampFromDate(_ date: Date) -> Int {
+    return Int(date.timeIntervalSince1970 * 1000)
 }
 
-func getStringFromDate(_ date: Date) -> String {
-    return getFormatter().string(from: date)
+func getCurrentTimestamp() -> Int {
+    return getTimestampFromDate(Date())
 }
 
-func getDateFromString(_ string: String) -> Date? {
-    return getFormatter().date(from: string)
+func getDateFromTimestamp(_ timestamp: Int) -> Date {
+    return Date(timeIntervalSince1970: TimeInterval(timestamp) / 1000)
 }
