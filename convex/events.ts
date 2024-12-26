@@ -7,6 +7,7 @@ import { DataModel, Doc, Id } from "./_generated/dataModel";
 export enum EventType {
   WORKOUT = "workout",
   FLASH_CARDS = "flashCards",
+  GENERIC_COMPLETION = "genericCompletion"
 }
 
 export const WORKOUT_DETAILS_SCHEMA = v.object({
@@ -35,11 +36,25 @@ export const FLASH_CARDS_SCHEMA = v.object({
   })
 })
 
+export const GENERIC_COMPLETION_SCHEMA = v.object({
+  type: v.literal(EventType.GENERIC_COMPLETION),
+  payload: v.object({
+    numCompletions: v.number(),
+    numRequiredCompletions: v.number(),
+  })
+})
+
+const allEventDetails = v.union(
+  WORKOUT_DETAILS_SCHEMA, 
+  FLASH_CARDS_SCHEMA, 
+  GENERIC_COMPLETION_SCHEMA,
+);
+
 export const EVENTS_SCHEMA = defineTable({
   ownerId: v.id("users"),
   entityId: v.id("entities"),
   date: v.string(),
-  details: v.union(WORKOUT_DETAILS_SCHEMA, FLASH_CARDS_SCHEMA),
+  details: allEventDetails,
 }).index("by_entity_id", ["entityId"]);
 
 export const list = query({
@@ -68,7 +83,7 @@ function getEnumType(typeString: string): EventType {
 export const create = mutation({
   args: {
     entityId: v.id("entities"),
-    details: v.union(WORKOUT_DETAILS_SCHEMA, FLASH_CARDS_SCHEMA),
+    details: allEventDetails,
     date: v.string(),
   },
   handler: async (ctx, { entityId, details, date }) => {
@@ -118,7 +133,7 @@ export const upsertDayEvent = mutation({
   args: {
     entityId: v.id("entities"),
     date: v.string(),
-    details: v.union(WORKOUT_DETAILS_SCHEMA, FLASH_CARDS_SCHEMA),
+    details: allEventDetails,
   },
   handler: async (ctx, { entityId, details, date }) => {
     const ownerId = await getUserIdFromContextAsync(ctx)

@@ -59,13 +59,22 @@ export const list = query({
         // TODO: Can this happen in parallel?
         const currentEvent = await getCurrentEvent({db: ctx.db, ownerId, entityId: entity._id, dateString: date});
         // TODO: Generalize this logic!
-        // TODO: Do events even need types? I think they're always the same now?
-        if (entity.type === EntityType.FLASH_CARDS && currentEvent?.details.type === EventType.FLASH_CARDS) {
-          entityIdToIsDone[entity._id] = currentEvent?.details.payload.numReviewed >= 100;
-        }
-        if (entity.type === EntityType.WORKOUT) {
-          entityIdToIsDone[entity._id] = !!currentEvent;
-        }
+        switch (entity.type) {
+            case EntityType.FLASH_CARDS: {
+              if (currentEvent?.details.type === EventType.FLASH_CARDS) {
+                entityIdToIsDone[entity._id] = currentEvent.details.payload.numReviewed >= 100;
+              }
+            }
+            case EntityType.HYDRATION: {
+              if (currentEvent?.details.type === EventType.GENERIC_COMPLETION) {
+                const {numCompletions, numRequiredCompletions} = currentEvent.details.payload;
+                entityIdToIsDone[entity._id] = numCompletions >= numRequiredCompletions;
+              }
+            }
+            case EntityType.WORKOUT: {
+              entityIdToIsDone[entity._id] = !!currentEvent;
+            }
+          }
       }
     }
     return {

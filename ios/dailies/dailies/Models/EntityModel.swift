@@ -50,9 +50,7 @@ class EntityListModel: ObservableObject {
     var entities: Entities = .init(entities: [], entityIdToIsDone: [:])
 
     init() {
-        let isoFormatter = ISO8601DateFormatter()
-        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        let dateString = isoFormatter.string(from: Date())
+        let dateString = getDateString()
         Task {
             client.subscribe(to: "entities:list", with: [
                 "date": dateString,
@@ -76,5 +74,9 @@ class EntityListModel: ObservableObject {
 
     public func getFlashCardEntityId() -> String? {
         entities.entities.first(where: { $0.category == "learning" && $0.type == "flashCards" })?._id
+    }
+
+    public func getHydrationEntityId() -> String? {
+        entities.entities.first(where: { $0.category == "care" && $0.type == "hydration" })?._id
     }
 }

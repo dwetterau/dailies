@@ -28,28 +28,39 @@ struct HomePage: View {
 
                 // Buttons Section
                 VStack(spacing: 20) {
-                    NavigationLink(value: "workouts") {
-                        Text("Workouts")
-                            .font(.title)
-                            .frame(maxWidth: .infinity, minHeight: 60)
-                            .background(Color.blue)
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
-                            .padding(.horizontal, 30)
-                            .shadow(radius: 10)
-                    }
-
                     if let flashCardEntityId = entityListModel.getFlashCardEntityId() {
                         NavigationLink(value: "flashCards") {
                             Text("Flash Cards")
                                 .font(.title)
                                 .frame(maxWidth: .infinity, minHeight: 60)
-                                .background(entityListModel.isEntityDoneToday(entityId: flashCardEntityId) ? Color.green : Color.gray)
+                                .background(entityListModel.isEntityDoneToday(entityId: flashCardEntityId) ? Color.green: Color.gray)
                                 .foregroundColor(.white)
                                 .cornerRadius(12)
                                 .padding(.horizontal, 30)
                                 .shadow(radius: 10)
                         }
+                    }
+                    if let hydrationEntityId = entityListModel.getHydrationEntityId() {
+                        NavigationLink(value: "hydration") {
+                            Text("Drink water")
+                                .font(.title)
+                                .frame(maxWidth: .infinity, minHeight: 60)
+                                .background(entityListModel.isEntityDoneToday(entityId: hydrationEntityId) ? Color.blue : Color.gray)
+                                .foregroundColor(.white)
+                                .cornerRadius(12)
+                                .padding(.horizontal, 30)
+                                .shadow(radius: 10)
+                        }
+                    }
+                    NavigationLink(value: "exercise") {
+                        Text("Exercise")
+                            .font(.title)
+                            .frame(maxWidth: .infinity, minHeight: 60)
+                            .background(Color.gray)
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                            .padding(.horizontal, 30)
+                            .shadow(radius: 10)
                     }
                     Spacer()
                     Button(action: {
@@ -62,13 +73,19 @@ struct HomePage: View {
                 .padding(.top, 100) // Spacing from the top
                 .navigationDestination(for: String.self) { destination in
                     switch destination {
-                    case "workouts":
+                    case "exercise":
                         EntityListPage(entities: entityListModel.getExerciseEntities())
                     case "flashCards":
                         if let entityId = entityListModel.getFlashCardEntityId() {
                             FlashCardReviewPage(entityId: entityId)
                         } else {
                             Text("Missing flash card entity")
+                        }
+                    case "hydration":
+                        if let entityId = entityListModel.getHydrationEntityId() {
+                            HydrationPage(entityId: entityId)
+                        } else {
+                            Text("Missing hydration entity")
                         }
                     default:
                         Text("Unknown destination \(destination)")
