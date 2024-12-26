@@ -14,7 +14,7 @@ struct CarePageButton: View {
         BigButton(
             buttonText: "Care",
             buttonCompleteColor: .blue,
-            isComplete: entityListModel.isCategoryDoneToday(category: "care")
+            isComplete: entityListModel.isCategoryDoneToday(category: .care)
         )
     }
 }

@@ -7,16 +7,32 @@
 import Combine
 import SwiftUI
 
+enum EntityCategory: String, Codable {
+    case exercise
+    case learning
+    case care
+    case thinking
+    case tidying
+}
+
+enum EntityType: String, Codable {
+    case workout
+    case flashCards
+    case hydration
+    case journal
+    case prescriptions
+}
+
 struct Entity: Decodable, Hashable {
     let _id: String
     let ownerId: String
     let name: String
-    let category: String
-    let type: String
+    let category: EntityCategory
+    let type: EntityType
     let isRequiredDaily: Bool
 }
 
-let emptyEntity = Entity(_id: "", ownerId: "", name: "", category: "", type: "", isRequiredDaily: false)
+let emptyEntity = Entity(_id: "", ownerId: "", name: "", category: .exercise, type: .workout, isRequiredDaily: false)
 
 struct Entities: Decodable {
     let entities: [Entity]
@@ -74,7 +90,7 @@ class EntityListModel: ObservableObject {
         return entities.entityIdToIsDone[entityId] ?? false
     }
 
-    public func isCategoryDoneToday(category: String) -> Bool {
+    public func isCategoryDoneToday(category: EntityCategory) -> Bool {
         var isAnyDone = false
         var isRequiredEntityNotDone = false
         for entity in entities.entities {
@@ -93,15 +109,15 @@ class EntityListModel: ObservableObject {
 
     public func getExerciseEntities() -> [Entity] {
         entities.entities.filter { entity in
-            entity.category == "exercise"
+            entity.category == .exercise
         }
     }
 
     public func getFlashCardEntityId() -> String? {
-        entities.entities.first(where: { $0.category == "learning" && $0.type == "flashCards" })?._id
+        entities.entities.first(where: { $0.category == .learning && $0.type == .flashCards })?._id
     }
 
     public func getHydrationEntityId() -> String? {
-        entities.entities.first(where: { $0.category == "care" && $0.type == "hydration" })?._id
+        entities.entities.first(where: { $0.category == .care && $0.type == .hydration })?._id
     }
 }
