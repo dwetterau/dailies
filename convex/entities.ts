@@ -22,7 +22,7 @@ export enum EntityType {
   FLASH_CARDS = "flashCards",
   HYDRATION = "hydration",
   WRITING = "writing",
-  PRESCRIPTIONS = "prescription",
+  PRESCRIPTIONS = "prescriptions",
 }
 
 const entityTypesSchema = v.union(

@@ -113,11 +113,7 @@ class EntityListModel: ObservableObject {
         }
     }
 
-    public func getFlashCardEntityId() -> String? {
-        entities.entities.first(where: { $0.category == .learning && $0.type == .flashCards })?._id
-    }
-
-    public func getHydrationEntityId() -> String? {
-        entities.entities.first(where: { $0.category == .care && $0.type == .hydration })?._id
+    public func getEntityId(forCategory category: EntityCategory, forType: EntityType) -> String? {
+        entities.entities.first(where: { $0.category == category && $0.type == forType })?._id
     }
 }

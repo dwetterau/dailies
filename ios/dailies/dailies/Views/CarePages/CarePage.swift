@@ -11,9 +11,12 @@ struct CarePage: View {
     @ObservedObject var entityListModel: EntityListModel
 
     var body: some View {
-        VStack {
-            if let hydrationEntityId = entityListModel.getHydrationEntityId() {
+        VStack(spacing: 20) {
+            if let hydrationEntityId = entityListModel.getEntityId(forCategory: .care, forType: .hydration) {
                 HydrationButton(entityId: hydrationEntityId)
+            }
+            if let prescriptionsEntityId = entityListModel.getEntityId(forCategory: .care, forType: .prescriptions) {
+                PrescriptionsButton(entityId: prescriptionsEntityId)
             }
         }.navigationTitle("Care")
     }
