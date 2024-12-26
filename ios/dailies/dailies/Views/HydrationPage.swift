@@ -23,14 +23,11 @@ struct HydrationPage: View {
             Button(action: {
                 viewModel.logCompletion(completionCallback: {})
             }) {
-                Text("Drink a glass -  \(viewModel.completionStatusString)")
-                    .font(.title)
-                    .frame(maxWidth: .infinity, minHeight: 60)
-                    .background(Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(12)
-                    .padding(.horizontal, 30)
-                    .shadow(radius: 10)
+                BigButton(
+                    buttonText: "Drink a glass -  \(viewModel.completionStatusString)",
+                    buttonCompleteColor: .blue,
+                    isComplete: viewModel.isComplete
+                )
             }.disabled(viewModel.isComplete || viewModel.isSaving)
             // TODO: Get the title from the entity
         }.navigationTitle("Drink Water")

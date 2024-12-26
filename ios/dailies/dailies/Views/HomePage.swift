@@ -30,38 +30,16 @@ struct HomePage: View {
                 VStack(spacing: 20) {
                     if let flashCardEntityId = entityListModel.getFlashCardEntityId() {
                         NavigationLink(value: "flashCards") {
-                            Text("Flash Cards")
-                                .font(.title)
-                                .frame(maxWidth: .infinity, minHeight: 60)
-                                .background(entityListModel.isEntityDoneToday(entityId: flashCardEntityId) ? Color.green : Color.gray)
-                                .foregroundColor(.white)
-                                .cornerRadius(12)
-                                .padding(.horizontal, 30)
-                                .shadow(radius: 10)
+                            BigButton(buttonText: "Flash Cards", buttonCompleteColor: .green, isComplete: entityListModel.isEntityDoneToday(entityId: flashCardEntityId))
                         }
                     }
                     if let hydrationEntityId = entityListModel.getHydrationEntityId() {
                         NavigationLink(value: "hydration") {
-                            Text("Drink water")
-                                .font(.title)
-                                .frame(maxWidth: .infinity, minHeight: 60)
-                                .background(entityListModel.isEntityDoneToday(entityId: hydrationEntityId) ? Color.blue : Color.gray)
-                                .foregroundColor(.white)
-                                .cornerRadius(12)
-                                .padding(.horizontal, 30)
-                                .shadow(radius: 10)
+                            BigButton(buttonText: "Drink water", buttonCompleteColor: .blue, isComplete: entityListModel.isEntityDoneToday(entityId: hydrationEntityId))
                         }
                     }
                     NavigationLink(value: "exercise") {
-                        Text("Exercise")
-                            .font(.title)
-                            .frame(maxWidth: .infinity, minHeight: 60)
-                            // Purple when we can compute this
-                            .background(Color.gray)
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
-                            .padding(.horizontal, 30)
-                            .shadow(radius: 10)
+                        BigButton(buttonText: "Exercise", buttonCompleteColor: .purple, isComplete: false)
                     }
                     Spacer()
                     Button(action: {
