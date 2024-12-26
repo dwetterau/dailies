@@ -67,15 +67,18 @@ export const list = query({
               if (currentEvent?.details.type === EventType.FLASH_CARDS) {
                 entityIdToIsDone[entity._id] = currentEvent.details.payload.numReviewed >= 100;
               }
+              break;
             }
             case EntityType.HYDRATION: {
               if (currentEvent?.details.type === EventType.GENERIC_COMPLETION) {
                 const {numCompletions, numRequiredCompletions} = currentEvent.details.payload;
                 entityIdToIsDone[entity._id] = numCompletions >= numRequiredCompletions;
               }
+              break;
             }
             case EntityType.WORKOUT: {
               entityIdToIsDone[entity._id] = !!currentEvent;
+              break;
             }
           }
       }

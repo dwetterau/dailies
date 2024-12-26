@@ -56,6 +56,7 @@ struct HomePage: View {
                         Text("Exercise")
                             .font(.title)
                             .frame(maxWidth: .infinity, minHeight: 60)
+                            // Purple when we can compute this
                             .background(Color.gray)
                             .foregroundColor(.white)
                             .cornerRadius(12)

@@ -90,7 +90,8 @@ class FlashCardReviewModel: ObservableObject {
                 .handleEvents(receiveCompletion: logHandlers("flashCards:listCards"))
                 .replaceError(with: [])
                 .receive(on: DispatchQueue.main)
-                .scan(flashCards) { currentFlashCards, newFlashCards in
+                .combineLatest($flashCards)
+                .map { newFlashCards, currentFlashCards in
                     var mergedFlashCards: [FlashCard] = []
                     var idToReviewStatus: [String: String] = [:]
                     for card in currentFlashCards {
@@ -114,7 +115,6 @@ class FlashCardReviewModel: ObservableObject {
                             mergedFlashCards.append(card)
                         }
                     }
-
                     return mergedFlashCards
                 }
                 .assign(to: &$flashCards)
