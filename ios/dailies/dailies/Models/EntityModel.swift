@@ -13,9 +13,10 @@ struct Entity: Decodable, Hashable {
     let name: String
     let category: String
     let type: String
+    let isRequiredDaily: Bool
 }
 
-let emptyEntity = Entity(_id: "", ownerId: "", name: "", category: "", type: "")
+let emptyEntity = Entity(_id: "", ownerId: "", name: "", category: "", type: "", isRequiredDaily: false)
 
 struct Entities: Decodable {
     let entities: [Entity]
@@ -71,6 +72,23 @@ class EntityListModel: ObservableObject {
 
     public func isEntityDoneToday(entityId: String) -> Bool {
         return entities.entityIdToIsDone[entityId] ?? false
+    }
+
+    public func isCategoryDoneToday(category: String) -> Bool {
+        var isAnyDone = false
+        var isRequiredEntityNotDone = false
+        for entity in entities.entities {
+            if entity.category == category {
+                if isEntityDoneToday(entityId: entity._id) {
+                    isAnyDone = true
+                } else {
+                    if entity.isRequiredDaily {
+                        isRequiredEntityNotDone = true
+                    }
+                }
+            }
+        }
+        return isAnyDone && !isRequiredEntityNotDone
     }
 
     public func getExerciseEntities() -> [Entity] {

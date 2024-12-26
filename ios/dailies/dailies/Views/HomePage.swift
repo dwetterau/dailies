@@ -33,10 +33,8 @@ struct HomePage: View {
                             BigButton(buttonText: "Flash Cards", buttonCompleteColor: .green, isComplete: entityListModel.isEntityDoneToday(entityId: flashCardEntityId))
                         }
                     }
-                    if let hydrationEntityId = entityListModel.getHydrationEntityId() {
-                        NavigationLink(value: "hydration") {
-                            BigButton(buttonText: "Drink water", buttonCompleteColor: .blue, isComplete: entityListModel.isEntityDoneToday(entityId: hydrationEntityId))
-                        }
+                    NavigationLink(value: "careButton") {
+                        CarePageButton(entityListModel: self.entityListModel)
                     }
                     NavigationLink(value: "exercise") {
                         BigButton(buttonText: "Exercise", buttonCompleteColor: .purple, isComplete: false)
@@ -60,12 +58,8 @@ struct HomePage: View {
                         } else {
                             Text("Missing flash card entity")
                         }
-                    case "hydration":
-                        if let entityId = entityListModel.getHydrationEntityId() {
-                            HydrationPage(entityId: entityId)
-                        } else {
-                            Text("Missing hydration entity")
-                        }
+                    case "careButton":
+                        CarePage(entityListModel: entityListModel)
                     default:
                         Text("Unknown destination \(destination)")
                     }
