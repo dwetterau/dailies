@@ -39,6 +39,17 @@ let emptyEntity = Entity(_id: "", ownerId: "", name: "", category: .exercise, ty
 struct Entities: Decodable {
     let entities: [Entity]
     let entityIdToIsDone: [String: Bool]
+    let entityIdToCompletionRatio: [String: Float64]
+    
+    func getCompletionRatio(for entityId: String) -> CGFloat {
+        if (entityIdToIsDone[entityId] ?? false) {
+            return 1
+        }
+        if let completionRatio = entityIdToCompletionRatio[entityId] {
+            return CGFloat(completionRatio)
+        }
+        return 0
+    }
 }
 
 class EntityModelWithEvents: ObservableObject {
@@ -119,7 +130,7 @@ class EntityListModel: ObservableObject {
     private var entityViewModels: [EntityViewModel] = []
 
     @Published
-    private var entitiesFromServer: Entities = .init(entities: [], entityIdToIsDone: [:])
+    private var entitiesFromServer: Entities = .init(entities: [], entityIdToIsDone: [:], entityIdToCompletionRatio: [:])
 
     // Used to stay subscribed to the sink to keep the entityViewModels up to date
     private var cancellables = Set<AnyCancellable>()
@@ -138,7 +149,7 @@ class EntityListModel: ObservableObject {
                 yielding: Entities.self
             )
             .handleEvents(receiveCompletion: logHandlers("entities:list"))
-            .replaceError(with: Entities(entities: [], entityIdToIsDone: [:]))
+            .replaceError(with: Entities(entities: [], entityIdToIsDone: [:], entityIdToCompletionRatio: [:]))
             .receive(on: DispatchQueue.main)
             .assign(to: &$entitiesFromServer)
         }
@@ -149,16 +160,33 @@ class EntityListModel: ObservableObject {
             }
         }.store(in: &cancellables)
     }
-
+    
     public func isEntityDoneToday(entityId: String) -> Bool {
         return entitiesFromServer.entityIdToIsDone[entityId] ?? false
     }
 
-    public func isCategoryDoneToday(category: EntityCategory) -> Bool {
+    public func getCompletionRatio(for entityId: String) -> CGFloat {
+        return entitiesFromServer.getCompletionRatio(for: entityId)
+    }
+
+    public func getCategoryCompletionRatio(for category: EntityCategory) -> CGFloat {
+        var requiredEntityCount = 0;
+        var hasOptionalEntity = false;
+        var maxOptionalCompletionPercentage: CGFloat = 0;
+        var totalRequiredCompletionPercentage: CGFloat = 0;
+        
         var isAnyDone = false
         var isRequiredEntityNotDone = false
+        
         for entity in entitiesFromServer.entities {
             if entity.category == category {
+                if entity.isRequiredDaily {
+                    requiredEntityCount += 1
+                    totalRequiredCompletionPercentage += getCompletionRatio(for: entity._id)
+                } else {
+                    hasOptionalEntity = true
+                    maxOptionalCompletionPercentage = max(maxOptionalCompletionPercentage, getCompletionRatio(for: entity._id))
+                }
                 if isEntityDoneToday(entityId: entity._id) {
                     isAnyDone = true
                 } else {
@@ -168,7 +196,18 @@ class EntityListModel: ObservableObject {
                 }
             }
         }
-        return isAnyDone && !isRequiredEntityNotDone
+        if isAnyDone && !isRequiredEntityNotDone {
+            return 1
+        }
+        if (requiredEntityCount > 0) {
+            return totalRequiredCompletionPercentage / CGFloat(requiredEntityCount)
+        } else {
+            if (!hasOptionalEntity) {
+                // There are no entities?
+                return 0
+            }
+            return maxOptionalCompletionPercentage
+        }
     }
 
     // TODO: Convert to view models

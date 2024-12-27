@@ -14,7 +14,7 @@ struct LearningPageButton: View {
         BigButton(
             buttonText: "Learning",
             buttonCompleteColor: getColorForEntityCategory(.learning),
-            completionRatio: entityListModel.isCategoryDoneToday(category: .care) ? 1 : 0
+            completionRatio: entityListModel.getCategoryCompletionRatio(for: .care)
         )
     }
 }

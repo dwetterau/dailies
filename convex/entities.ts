@@ -59,6 +59,7 @@ export const list = query({
       .collect();
 
     const entityIdToIsDone: Record<Id<"entities">, boolean> = {};
+    const entityIdToCompletionRatio: Record<Id<"entities">, number> = {};
     if (timeRange) {
       for (const entity of entities) {
         // TODO: Can this happen in parallel?
@@ -67,17 +68,21 @@ export const list = query({
           // TODO: We probably don't need both of these numRequiredCompletions fields (on the entity too)
           const {numCompletions, numRequiredCompletions} = currentEvent.details.payload;
           entityIdToIsDone[entity._id] = numCompletions >= numRequiredCompletions; 
+          entityIdToCompletionRatio[entity._id] = numCompletions >= numRequiredCompletions ? 1 : numCompletions / numRequiredCompletions;
         }
         // TODO: Generalize this logic!
         switch (entity.type) {
           case EntityType.FLASH_CARDS: {
             if (currentEvent?.details.type === EventType.FLASH_CARDS && entity.numRequiredCompletions) {
-              entityIdToIsDone[entity._id] = currentEvent.details.payload.numReviewed >= entity.numRequiredCompletions;
+              const {numReviewed} = currentEvent.details.payload;
+              entityIdToIsDone[entity._id] = numReviewed >= entity.numRequiredCompletions;
+              entityIdToCompletionRatio[entity._id] = numReviewed >= entity.numRequiredCompletions ? 1 : numReviewed / entity.numRequiredCompletions;
             }
             break;
           }
           case EntityType.WORKOUT: {
             entityIdToIsDone[entity._id] = !!currentEvent;
+            entityIdToCompletionRatio[entity._id] = !!currentEvent ? 1 : 0 
             break;
           }
         }
@@ -86,6 +91,7 @@ export const list = query({
     return {
       entities,
       entityIdToIsDone,
+      entityIdToCompletionRatio,
     };
   },
 });
