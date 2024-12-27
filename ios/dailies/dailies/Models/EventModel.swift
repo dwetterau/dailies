@@ -16,7 +16,7 @@ struct Event: Decodable, Hashable {
 }
 
 enum EventType: Codable, Hashable, ConvexEncodable {
-    case workout(WorkoutDetails)
+    case workoutMachineWithWeight(WorkoutMachineWithWeightDetails)
     case flashCards(FlashCardsDetails)
     case genericCompletion(GenericCompletionDetails)
 
@@ -26,7 +26,7 @@ enum EventType: Codable, Hashable, ConvexEncodable {
     }
 
     enum EventTypeKey: String, Codable {
-        case workout
+        case workoutMachineWithWeight
         case flashCards
         case genericCompletion
     }
@@ -36,9 +36,9 @@ enum EventType: Codable, Hashable, ConvexEncodable {
         let type = try container.decode(EventTypeKey.self, forKey: .type)
 
         switch type {
-        case .workout:
-            let details = try container.decode(WorkoutDetails.self, forKey: .payload)
-            self = .workout(details)
+        case .workoutMachineWithWeight:
+            let details = try container.decode(WorkoutMachineWithWeightDetails.self, forKey: .payload)
+            self = .workoutMachineWithWeight(details)
         case .flashCards:
             let details = try container.decode(FlashCardsDetails.self, forKey: .payload)
             self = .flashCards(details)
@@ -51,8 +51,8 @@ enum EventType: Codable, Hashable, ConvexEncodable {
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         switch self {
-        case let .workout(details):
-            try container.encode(EventTypeKey.workout, forKey: .type)
+        case let .workoutMachineWithWeight(details):
+            try container.encode(EventTypeKey.workoutMachineWithWeight, forKey: .type)
             try container.encode(details, forKey: .payload)
         case let .flashCards(details):
             try container.encode(EventTypeKey.flashCards, forKey: .type)
@@ -66,8 +66,8 @@ enum EventType: Codable, Hashable, ConvexEncodable {
     // Hashable conformance
     func hash(into hasher: inout Hasher) {
         switch self {
-        case let .workout(details):
-            hasher.combine(EventTypeKey.workout)
+        case let .workoutMachineWithWeight(details):
+            hasher.combine(EventTypeKey.workoutMachineWithWeight)
             hasher.combine(details) // Combine the associated value
         case let .flashCards(details):
             hasher.combine(EventTypeKey.flashCards)
@@ -81,7 +81,7 @@ enum EventType: Codable, Hashable, ConvexEncodable {
     // Equatable conformance
     static func == (lhs: EventType, rhs: EventType) -> Bool {
         switch (lhs, rhs) {
-        case let (.workout(details1), .workout(details2)):
+        case let (.workoutMachineWithWeight(details1), .workoutMachineWithWeight(details2)):
             return details1 == details2
         case let (.flashCards(details1), .flashCards(details2)):
             return details1 == details2
@@ -93,19 +93,19 @@ enum EventType: Codable, Hashable, ConvexEncodable {
     }
 }
 
-struct WorkoutOverride: Codable, Hashable {
+struct WorkoutMachineWithWeightOverride: Codable, Hashable {
     let weight: Double
     let repIndex: Int
     let setIndex: Int
 }
 
-struct WorkoutDetails: Codable, Hashable {
+struct WorkoutMachineWithWeightDetails: Codable, Hashable {
     let weight: Double
     let numReps: Int
     let numSets: Int
-    let overrides: WorkoutOverride?
+    let overrides: WorkoutMachineWithWeightOverride?
 
-    static func == (lhs: WorkoutDetails, rhs: WorkoutDetails) -> Bool {
+    static func == (lhs: WorkoutMachineWithWeightDetails, rhs: WorkoutMachineWithWeightDetails) -> Bool {
         return lhs.weight == rhs.weight &&
             lhs.numReps == rhs.numReps &&
             lhs.numSets == rhs.numSets &&

@@ -5,10 +5,12 @@
 //  Created by David Wetterau on 12/27/24.
 //
 
+import AlertToast
 import SwiftUI
 
 struct ExercisePage: View {
     @ObservedObject var entityListModel: EntityListModel
+    @State var showSaveSuccessToast = false
 
     var body: some View {
         VStack(spacing: 20) {
@@ -25,7 +27,7 @@ struct ExercisePage: View {
                 case .genericCompletion:
                     EntityCompletionButton(entityViewModel)
                 default:
-                    Text("unknown entity type: \(entitiyviewModel.type)")
+                    Text("unknown entity type: \(entityViewModel.type)")
                 }
             }
         }
@@ -33,13 +35,17 @@ struct ExercisePage: View {
         .navigationDestination(for: String.self) { entityId in
             if let entityViewModel = entityListModel.getEntity(id: entityId) {
                 if entityViewModel.type == .workoutMachineWithWeight {
-                    WorkoutMachineWithWeightPage(entityId: entityViewModel.id)
+                    WorkoutMachineWithWeightPage(entityId: entityViewModel.id) {
+                        showSaveSuccessToast = true
+                    }
                 } else {
                     Text("unknown exercise entity destination")
                 }
             } else {
                 Text("unknown exercise entity")
             }
+        }.toast(isPresenting: $showSaveSuccessToast) {
+            AlertToast(type: .complete(.green), title: "Saved!")
         }
     }
 }

@@ -18,9 +18,11 @@ struct WorkoutMachineWithWeightPage: View {
 
     private let entityId: String
     private let eventId: String?
+    private let onSave: () -> Void
 
-    init(entityId: String) {
+    init(entityId: String, onSave: @escaping () -> Void = {}) {
         self.entityId = entityId
+        self.onSave = onSave
         eventId = nil
     }
 
@@ -28,9 +30,10 @@ struct WorkoutMachineWithWeightPage: View {
         entityId = event.entityId
         eventId = event._id
         _date = State(initialValue: getDateFromTimestamp(event.timestamp))
+        onSave = {}
 
         switch event.details {
-        case let .workout(workoutDetails):
+        case let .workoutMachineWithWeight(workoutDetails):
             _weight = State(initialValue: workoutDetails.weight)
             _numReps = State(initialValue: workoutDetails.numReps)
             _numSets = State(initialValue: workoutDetails.numSets)
@@ -82,11 +85,13 @@ struct WorkoutMachineWithWeightPage: View {
             do {
                 try await client.mutation("events:create", with: [
                     "entityId": entityId,
-                    "timestamp": getTimestampFromDate(date),
-                    "details": EventType.workout(
-                        WorkoutDetails(weight: weight!, numReps: numReps!, numSets: numSets!, overrides: nil)
+                    "timestamp": Float64(getTimestampFromDate(date)),
+                    "details": EventType.workoutMachineWithWeight(
+                        WorkoutMachineWithWeightDetails(weight: weight!, numReps: numReps!, numSets: numSets!, overrides: nil)
                     ),
                 ])
+                onSave()
+                dismiss()
             } catch let ClientError.ConvexError(data) {
                 let errorMessage = try! JSONDecoder().decode(String.self, from: Data(data.utf8))
                 print(errorMessage)
@@ -95,8 +100,6 @@ struct WorkoutMachineWithWeightPage: View {
                 print("An unknown error occurred: \(error)")
                 return
             }
-            // TODO: Use something like AlertToast to confirm that it was created successfully
-            dismiss()
         }
     }
 }
