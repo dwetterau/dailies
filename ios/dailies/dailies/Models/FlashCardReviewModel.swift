@@ -76,7 +76,7 @@ class FlashCardReviewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
 
     init(_ entityViewModel: EntityViewModel) {
-        self.entity = entityViewModel
+        entity = entityViewModel
         let timeRange = getTimeRangeForDate(Date())
 
         if let loadedFlashCards: [FlashCard] = loadFromDisk(filename: flashCardFileName, type: [FlashCard].self) {
