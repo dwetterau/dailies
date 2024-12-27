@@ -20,7 +20,7 @@ struct PrescriptionsButton: View {
 
     var body: some View {
         Button(action: {
-            viewModel.logCompletion(completionCallback: {})
+            viewModel.logCompletion()
         }) {
             BigButton(
                 // TODO: Get the button text from the entity

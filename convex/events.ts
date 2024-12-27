@@ -145,15 +145,16 @@ export const upsertDayEvent = mutation({
       startTimestamp: v.number(),
       endTimestamp: v.number(),
     }),
+    timestamp: v.number(),
     details: allEventDetails,
   },
-  handler: async (ctx, { entityId, details, timeRange }) => {
-
+  handler: async (ctx, { entityId, details, timeRange, timestamp }) => {
     const ownerId = await getUserIdFromContextAsync(ctx)
-
     const existingEvent = await getCurrentEvent({db: ctx.db, ownerId, timeRange, entityId});
     if (existingEvent) {
+      console.log("Patching current day event to", details)
       await ctx.db.patch(existingEvent._id, {
+        timestamp,
         details,
       });
     } else {
@@ -162,7 +163,7 @@ export const upsertDayEvent = mutation({
         details,
         entityId,
         ownerId,
-        timestamp: timeRange.startTimestamp,
+        timestamp,
       });
     }
   },

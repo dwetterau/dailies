@@ -208,7 +208,8 @@ class FlashCardReviewModel: ObservableObject {
         }.map { card in
             ["id": card._id, "reviewStatus": card.reviewStatus!]
         }
-        let timeRange = getTimeRangeForDate(Date())
+        let timestamp = getCurrentTimestamp()
+        let timeRange = getTimeRangeForDate(getDateFromTimestamp(timestamp))
         Task {
             do {
                 try await client.mutation("flashCards:startSaveReviewStatus", with: [
@@ -220,6 +221,7 @@ class FlashCardReviewModel: ObservableObject {
                         "startTimestamp": timeRange.start,
                         "endTimestamp": timeRange.end,
                     ],
+                    "timestamp": Float64(timestamp),
                     "details": EventType.flashCards(FlashCardsDetails(numReviewed: reviewStats.numReviewed, numCorrect: reviewStats.numCorrect)),
                 ])
             } catch let ClientError.ConvexError(data) {

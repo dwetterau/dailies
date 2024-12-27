@@ -38,11 +38,10 @@ class EntityCompletionModel: ObservableObject {
         self.entityId = entityId
         self.numRequiredCompletions = numRequiredCompletions
 
-        let timestamp = getCurrentTimestamp()
-        let timeRange = getTimeRangeForDate(getDateFromTimestamp(timestamp))
+        let timeRange = getTimeRangeForDate(Date())
         if let loadedCompletionStats: CompletionStats = loadFromDisk(filename: getCompletionStatsFilename(entityId: entityId), type: CompletionStats.self) {
             if isInTimeRange(timeRange, loadedCompletionStats.timestamp) {
-                print("Loaded completionStats from disk")
+                print("Loaded completionStats from disk", loadedCompletionStats)
                 completionStats = loadedCompletionStats
             } else {
                 // TODO: Should we try to save these too?
@@ -65,10 +64,13 @@ class EntityCompletionModel: ObservableObject {
                 .map { newCurrentEvent, currentCompletionStats in
                     if let eventDetails = newCurrentEvent?.details {
                         if case let .genericCompletion(completionDetails) = eventDetails {
-                            return CompletionStats(
-                                timestamp: newCurrentEvent!.timestamp,
-                                numCompletions: max(currentCompletionStats.numCompletions, completionDetails.numCompletions)
-                            )
+                            let remoteTimestamp = newCurrentEvent!.timestamp
+                            if remoteTimestamp > currentCompletionStats.timestamp {
+                                return CompletionStats(
+                                    timestamp: remoteTimestamp,
+                                    numCompletions: completionDetails.numCompletions
+                                )
+                            }
                         }
                     }
                     return currentCompletionStats
@@ -85,20 +87,35 @@ class EntityCompletionModel: ObservableObject {
         completionStats.numCompletions >= numRequiredCompletions
     }
 
-    public func logCompletion(completionCallback: @escaping () -> Void) {
-        let timeRange = getTimeRangeForDate(Date())
+    public func logCompletion() {
+        let newTimestamp = getCurrentTimestamp()
+        let timeRange = getTimeRangeForDate(getDateFromTimestamp(newTimestamp))
         if isInTimeRange(timeRange, completionStats.timestamp) {
+            if isComplete {
+                print("ignoring additional completion press")
+                return
+            }
             completionStats = CompletionStats(
-                timestamp: completionStats.timestamp,
+                timestamp: newTimestamp,
                 numCompletions: completionStats.numCompletions + 1
             )
         } else {
             completionStats = CompletionStats(
-                timestamp: getCurrentTimestamp(),
+                timestamp: newTimestamp,
                 numCompletions: 1
             )
         }
-        saveCompletionEvent(completionCallback)
+        saveCurrentCompletionEvent()
+    }
+
+    public func removeAllCompletions(_ completionCallback: @escaping () -> Void) {
+        saveCompletionStats(
+            // It's important to use a new timestamp, since we need this to be > than the previously stored
+            // value to apply the update. This does mean you can reset the next day's events if you do so right
+            // on a boundary.
+            CompletionStats(timestamp: getCurrentTimestamp(), numCompletions: 0),
+            completionCallback: completionCallback
+        )
     }
 
     public var completionStatusString: String {
@@ -108,7 +125,11 @@ class EntityCompletionModel: ObservableObject {
         return "\(completionStats.numCompletions)/\(numRequiredCompletions)"
     }
 
-    private func saveCompletionEvent(_ completionCallback: @escaping () -> Void) {
+    private func saveCurrentCompletionEvent() {
+        saveCompletionStats(completionStats, completionCallback: {})
+    }
+
+    private func saveCompletionStats(_ completionStats: CompletionStats, completionCallback: @escaping () -> Void) {
         isSaving = true
 
         let timeRange = getTimeRangeForDate(getDateFromTimestamp(completionStats.timestamp))
@@ -120,9 +141,10 @@ class EntityCompletionModel: ObservableObject {
                         "startTimestamp": timeRange.start,
                         "endTimestamp": timeRange.end,
                     ],
+                    "timestamp": Float64(completionStats.timestamp),
                     "details": EventType.genericCompletion(
                         GenericCompletionDetails(
-                            numCompletions: self.completionStats.numCompletions,
+                            numCompletions: completionStats.numCompletions,
                             numRequiredCompletions: self.numRequiredCompletions
                         )
                     ),
