@@ -69,6 +69,8 @@ export const list = query({
               }
               break;
             }
+            case EntityType.PRESCRIPTIONS:
+            case EntityType.JOURNALING:
             case EntityType.HYDRATION: {
               if (currentEvent?.details.type === EventType.GENERIC_COMPLETION) {
                 const {numCompletions, numRequiredCompletions} = currentEvent.details.payload;
