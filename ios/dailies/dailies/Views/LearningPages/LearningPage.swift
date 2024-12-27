@@ -17,7 +17,7 @@ struct LearningPage: View {
                     BigButton(
                         buttonText: flashCardsEntity.name,
                         buttonCompleteColor: flashCardsEntity.buttonColor,
-                        isComplete: entityListModel.isEntityDoneToday(entityId: flashCardsEntity.id)
+                        completionRatio: entityListModel.isEntityDoneToday(entityId: flashCardsEntity.id) ? 1: 0
                     )
                 }
             }

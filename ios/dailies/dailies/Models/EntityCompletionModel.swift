@@ -129,6 +129,16 @@ class EntityCompletionModel: ObservableObject {
         }
         return "\(completionStats.numCompletions)/\(entityViewModel.numRequiredCompletions)"
     }
+    
+    public var completionRatio: CGFloat {
+        if isComplete {
+            return 1
+        }
+        if entityViewModel.numRequiredCompletions == 0 {
+            return 0
+        }
+        return CGFloat(completionStats.numCompletions) / CGFloat(entityViewModel.numRequiredCompletions)
+    }
 
     private func saveCurrentCompletionEvent() {
         saveCompletionStats(completionStats, completionCallback: {})

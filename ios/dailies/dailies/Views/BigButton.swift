@@ -10,16 +10,32 @@ import SwiftUI
 struct BigButton: View {
     let buttonText: String
     let buttonCompleteColor: Color
-    let isComplete: Bool
+    // Number in [0, 1]
+    let completionRatio: CGFloat
 
     var body: some View {
-        Text(buttonText)
-            .font(.title)
-            .frame(maxWidth: .infinity, minHeight: 60)
-            .background(isComplete ? buttonCompleteColor : Color.gray)
-            .foregroundColor(.white)
-            .cornerRadius(12)
+            ZStack {
+                // Background progress bar
+                GeometryReader { geometry in
+                    HStack(spacing: 0) {
+                        buttonCompleteColor
+                            .frame(width: geometry.size.width * completionRatio)
+                        
+                        Color.gray
+                            .frame(width: geometry.size.width * (1 - completionRatio))
+                    }
+                }
+                .cornerRadius(12)
+                .shadow(radius: 10)
+
+                // Button text
+                Text(buttonText)
+                    .font(.title)
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 30)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 60)
             .padding(.horizontal, 30)
-            .shadow(radius: 10)
-    }
+        }
 }

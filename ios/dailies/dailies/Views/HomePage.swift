@@ -35,7 +35,10 @@ struct HomePage: View {
                         CarePageButton(entityListModel: self.entityListModel)
                     }
                     NavigationLink(value: "exercise") {
-                        BigButton(buttonText: "Exercise", buttonCompleteColor: .purple, isComplete: false)
+                        BigButton(
+                            buttonText: "Exercise",
+                            buttonCompleteColor: .purple,
+                            completionRatio: 0)
                     }
                     Spacer()
                     Button(action: {
