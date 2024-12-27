@@ -13,7 +13,7 @@ struct LearningPageButton: View {
     var body: some View {
         BigButton(
             buttonText: "Learning",
-            buttonCompleteColor: .green,
+            buttonCompleteColor: getColorForEntityCategory(.learning),
             isComplete: entityListModel.isCategoryDoneToday(category: .care)
         )
     }

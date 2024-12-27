@@ -31,16 +31,17 @@ struct Entity: Decodable, Hashable {
     let category: EntityCategory
     let type: EntityType
     let isRequiredDaily: Bool
+    let numRequiredCompletions: Int?
 }
 
-let emptyEntity = Entity(_id: "", ownerId: "", name: "", category: .exercise, type: .workout, isRequiredDaily: false)
+let emptyEntity = Entity(_id: "", ownerId: "", name: "", category: .exercise, type: .workout, isRequiredDaily: false, numRequiredCompletions: nil)
 
 struct Entities: Decodable {
     let entities: [Entity]
     let entityIdToIsDone: [String: Bool]
 }
 
-class EntityModel: ObservableObject {
+class EntityModelWithEvents: ObservableObject {
     @Published
     var entity: Entity = emptyEntity
 
@@ -63,9 +64,65 @@ class EntityModel: ObservableObject {
     }
 }
 
+func getColorForEntityCategory(_ entityCategory: EntityCategory) -> Color {
+    switch entityCategory {
+    case .care:
+        return .blue
+    case .learning:
+        return .green
+    case .exercise:
+        return .purple
+    default:
+        return .gray
+    }
+}
+
+class EntityViewModel: ObservableObject {
+    @Published
+    private var entity: Entity
+
+    @Published
+    public private(set) var isDone: Bool
+
+    init(_ entity: Entity, isDone: Bool) {
+        self.entity = entity
+        self.isDone = isDone
+    }
+
+    public var id: String {
+        return entity._id
+    }
+
+    public var category: EntityCategory {
+        return entity.category
+    }
+
+    public var type: EntityType {
+        return entity.type
+    }
+
+    public var name: String {
+        return entity.name
+    }
+
+    public var buttonColor: Color {
+        return getColorForEntityCategory(category)
+    }
+
+    public var numRequiredCompletions: Int {
+        return entity.numRequiredCompletions ?? 0
+    }
+}
+
 class EntityListModel: ObservableObject {
     @Published
-    var entities: Entities = .init(entities: [], entityIdToIsDone: [:])
+    private var entityViewModels: [EntityViewModel] = []
+
+    @Published
+    private var entitiesFromServer: Entities = .init(entities: [], entityIdToIsDone: [:])
+
+    // Used to stay subscribed to the sink to keep the entityViewModels up to date
+    private var cancellables = Set<AnyCancellable>()
 
     init() {
         let timeRange = getTimeRangeForDate(Date())
@@ -83,18 +140,24 @@ class EntityListModel: ObservableObject {
             .handleEvents(receiveCompletion: logHandlers("entities:list"))
             .replaceError(with: Entities(entities: [], entityIdToIsDone: [:]))
             .receive(on: DispatchQueue.main)
-            .assign(to: &$entities)
+            .assign(to: &$entitiesFromServer)
         }
+        $entitiesFromServer.sink { newEntitiesFromServer in
+            self.entityViewModels = newEntitiesFromServer.entities.map {
+                entity in
+                EntityViewModel(entity, isDone: self.isEntityDoneToday(entityId: entity._id))
+            }
+        }.store(in: &cancellables)
     }
 
     public func isEntityDoneToday(entityId: String) -> Bool {
-        return entities.entityIdToIsDone[entityId] ?? false
+        return entitiesFromServer.entityIdToIsDone[entityId] ?? false
     }
 
     public func isCategoryDoneToday(category: EntityCategory) -> Bool {
         var isAnyDone = false
         var isRequiredEntityNotDone = false
-        for entity in entities.entities {
+        for entity in entitiesFromServer.entities {
             if entity.category == category {
                 if isEntityDoneToday(entityId: entity._id) {
                     isAnyDone = true
@@ -108,13 +171,16 @@ class EntityListModel: ObservableObject {
         return isAnyDone && !isRequiredEntityNotDone
     }
 
+    // TODO: Convert to view models
     public func getExerciseEntities() -> [Entity] {
-        entities.entities.filter { entity in
+        entitiesFromServer.entities.filter { entity in
             entity.category == .exercise
         }
     }
 
-    public func getEntityId(forCategory category: EntityCategory, forType: EntityType) -> String? {
-        entities.entities.first(where: { $0.category == category && $0.type == forType })?._id
+    public func getEntity(forCategory category: EntityCategory, forType: EntityType) -> EntityViewModel? {
+        entityViewModels.first(where: { entityViewModel in
+            entityViewModel.category == category && entityViewModel.type == forType
+        })
     }
 }

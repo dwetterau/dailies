@@ -36,6 +36,7 @@ export const ENTITIES_SCHEMA = defineTable({
   type: entityTypesSchema,
   category: entityCategoriesSchema,
   isRequiredDaily: v.boolean(),
+  numRequiredCompletions: v.optional(v.number()),
   // TODO: Add a "resetAfterInterval" field - so that weekly events don't reset daily
 });
 

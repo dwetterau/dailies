@@ -53,8 +53,8 @@ struct HomePage: View {
                     case "learningButton":
                         LearningPage(entityListModel: entityListModel)
                     case "flashCards":
-                        if let flashCardsEntityId = entityListModel.getEntityId(forCategory: .learning, forType: .flashCards) {
-                            FlashCardReviewPage(entityId: flashCardsEntityId)
+                        if let flashCardsEntity = entityListModel.getEntity(forCategory: .learning, forType: .flashCards) {
+                            FlashCardReviewPage(entityId: flashCardsEntity.id)
                         } else {
                             Text("no flash card entity")
                         }

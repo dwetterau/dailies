@@ -12,11 +12,11 @@ struct CarePage: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            if let hydrationEntityId = entityListModel.getEntityId(forCategory: .care, forType: .hydration) {
-                HydrationButton(entityId: hydrationEntityId)
+            if let hydrationEntity = entityListModel.getEntity(forCategory: .care, forType: .hydration) {
+                EntityCompletionButton(hydrationEntity)
             }
-            if let prescriptionsEntityId = entityListModel.getEntityId(forCategory: .care, forType: .prescriptions) {
-                PrescriptionsButton(entityId: prescriptionsEntityId)
+            if let prescriptionsEntity = entityListModel.getEntity(forCategory: .care, forType: .prescriptions) {
+                EntityCompletionButton(prescriptionsEntity)
             }
         }.navigationTitle("Care")
     }

@@ -8,10 +8,10 @@
 import SwiftUI
 
 struct EntityPage: View {
-    @StateObject private var entity: EntityModel
+    @StateObject private var entity: EntityModelWithEvents
 
     init(entity: Entity) {
-        _entity = StateObject(wrappedValue: EntityModel(entity: entity))
+        _entity = StateObject(wrappedValue: EntityModelWithEvents(entity: entity))
     }
 
     var body: some View {

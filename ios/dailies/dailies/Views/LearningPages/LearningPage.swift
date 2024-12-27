@@ -12,20 +12,20 @@ struct LearningPage: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            if let flashCardsEntityId = entityListModel.getEntityId(forCategory: .learning, forType: .flashCards) {
+            if let flashCardsEntity = entityListModel.getEntity(forCategory: .learning, forType: .flashCards) {
                 NavigationLink(value: "flashCards") {
                     BigButton(
-                        buttonText: "Flash Cards",
-                        buttonCompleteColor: .green,
-                        isComplete: entityListModel.isEntityDoneToday(entityId: flashCardsEntityId)
+                        buttonText: flashCardsEntity.name,
+                        buttonCompleteColor: flashCardsEntity.buttonColor,
+                        isComplete: entityListModel.isEntityDoneToday(entityId: flashCardsEntity.id)
                     )
                 }
             }
-            if let journalingEntityId = entityListModel.getEntityId(forCategory: .learning, forType: .journaling) {
-                JournalingButton(entityId: journalingEntityId)
+            if let journalingEntity = entityListModel.getEntity(forCategory: .learning, forType: .journaling) {
+                EntityCompletionButton(journalingEntity)
             }
-            if let duolingoEntityId = entityListModel.getEntityId(forCategory: .learning, forType: .duolingo) {
-                DuolingoButton(entityId: duolingoEntityId)
+            if let duolingoEntity = entityListModel.getEntity(forCategory: .learning, forType: .duolingo) {
+                EntityCompletionButton(duolingoEntity)
             }
         }.navigationTitle("Learning")
     }
