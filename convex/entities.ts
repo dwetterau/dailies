@@ -20,6 +20,7 @@ const entityCategoriesSchema = v.union(
 export enum EntityType {
   WORKOUT = "workout",
   FLASH_CARDS = "flashCards",
+  DUOLINGO = "duolingo",
   HYDRATION = "hydration",
   JOURNALING = "journaling",
   PRESCRIPTIONS = "prescriptions",
@@ -61,28 +62,23 @@ export const list = query({
       for (const entity of entities) {
         // TODO: Can this happen in parallel?
         const currentEvent = await getCurrentEvent({db: ctx.db, ownerId, entityId: entity._id, timeRange});
+        if (currentEvent?.details.type === EventType.GENERIC_COMPLETION) {
+          const {numCompletions, numRequiredCompletions} = currentEvent.details.payload;
+          entityIdToIsDone[entity._id] = numCompletions >= numRequiredCompletions; 
+        }
         // TODO: Generalize this logic!
         switch (entity.type) {
-            case EntityType.FLASH_CARDS: {
-              if (currentEvent?.details.type === EventType.FLASH_CARDS) {
-                entityIdToIsDone[entity._id] = currentEvent.details.payload.numReviewed >= 100;
-              }
-              break;
+          case EntityType.FLASH_CARDS: {
+            if (currentEvent?.details.type === EventType.FLASH_CARDS) {
+              entityIdToIsDone[entity._id] = currentEvent.details.payload.numReviewed >= 100;
             }
-            case EntityType.PRESCRIPTIONS:
-            case EntityType.JOURNALING:
-            case EntityType.HYDRATION: {
-              if (currentEvent?.details.type === EventType.GENERIC_COMPLETION) {
-                const {numCompletions, numRequiredCompletions} = currentEvent.details.payload;
-                entityIdToIsDone[entity._id] = numCompletions >= numRequiredCompletions;
-              }
-              break;
-            }
-            case EntityType.WORKOUT: {
-              entityIdToIsDone[entity._id] = !!currentEvent;
-              break;
-            }
+            break;
           }
+          case EntityType.WORKOUT: {
+            entityIdToIsDone[entity._id] = !!currentEvent;
+            break;
+          }
+        }
       }
     }
     return {

@@ -24,6 +24,9 @@ struct LearningPage: View {
             if let journalingEntityId = entityListModel.getEntityId(forCategory: .learning, forType: .journaling) {
                 JournalingButton(entityId: journalingEntityId)
             }
+            if let duolingoEntityId = entityListModel.getEntityId(forCategory: .learning, forType: .duolingo) {
+                DuolingoButton(entityId: duolingoEntityId)
+            }
         }.navigationTitle("Learning")
     }
 }

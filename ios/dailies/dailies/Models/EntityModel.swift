@@ -18,6 +18,7 @@ enum EntityCategory: String, Codable {
 enum EntityType: String, Codable {
     case workout
     case flashCards
+    case duolingo
     case hydration
     case journaling
     case prescriptions
