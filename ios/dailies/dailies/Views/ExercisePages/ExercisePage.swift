@@ -13,7 +13,8 @@ struct ExercisePage: View {
     var body: some View {
         VStack(spacing: 20) {
             ForEach(entityListModel.getEntities(forCategory: .exercise), id: \.id) { entityViewModel in
-                if entityViewModel.type == .workoutMachineWithWeight {
+                switch entityViewModel.type {
+                case .workoutMachineWithWeight:
                     NavigationLink(value: entityViewModel.id) {
                         BigButton(
                             buttonText: entityViewModel.name,
@@ -21,21 +22,24 @@ struct ExercisePage: View {
                             completionRatio: entityListModel.getCompletionRatio(for: entityViewModel.id)
                         )
                     }
-                } else {
-                    Text("unknown entity")
+                case .genericCompletion:
+                    EntityCompletionButton(entityViewModel)
+                default:
+                    Text("unknown entity type: \(entitiyviewModel.type)")
                 }
             }
-        }.navigationTitle("Exercise")
-            .navigationDestination(for: String.self) { entityId in
-                if let entityViewModel = entityListModel.getEntity(id: entityId) {
-                    if entityViewModel.type == .workoutMachineWithWeight {
-                        WorkoutMachineWithWeightPage(entityId: entityViewModel.id)
-                    } else {
-                        Text("unknown exercise entity destination")
-                    }
+        }
+        .navigationTitle("Exercise")
+        .navigationDestination(for: String.self) { entityId in
+            if let entityViewModel = entityListModel.getEntity(id: entityId) {
+                if entityViewModel.type == .workoutMachineWithWeight {
+                    WorkoutMachineWithWeightPage(entityId: entityViewModel.id)
                 } else {
-                    Text("unknown exercise entity")
+                    Text("unknown exercise entity destination")
                 }
+            } else {
+                Text("unknown exercise entity")
             }
+        }
     }
 }

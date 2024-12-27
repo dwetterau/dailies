@@ -21,6 +21,7 @@ export enum EntityType {
   WORKOUT_MACHINE_WITH_WEIGHT = "workoutMachineWithWeight",
   WORKOUT_WITH_DISTANCE = "workoutWithDistance",
   WORKOUT_WITH_TIME = "workoutWithTime",
+  GENERIC_COMPLETION = "genericCompletion",
   FLASH_CARDS = "flashCards",
   DUOLINGO = "duolingo",
   HYDRATION = "hydration",

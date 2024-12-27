@@ -19,6 +19,7 @@ enum EntityType: String, Codable {
     case workoutMachineWithWeight
     case workoutWithDistance
     case workoutWithTime
+    case genericCompletion
     case flashCards
     case duolingo
     case hydration
