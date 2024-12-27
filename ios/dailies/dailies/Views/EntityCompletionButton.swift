@@ -14,11 +14,7 @@ struct EntityCompletionButton: View {
 
     init(_ entity: EntityViewModel) {
         entityViewModel = entity
-        // TODO: Should this also depend on the entityViewModel instead? It seems like yes if it needs to change in response
-        _completionViewModel = StateObject(wrappedValue: EntityCompletionModel(
-            entityId: entity.id,
-            numRequiredCompletions: entity.numRequiredCompletions
-        ))
+        _completionViewModel = StateObject(wrappedValue: EntityCompletionModel(entity))
     }
 
     var body: some View {

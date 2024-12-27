@@ -19,8 +19,8 @@ private func getCompletionStatsFilename(entityId: String) -> String {
 }
 
 class EntityCompletionModel: ObservableObject {
-    private let entityId: String
-    private let numRequiredCompletions: Int
+    @ObservedObject
+    private var entityViewModel: EntityViewModel
 
     @Published
     private var completionStats: CompletionStats = .init(
@@ -34,12 +34,14 @@ class EntityCompletionModel: ObservableObject {
     // Used to stay subscribed to the query for cards
     private var cancellables = Set<AnyCancellable>()
 
-    init(entityId: String, numRequiredCompletions: Int) {
-        self.entityId = entityId
-        self.numRequiredCompletions = numRequiredCompletions
+    init(_ entityViewModel: EntityViewModel) {
+        self.entityViewModel = entityViewModel
 
         let timeRange = getTimeRangeForDate(Date())
-        if let loadedCompletionStats: CompletionStats = loadFromDisk(filename: getCompletionStatsFilename(entityId: entityId), type: CompletionStats.self) {
+        if let loadedCompletionStats: CompletionStats = loadFromDisk(
+            filename: getCompletionStatsFilename(entityId: self.entityViewModel.id),
+            type: CompletionStats.self
+        ) {
             if isInTimeRange(timeRange, loadedCompletionStats.timestamp) {
                 print("Loaded completionStats from disk", loadedCompletionStats)
                 completionStats = loadedCompletionStats
@@ -51,7 +53,7 @@ class EntityCompletionModel: ObservableObject {
 
         Task {
             client.subscribe(to: "events:getCurrentDayEvent", with: [
-                "entityId": entityId,
+                "entityId": self.entityViewModel.id,
                 "timeRange": [
                     "startTimestamp": timeRange.start,
                     "endTimestamp": timeRange.end,
@@ -79,12 +81,15 @@ class EntityCompletionModel: ObservableObject {
         }
 
         $completionStats.sink { newValue in
-            saveToDisk(newValue, filename: getCompletionStatsFilename(entityId: entityId))
+            saveToDisk(
+                newValue,
+                filename: getCompletionStatsFilename(entityId: entityViewModel.id)
+            )
         }.store(in: &cancellables)
     }
 
     public var isComplete: Bool {
-        completionStats.numCompletions >= numRequiredCompletions
+        completionStats.numCompletions >= entityViewModel.numRequiredCompletions
     }
 
     public func logCompletion() {
@@ -119,10 +124,10 @@ class EntityCompletionModel: ObservableObject {
     }
 
     public var completionStatusString: String {
-        if completionStats.numCompletions >= numRequiredCompletions {
+        if completionStats.numCompletions >= entityViewModel.numRequiredCompletions {
             return "Done"
         }
-        return "\(completionStats.numCompletions)/\(numRequiredCompletions)"
+        return "\(completionStats.numCompletions)/\(entityViewModel.numRequiredCompletions)"
     }
 
     private func saveCurrentCompletionEvent() {
@@ -136,7 +141,7 @@ class EntityCompletionModel: ObservableObject {
         Task {
             do {
                 try await client.mutation("events:upsertDayEvent", with: [
-                    "entityId": self.entityId,
+                    "entityId": entityViewModel.id,
                     "timeRange": [
                         "startTimestamp": timeRange.start,
                         "endTimestamp": timeRange.end,
@@ -145,7 +150,7 @@ class EntityCompletionModel: ObservableObject {
                     "details": EventType.genericCompletion(
                         GenericCompletionDetails(
                             numCompletions: completionStats.numCompletions,
-                            numRequiredCompletions: self.numRequiredCompletions
+                            numRequiredCompletions: entityViewModel.numRequiredCompletions
                         )
                     ),
                 ])

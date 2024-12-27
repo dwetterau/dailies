@@ -64,14 +64,15 @@ export const list = query({
         // TODO: Can this happen in parallel?
         const currentEvent = await getCurrentEvent({db: ctx.db, ownerId, entityId: entity._id, timeRange});
         if (currentEvent?.details.type === EventType.GENERIC_COMPLETION) {
+          // TODO: We probably don't need both of these numRequiredCompletions fields (on the entity too)
           const {numCompletions, numRequiredCompletions} = currentEvent.details.payload;
           entityIdToIsDone[entity._id] = numCompletions >= numRequiredCompletions; 
         }
         // TODO: Generalize this logic!
         switch (entity.type) {
           case EntityType.FLASH_CARDS: {
-            if (currentEvent?.details.type === EventType.FLASH_CARDS) {
-              entityIdToIsDone[entity._id] = currentEvent.details.payload.numReviewed >= 100;
+            if (currentEvent?.details.type === EventType.FLASH_CARDS && entity.numRequiredCompletions) {
+              entityIdToIsDone[entity._id] = currentEvent.details.payload.numReviewed >= entity.numRequiredCompletions;
             }
             break;
           }
