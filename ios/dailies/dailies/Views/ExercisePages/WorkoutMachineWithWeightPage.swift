@@ -1,5 +1,5 @@
 //
-//  EditEntryPage.swift
+//  WorkoutMachineWithWeightPage.swift
 //  dailies
 //
 //  Created by David Wetterau on 12/15/24.
@@ -8,7 +8,7 @@
 import ConvexMobile
 import SwiftUI
 
-struct EditEntryPage: View {
+struct WorkoutMachineWithWeightPage: View {
     @State private var date: Date = .init()
     @State private var weight: Double? = nil
     @State private var numReps: Int? = nil

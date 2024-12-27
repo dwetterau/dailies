@@ -16,7 +16,9 @@ enum EntityCategory: String, Codable {
 }
 
 enum EntityType: String, Codable {
-    case workout
+    case workoutMachineWithWeight
+    case workoutWithDistance
+    case workoutWithTime
     case flashCards
     case duolingo
     case hydration
@@ -34,7 +36,15 @@ struct Entity: Decodable, Hashable {
     let numRequiredCompletions: Int?
 }
 
-let emptyEntity = Entity(_id: "", ownerId: "", name: "", category: .exercise, type: .workout, isRequiredDaily: false, numRequiredCompletions: nil)
+let emptyEntity = Entity(
+    _id: "",
+    ownerId: "",
+    name: "",
+    category: .exercise,
+    type: .workoutWithTime,
+    isRequiredDaily: false,
+    numRequiredCompletions: nil
+)
 
 struct Entities: Decodable {
     let entities: [Entity]
@@ -210,16 +220,21 @@ class EntityListModel: ObservableObject {
         }
     }
 
-    // TODO: Convert to view models
-    public func getExerciseEntities() -> [Entity] {
-        entitiesFromServer.entities.filter { entity in
-            entity.category == .exercise
-        }
-    }
-
     public func getEntity(forCategory category: EntityCategory, forType: EntityType) -> EntityViewModel? {
         entityViewModels.first(where: { entityViewModel in
             entityViewModel.category == category && entityViewModel.type == forType
         })
+    }
+
+    public func getEntity(id: String) -> EntityViewModel? {
+        entityViewModels.first(where: { entityViewModel in
+            entityViewModel.id == id
+        })
+    }
+
+    public func getEntities(forCategory category: EntityCategory) -> [EntityViewModel] {
+        entityViewModels.filter { entityViewModel in
+            entityViewModel.category == category
+        }
     }
 }

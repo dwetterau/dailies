@@ -7,6 +7,12 @@
 
 import SwiftUI
 
+enum HomePageDestinations {
+    case careButton
+    case exerciseButton
+    case learningButton
+}
+
 struct HomePage: View {
     @StateObject
     var entityListModel: EntityListModel
@@ -28,18 +34,14 @@ struct HomePage: View {
 
                 // Buttons Section
                 VStack(spacing: 20) {
-                    NavigationLink(value: "learningButton") {
+                    NavigationLink(value: HomePageDestinations.learningButton) {
                         LearningPageButton(entityListModel: self.entityListModel)
                     }
-                    NavigationLink(value: "careButton") {
+                    NavigationLink(value: HomePageDestinations.careButton) {
                         CarePageButton(entityListModel: self.entityListModel)
                     }
-                    NavigationLink(value: "exercise") {
-                        BigButton(
-                            buttonText: "Exercise",
-                            buttonCompleteColor: .purple,
-                            completionRatio: 0
-                        )
+                    NavigationLink(value: HomePageDestinations.exerciseButton) {
+                        ExercisePageButton(entityListModel: self.entityListModel)
                     }
                     Spacer()
                     Button(action: {
@@ -50,22 +52,14 @@ struct HomePage: View {
                     }
                 }
                 .padding(.top, 100) // Spacing from the top
-                .navigationDestination(for: String.self) { destination in
+                .navigationDestination(for: HomePageDestinations.self) { destination in
                     switch destination {
-                    case "exercise":
-                        EntityListPage(entities: entityListModel.getExerciseEntities())
-                    case "learningButton":
+                    case .exerciseButton:
+                        ExercisePage(entityListModel: entityListModel)
+                    case .learningButton:
                         LearningPage(entityListModel: entityListModel)
-                    case "flashCards":
-                        if let flashCardsEntity = entityListModel.getEntity(forCategory: .learning, forType: .flashCards) {
-                            FlashCardReviewPage(flashCardsEntity)
-                        } else {
-                            Text("no flash card entity")
-                        }
-                    case "careButton":
+                    case .careButton:
                         CarePage(entityListModel: entityListModel)
-                    default:
-                        Text("Unknown destination \(destination)")
                     }
                 }
                 Spacer()

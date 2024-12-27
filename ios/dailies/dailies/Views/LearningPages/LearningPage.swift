@@ -28,5 +28,16 @@ struct LearningPage: View {
                 EntityCompletionButton(duolingoEntity)
             }
         }.navigationTitle("Learning")
+            .navigationDestination(for: String.self) { destination in
+                switch destination {
+                case "flashCards":
+                    if let flashCardsEntity = entityListModel.getEntity(forCategory: .learning, forType: .flashCards) {
+                        FlashCardReviewPage(flashCardsEntity)
+                    } else {
+                        Text("no flash card entity")
+                    }
+                default: Text("unknown destination")
+                }
+            }
     }
 }

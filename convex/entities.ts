@@ -18,7 +18,9 @@ const entityCategoriesSchema = v.union(
 )
 
 export enum EntityType {
-  WORKOUT = "workout",
+  WORKOUT_MACHINE_WITH_WEIGHT = "workoutMachineWithWeight",
+  WORKOUT_WITH_DISTANCE = "workoutWithDistance",
+  WORKOUT_WITH_TIME = "workoutWithTime",
   FLASH_CARDS = "flashCards",
   DUOLINGO = "duolingo",
   HYDRATION = "hydration",
@@ -80,7 +82,7 @@ export const list = query({
             }
             break;
           }
-          case EntityType.WORKOUT: {
+          case EntityType.WORKOUT_MACHINE_WITH_WEIGHT: {
             entityIdToIsDone[entity._id] = !!currentEvent;
             entityIdToCompletionRatio[entity._id] = !!currentEvent ? 1 : 0 
             break;

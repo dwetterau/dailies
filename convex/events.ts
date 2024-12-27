@@ -5,13 +5,13 @@ import { getUserIdFromContextAsync } from "./users";
 import { DataModel, Doc, Id } from "./_generated/dataModel";
 
 export enum EventType {
-  WORKOUT = "workout",
+  WORKOUT_MACHINE_WITH_WEIGHT = "workoutMachineWithWeight",
   FLASH_CARDS = "flashCards",
-  GENERIC_COMPLETION = "genericCompletion"
+  GENERIC_COMPLETION = "genericCompletion",
 }
 
 export const WORKOUT_DETAILS_SCHEMA = v.object({
-  type: v.literal(EventType.WORKOUT),
+  type: v.literal(EventType.WORKOUT_MACHINE_WITH_WEIGHT),
   payload: v.object({
     weight: v.number(),
     numReps: v.number(),
