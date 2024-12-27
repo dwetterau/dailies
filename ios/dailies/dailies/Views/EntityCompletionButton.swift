@@ -22,7 +22,7 @@ struct EntityCompletionButton: View {
             completionViewModel.logCompletion()
         }) {
             BigButton(
-                buttonText: completionViewModel.isComplete || entityViewModel.numRequiredCompletions > 1 ? "\(entityViewModel.name) - \(completionViewModel.completionStatusString)" : "\(entityViewModel.name)",
+                buttonText: "\(entityViewModel.name)",
                 buttonCompleteColor: entityViewModel.buttonColor,
                 completionRatio: completionViewModel.completionRatio
             )

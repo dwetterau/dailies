@@ -40,9 +40,9 @@ struct Entities: Decodable {
     let entities: [Entity]
     let entityIdToIsDone: [String: Bool]
     let entityIdToCompletionRatio: [String: Float64]
-    
+
     func getCompletionRatio(for entityId: String) -> CGFloat {
-        if (entityIdToIsDone[entityId] ?? false) {
+        if entityIdToIsDone[entityId] ?? false {
             return 1
         }
         if let completionRatio = entityIdToCompletionRatio[entityId] {
@@ -160,7 +160,7 @@ class EntityListModel: ObservableObject {
             }
         }.store(in: &cancellables)
     }
-    
+
     public func isEntityDoneToday(entityId: String) -> Bool {
         return entitiesFromServer.entityIdToIsDone[entityId] ?? false
     }
@@ -170,14 +170,14 @@ class EntityListModel: ObservableObject {
     }
 
     public func getCategoryCompletionRatio(for category: EntityCategory) -> CGFloat {
-        var requiredEntityCount = 0;
-        var hasOptionalEntity = false;
-        var maxOptionalCompletionPercentage: CGFloat = 0;
-        var totalRequiredCompletionPercentage: CGFloat = 0;
-        
+        var requiredEntityCount = 0
+        var hasOptionalEntity = false
+        var maxOptionalCompletionPercentage: CGFloat = 0
+        var totalRequiredCompletionPercentage: CGFloat = 0
+
         var isAnyDone = false
         var isRequiredEntityNotDone = false
-        
+
         for entity in entitiesFromServer.entities {
             if entity.category == category {
                 if entity.isRequiredDaily {
@@ -199,10 +199,10 @@ class EntityListModel: ObservableObject {
         if isAnyDone && !isRequiredEntityNotDone {
             return 1
         }
-        if (requiredEntityCount > 0) {
+        if requiredEntityCount > 0 {
             return totalRequiredCompletionPercentage / CGFloat(requiredEntityCount)
         } else {
-            if (!hasOptionalEntity) {
+            if !hasOptionalEntity {
                 // There are no entities?
                 return 0
             }

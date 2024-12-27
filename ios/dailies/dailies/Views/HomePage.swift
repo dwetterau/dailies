@@ -38,7 +38,8 @@ struct HomePage: View {
                         BigButton(
                             buttonText: "Exercise",
                             buttonCompleteColor: .purple,
-                            completionRatio: 0)
+                            completionRatio: 0
+                        )
                     }
                     Spacer()
                     Button(action: {

@@ -123,13 +123,6 @@ class EntityCompletionModel: ObservableObject {
         )
     }
 
-    public var completionStatusString: String {
-        if completionStats.numCompletions >= entityViewModel.numRequiredCompletions {
-            return "Done"
-        }
-        return "\(completionStats.numCompletions)/\(entityViewModel.numRequiredCompletions)"
-    }
-    
     public var completionRatio: CGFloat {
         if isComplete {
             return 1
