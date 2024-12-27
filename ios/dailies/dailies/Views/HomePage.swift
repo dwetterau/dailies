@@ -52,6 +52,12 @@ struct HomePage: View {
                         EntityListPage(entities: entityListModel.getExerciseEntities())
                     case "learningButton":
                         LearningPage(entityListModel: entityListModel)
+                    case "flashCards":
+                        if let flashCardsEntityId = entityListModel.getEntityId(forCategory: .learning, forType: .flashCards) {
+                            FlashCardReviewPage(entityId: flashCardsEntityId)
+                        } else {
+                            Text("no flash card entity")
+                        }
                     case "careButton":
                         CarePage(entityListModel: entityListModel)
                     default:

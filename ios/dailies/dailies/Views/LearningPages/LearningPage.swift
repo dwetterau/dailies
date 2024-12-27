@@ -24,6 +24,6 @@ struct LearningPage: View {
             if let journalingEntityId = entityListModel.getEntityId(forCategory: .learning, forType: .journaling) {
                 JournalingButton(entityId: journalingEntityId)
             }
-        }.navigationTitle("Care")
+        }.navigationTitle("Learning")
     }
 }
