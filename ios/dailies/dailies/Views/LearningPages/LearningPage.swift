@@ -9,30 +9,41 @@ import SwiftUI
 
 struct LearningPage: View {
     @ObservedObject var entityListModel: EntityListModel
+    @StateObject var categoryPageModel: CategoryPageModel
 
+    init(entityListModel: EntityListModel) {
+        print("Loading learning page view")
+        self.entityListModel = entityListModel
+        self._categoryPageModel = StateObject(wrappedValue: CategoryPageModel(
+            .learning,
+            entityListModel: entityListModel
+        ))
+    }
+    
     var body: some View {
         VStack(spacing: 20) {
-            if let flashCardsEntity = entityListModel.getEntity(forCategory: .learning, forType: .flashCards) {
+            if let flashCardsEntityId = categoryPageModel.getEntityIdForType(.flashCards) {
                 NavigationLink(value: "flashCards") {
                     BigButton(
-                        buttonText: flashCardsEntity.name,
-                        buttonCompleteColor: flashCardsEntity.buttonColor,
-                        completionRatio: entityListModel.getCompletionRatio(for: flashCardsEntity.id)
+                        // TODO: I guess we need the button text for the entityId too
+                        buttonText: "Flash cards",
+                        buttonCompleteColor: getColorForEntityCategory(.learning),
+                        completionRatio: entityListModel.getCompletionRatio(for: flashCardsEntityId)
                     )
                 }
             }
-            if let journalingEntity = entityListModel.getEntity(forCategory: .learning, forType: .journaling) {
+            if let journalingEntity = entityListModel.getEntity(id: categoryPageModel.getEntityIdForType(.journaling)) {
                 EntityCompletionButton(journalingEntity)
             }
-            if let duolingoEntity = entityListModel.getEntity(forCategory: .learning, forType: .duolingo) {
+            if let duolingoEntity = entityListModel.getEntity(id: categoryPageModel.getEntityIdForType(.duolingo)) {
                 EntityCompletionButton(duolingoEntity)
             }
         }.navigationTitle("Learning")
             .navigationDestination(for: String.self) { destination in
                 switch destination {
                 case "flashCards":
-                    if let flashCardsEntity = entityListModel.getEntity(forCategory: .learning, forType: .flashCards) {
-                        FlashCardReviewPage(flashCardsEntity)
+                    if let flashCardsEntityId = categoryPageModel.getEntityIdForType(.flashCards) {
+                        FlashCardReviewPage(flashCardsEntityId)
                     } else {
                         Text("no flash card entity")
                     }

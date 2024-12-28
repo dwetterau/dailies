@@ -138,7 +138,7 @@ class EntityViewModel: ObservableObject {
 
 class EntityListModel: ObservableObject {
     @Published
-    private var entityViewModels: [EntityViewModel] = []
+    public private(set) var entityViewModels: [EntityViewModel] = []
 
     @Published
     private var entitiesFromServer: Entities = .init(entities: [], entityIdToIsDone: [:], entityIdToCompletionRatio: [:])
@@ -227,8 +227,11 @@ class EntityListModel: ObservableObject {
         })
     }
 
-    public func getEntity(id: String) -> EntityViewModel? {
-        entityViewModels.first(where: { entityViewModel in
+    public func getEntity(id: String?) -> EntityViewModel? {
+        if (id == nil) {
+            return nil
+        }
+        return entityViewModels.first(where: { entityViewModel in
             entityViewModel.id == id
         })
     }

@@ -70,13 +70,13 @@ class FlashCardReviewModel: ObservableObject {
     @Published
     public var isLoading: Bool = false
 
-    @ObservedObject
-    private var entity: EntityViewModel
+    private let entityId: String
     // Used to stay subscribed to the query for cards
     private var cancellables = Set<AnyCancellable>()
 
-    init(_ entityViewModel: EntityViewModel) {
-        entity = entityViewModel
+    // Note: We don't use a full entityViewModel so that we can support offline
+    init(_ entityId: String) {
+        self.entityId = entityId
         let timeRange = getTimeRangeForDate(Date())
 
         if let loadedFlashCards: [FlashCard] = loadFromDisk(filename: flashCardFileName, type: [FlashCard].self) {
@@ -127,7 +127,7 @@ class FlashCardReviewModel: ObservableObject {
                 }
                 .assign(to: &$flashCards)
             client.subscribe(to: "events:getCurrentDayEvent", with: [
-                "entityId": entity.id,
+                "entityId": entityId,
                 "timeRange": [
                     "startTimestamp": timeRange.start,
                     "endTimestamp": timeRange.end,
@@ -219,7 +219,7 @@ class FlashCardReviewModel: ObservableObject {
                     "cards": cardsToSave,
                 ])
                 try await client.mutation("events:upsertDayEvent", with: [
-                    "entityId": self.entity.id,
+                    "entityId": self.entityId,
                     "timeRange": [
                         "startTimestamp": timeRange.start,
                         "endTimestamp": timeRange.end,

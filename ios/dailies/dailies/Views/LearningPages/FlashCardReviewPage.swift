@@ -14,8 +14,8 @@ struct FlashCardReviewPage: View {
     @State var showSaveSuccessToast = false
     @State var showLoadSuccessToast = false
 
-    init(_ entityViewModel: EntityViewModel) {
-        _viewModel = StateObject(wrappedValue: FlashCardReviewModel(entityViewModel))
+    init(_ entityId: String) {
+        _viewModel = StateObject(wrappedValue: FlashCardReviewModel(entityId))
     }
 
     var body: some View {
@@ -126,7 +126,7 @@ struct PreviewContentWrapper: View {
     var body: some View {
         NavigationStack {
             List {
-                NavigationLink("go", destination: FlashCardReviewPage(EntityViewModel(emptyEntity, isDone: false)))
+                NavigationLink("go", destination: FlashCardReviewPage(""))
             }
         }
     }
