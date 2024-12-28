@@ -140,11 +140,13 @@ class FlashCardReviewModel: ObservableObject {
                 .map { newCurrentEvent, currentReviewStats in
                     if let eventDetails = newCurrentEvent?.details {
                         if case let .flashCards(flashCardsEvent) = eventDetails {
-                            return ReviewStats(
-                                numReviewed: max(currentReviewStats.numReviewed, flashCardsEvent.numReviewed),
-                                numCorrect: max(currentReviewStats.numCorrect, flashCardsEvent.numCorrect),
-                                timestamp: newCurrentEvent!.timestamp
-                            )
+                            if newCurrentEvent!.timestamp > currentReviewStats.timestamp {
+                                return ReviewStats(
+                                    numReviewed: flashCardsEvent.numReviewed,
+                                    numCorrect: flashCardsEvent.numCorrect,
+                                    timestamp: newCurrentEvent!.timestamp
+                                )
+                            }
                         }
                     }
                     return currentReviewStats
@@ -209,7 +211,7 @@ class FlashCardReviewModel: ObservableObject {
         }.map { card in
             ["id": card._id, "reviewStatus": card.reviewStatus!]
         }
-        let timestamp = getCurrentTimestamp()
+        let timestamp = reviewStats.timestamp
         let timeRange = getTimeRangeForDate(getDateFromTimestamp(timestamp))
         Task {
             do {
@@ -223,7 +225,12 @@ class FlashCardReviewModel: ObservableObject {
                         "endTimestamp": timeRange.end,
                     ],
                     "timestamp": Float64(timestamp),
-                    "details": EventType.flashCards(FlashCardsDetails(numReviewed: reviewStats.numReviewed, numCorrect: reviewStats.numCorrect)),
+                    "details": EventType.flashCards(
+                        FlashCardsDetails(
+                            numReviewed: reviewStats.numReviewed,
+                            numCorrect: reviewStats.numCorrect
+                        )
+                    ),
                 ])
             } catch let ClientError.ConvexError(data) {
                 let errorMessage = try! JSONDecoder().decode(String.self, from: Data(data.utf8))
