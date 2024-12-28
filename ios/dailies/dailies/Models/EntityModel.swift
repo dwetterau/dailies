@@ -228,7 +228,7 @@ class EntityListModel: ObservableObject {
     }
 
     public func getEntity(id: String?) -> EntityViewModel? {
-        if (id == nil) {
+        if id == nil {
             return nil
         }
         return entityViewModels.first(where: { entityViewModel in

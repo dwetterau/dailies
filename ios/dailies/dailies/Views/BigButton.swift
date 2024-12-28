@@ -13,16 +13,20 @@ struct BigButton: View {
     // Number in [0, 1]
     let completionRatio: CGFloat
 
+    @State private var animatedCompletionRatio: CGFloat = 0.0
+
     var body: some View {
         ZStack {
             // Background progress bar
             GeometryReader { geometry in
                 HStack(spacing: 0) {
                     buttonCompleteColor
-                        .frame(width: geometry.size.width * completionRatio)
+                        .frame(width: geometry.size.width * animatedCompletionRatio)
+                        .animation(.easeInOut(duration: 0.5), value: animatedCompletionRatio)
 
                     Color.gray
-                        .frame(width: geometry.size.width * (1 - completionRatio))
+                        .frame(width: geometry.size.width * (1 - animatedCompletionRatio))
+                        .animation(.easeInOut(duration: 0.5), value: animatedCompletionRatio)
                 }
             }
             .cornerRadius(12)
@@ -37,5 +41,13 @@ struct BigButton: View {
         .frame(maxWidth: .infinity)
         .frame(height: 60)
         .padding(.horizontal, 30)
+        .onAppear {
+            animatedCompletionRatio = completionRatio // Initialize the state variable
+        }
+        .onChange(of: completionRatio) { _, newValue in
+            withAnimation {
+                animatedCompletionRatio = newValue
+            }
+        }
     }
 }

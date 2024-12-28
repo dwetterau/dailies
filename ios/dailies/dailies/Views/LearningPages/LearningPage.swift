@@ -14,19 +14,19 @@ struct LearningPage: View {
     init(entityListModel: EntityListModel) {
         print("Loading learning page view")
         self.entityListModel = entityListModel
-        self._categoryPageModel = StateObject(wrappedValue: CategoryPageModel(
+        _categoryPageModel = StateObject(wrappedValue: CategoryPageModel(
             .learning,
             entityListModel: entityListModel
         ))
     }
-    
+
     var body: some View {
         VStack(spacing: 20) {
             if let flashCardsEntityId = categoryPageModel.getEntityIdForType(.flashCards) {
+                let buttonText = entityListModel.getEntity(id: flashCardsEntityId)?.name ?? "Flash cards"
                 NavigationLink(value: "flashCards") {
                     BigButton(
-                        // TODO: I guess we need the button text for the entityId too
-                        buttonText: "Flash cards",
+                        buttonText: buttonText,
                         buttonCompleteColor: getColorForEntityCategory(.learning),
                         completionRatio: entityListModel.getCompletionRatio(for: flashCardsEntityId)
                     )
