@@ -121,7 +121,7 @@ class EntityListModel: ObservableObject {
     private var entitiesFromServer: Entities = .init(entities: [], entityIdToIsDone: [:], entityIdToCompletionRatio: [:])
 
     // Used to stay subscribed to the sink to keep the entityViewModels up to date
-    private var cancellables = Set<AnyCancellable>()
+    private var subscriptions = Set<AnyCancellable>()
 
     init() {
         let timeRange = getTimeRangeForDate(Date())
@@ -141,12 +141,13 @@ class EntityListModel: ObservableObject {
             .receive(on: DispatchQueue.main)
             .assign(to: &$entitiesFromServer)
         }
-        $entitiesFromServer.sink { newEntitiesFromServer in
+        $entitiesFromServer.sink { [weak self] newEntitiesFromServer in
+            guard let self = self else { return }
             self.entityViewModels = newEntitiesFromServer.entities.map {
                 entity in
                 EntityViewModel(entity, isDone: self.isEntityDoneToday(entityId: entity._id))
             }
-        }.store(in: &cancellables)
+        }.store(in: &subscriptions)
     }
 
     public func isEntityDoneToday(entityId: String) -> Bool {

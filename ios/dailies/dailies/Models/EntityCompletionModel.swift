@@ -31,8 +31,7 @@ class EntityCompletionModel: ObservableObject {
     @Published
     public private(set) var isSaving: Bool = false
 
-    // Used to stay subscribed to the query for cards
-    private var cancellables = Set<AnyCancellable>()
+    private var subscriptions = Set<AnyCancellable>()
 
     init(_ entityViewModel: EntityViewModel) {
         self.entityViewModel = entityViewModel
@@ -85,7 +84,7 @@ class EntityCompletionModel: ObservableObject {
                 newValue,
                 filename: getCompletionStatsFilename(entityId: entityViewModel.id)
             )
-        }.store(in: &cancellables)
+        }.store(in: &subscriptions)
     }
 
     public var isComplete: Bool {

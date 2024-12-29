@@ -72,7 +72,7 @@ class FlashCardReviewModel: ObservableObject {
 
     private let entityId: String
     // Used to stay subscribed to the query for cards
-    private var cancellables = Set<AnyCancellable>()
+    private var subscriptions = Set<AnyCancellable>()
 
     // Note: We don't use a full entityViewModel so that we can support offline
     init(_ entityId: String) {
@@ -160,11 +160,11 @@ class FlashCardReviewModel: ObservableObject {
             .sink { newValue in
                 saveToDisk(newValue, filename: flashCardFileName)
             }
-            .store(in: &cancellables)
+            .store(in: &subscriptions)
 
         $reviewStats.sink { newValue in
             saveToDisk(newValue, filename: flashCardReviewStatsFileName)
-        }.store(in: &cancellables)
+        }.store(in: &subscriptions)
     }
 
     public func getCurrentCard() -> FlashCard? {

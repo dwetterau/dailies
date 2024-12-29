@@ -12,7 +12,6 @@ struct LearningPage: View {
     @StateObject var categoryPageModel: CategoryPageModel
 
     init(entityListModel: EntityListModel) {
-        print("Loading learning page view")
         self.entityListModel = entityListModel
         _categoryPageModel = StateObject(wrappedValue: CategoryPageModel(
             .learning,

@@ -37,7 +37,9 @@ class CategoryPageModel: ObservableObject {
             entityTypeToId = getEntityTypeToId(from: entityListModel.entityViewModels)
         }
 
-        entityListModel.$entityViewModels.sink { newModels in
+        entityListModel.$entityViewModels.sink { [weak self] newModels in
+            guard let self = self else { return }
+            // Exit early if `self` is nil
             let newEntityTypeToId = self.getEntityTypeToId(from: newModels)
             if newEntityTypeToId.isEmpty {
                 print("Received empty entities, ignoring them")
@@ -52,7 +54,7 @@ class CategoryPageModel: ObservableObject {
         entityTypeToId[type]
     }
 
-    private func getEntityTypeToId(from entityViewModels: [EntityViewModel]) -> [EntityType: String] {
+    func getEntityTypeToId(from entityViewModels: [EntityViewModel]) -> [EntityType: String] {
         var entityTypeToId: [EntityType: String] = [:]
         for entityViewModel in entityViewModels {
             if entityViewModel.category == category {

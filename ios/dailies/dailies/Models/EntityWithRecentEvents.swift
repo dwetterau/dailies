@@ -26,7 +26,8 @@ class EventsListViewModel: ObservableObject {
                 .assign(to: &$events)
         }
 
-        $events.dropFirst().sink { newEvents in
+        $events.dropFirst().sink { [weak self] _ in
+            guard let self = self else { return }
             self.loaded = true
         }.store(in: &subscriptions)
     }
