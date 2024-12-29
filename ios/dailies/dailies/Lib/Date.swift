@@ -38,3 +38,9 @@ func getCurrentTimestamp() -> Int {
 func getDateFromTimestamp(_ timestamp: Int) -> Date {
     return Date(timeIntervalSince1970: TimeInterval(timestamp) / 1000)
 }
+
+func getDateString(_ date: Date) -> String {
+    let dateFormatter = DateFormatter()
+    dateFormatter.dateFormat = "MMM d, yyyy"
+    return dateFormatter.string(from: date)
+}

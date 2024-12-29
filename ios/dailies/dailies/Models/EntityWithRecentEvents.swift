@@ -20,7 +20,7 @@ class EventsListViewModel: ObservableObject {
     init(entityId: String) {
         Task {
             client.subscribe(to: "events:list", with: ["entityId": entityId], yielding: [Event].self)
-                .handleEvents(receiveCompletion: logHandlers("events:list"))
+                .handleEvents(receiveCompletion: logCompletionHandlers("events:list"))
                 .replaceError(with: [])
                 .receive(on: DispatchQueue.main)
                 .assign(to: &$events)

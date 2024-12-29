@@ -35,7 +35,10 @@ struct ExercisePage: View {
         .navigationDestination(for: String.self) { entityId in
             if let entityViewModel = entityListModel.getEntity(id: entityId) {
                 if entityViewModel.type == .workoutMachineWithWeight {
-                    WorkoutMachineWithWeightPage(entityId: entityViewModel.id) {
+                    WorkoutMachineWithWeightPage(
+                        entityId: entityViewModel.id,
+                        entityName: entityViewModel.name
+                    ) {
                         showSaveSuccessToast = true
                     }
                 } else {

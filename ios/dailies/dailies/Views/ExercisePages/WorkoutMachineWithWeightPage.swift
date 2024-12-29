@@ -21,10 +21,12 @@ struct WorkoutMachineWithWeightPage: View {
     @Environment(\.dismiss) private var dismiss
 
     private let entityId: String
+    private let entityName: String
     private let onSave: () -> Void
 
-    init(entityId: String, onSave: @escaping () -> Void = {}) {
+    init(entityId: String, entityName: String, onSave: @escaping () -> Void = {}) {
         self.entityId = entityId
+        self.entityName = entityName
         self.onSave = onSave
 
         _eventsListViewModel = StateObject(wrappedValue: EventsListViewModel(entityId: entityId))
@@ -54,8 +56,7 @@ struct WorkoutMachineWithWeightPage: View {
                 }
             }
         }
-        // TODO: Better title
-        .navigationTitle("New event")
+        .navigationTitle("New workout")
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: handleSubmit) {
@@ -69,7 +70,7 @@ struct WorkoutMachineWithWeightPage: View {
 
     private func editForm() -> some View {
         Form {
-            Section {
+            Section(header: Text(self.entityName)) {
                 DatePicker(
                     "Date",
                     selection: $date,
@@ -77,16 +78,61 @@ struct WorkoutMachineWithWeightPage: View {
                     displayedComponents: .date
                 )
             }
+            Section(header: Text("Details")) {
+                self.detailsSection(
+                    weight: $weight,
+                    numReps: $numReps,
+                    numSets: $numSets
+                )
+            }
+            if let mostRecentEvent = eventsListViewModel.mostRecentEvent {
+                if case let .workoutMachineWithWeight(mostRecentDetails) = mostRecentEvent.details {
+                    Section(header: Text("Previous details")) {
+                        HStack {
+                            Text("Date")
+                            Spacer()
+                            Text(getDateString(getDateFromTimestamp(mostRecentEvent.timestamp)))
+                        }
+                        self.detailsSection(
+                            weight: Binding(get: { mostRecentDetails.weight }, set: { _ in }),
+                            numReps: Binding(get: { mostRecentDetails.numReps }, set: { _ in }),
+                            numSets: Binding(get: { mostRecentDetails.numSets }, set: { _ in }),
+                            isDisabled: true
+                        )
+                    }
+                }
+            }
+        }
+    }
 
-            Section(header: Text("Workout details")) {
-                TextField("Weight (lbs)", value: $weight, format: .number)
+    func detailsSection(
+        weight: Binding<Double?>,
+        numReps: Binding<Int?>,
+        numSets: Binding<Int?>,
+        isDisabled: Bool = false
+    ) -> some View {
+        Group {
+            HStack {
+                Text("Weight")
+                TextField("0", value: weight, format: .number)
                     .keyboardType(.decimalPad)
-
-                TextField("# Reps", value: $numReps, format: .number)
+                    .disabled(isDisabled)
+                    .multilineTextAlignment(.trailing)
+                Text("lbs").foregroundColor(.gray)
+            }
+            HStack {
+                Text("Repetitions")
+                TextField("0", value: numReps, format: .number)
                     .keyboardType(.numberPad)
-
-                TextField("# Sets", value: $numSets, format: .number)
+                    .disabled(isDisabled)
+                    .multilineTextAlignment(.trailing)
+            }
+            HStack {
+                Text("Sets")
+                TextField("0", value: numSets, format: .number)
                     .keyboardType(.numberPad)
+                    .disabled(isDisabled)
+                    .multilineTextAlignment(.trailing)
             }
         }
     }
@@ -117,4 +163,8 @@ struct WorkoutMachineWithWeightPage: View {
             }
         }
     }
+}
+
+#Preview {
+    WorkoutMachineWithWeightPage(entityId: "", entityName: "Test name")
 }

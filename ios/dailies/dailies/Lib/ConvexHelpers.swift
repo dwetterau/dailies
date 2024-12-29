@@ -6,7 +6,7 @@
 //
 import Combine
 
-func logHandlers<F: Error>(_ queryName: String) -> (Subscribers.Completion<F>) -> Void {
+func logCompletionHandlers<F: Error>(_ queryName: String) -> (Subscribers.Completion<F>) -> Void {
     return { completion in
         if case let .failure(error) = completion {
             // Log the error

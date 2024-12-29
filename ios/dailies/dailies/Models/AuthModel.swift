@@ -17,7 +17,7 @@ class AuthModel: ObservableObject {
         client.authState.replaceError(with: .unauthenticated)
             .handleEvents(receiveOutput: {
                 print("authState: receiveOutput", $0)
-            }, receiveCompletion: logHandlers("authState"))
+            }, receiveCompletion: logCompletionHandlers("authState"))
             .receive(on: DispatchQueue.main)
             .assign(to: &$authState)
         Task {

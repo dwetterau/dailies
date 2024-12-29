@@ -96,7 +96,7 @@ class FlashCardReviewModel: ObservableObject {
 
         Task {
             client.subscribe(to: "flashCards:listCards", yielding: [FlashCard].self)
-                .handleEvents(receiveCompletion: logHandlers("flashCards:listCards"))
+                .handleEvents(receiveCompletion: logCompletionHandlers("flashCards:listCards"))
                 .replaceError(with: [])
                 .receive(on: DispatchQueue.main)
                 .combineLatest($flashCards)
@@ -134,7 +134,7 @@ class FlashCardReviewModel: ObservableObject {
                     "endTimestamp": timeRange.end,
                 ],
             ], yielding: Event?.self)
-                .handleEvents(receiveCompletion: logHandlers("FlashCardReviewModel events:getCurrentDayEvent"))
+                .handleEvents(receiveCompletion: logCompletionHandlers("FlashCardReviewModel events:getCurrentDayEvent"))
                 .replaceError(with: nil)
                 .receive(on: DispatchQueue.main)
                 .combineLatest($reviewStats)

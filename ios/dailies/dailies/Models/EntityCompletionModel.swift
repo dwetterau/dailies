@@ -60,7 +60,7 @@ class EntityCompletionModel: ObservableObject {
                     "endTimestamp": timeRange.end,
                 ],
             ], yielding: Event?.self)
-                .handleEvents(receiveCompletion: logHandlers("EntityCompletionModel events:getCurrentDayEvent"))
+                .handleEvents(receiveCompletion: logCompletionHandlers("EntityCompletionModel events:getCurrentDayEvent"))
                 .replaceError(with: nil)
                 .receive(on: DispatchQueue.main)
                 .combineLatest($completionStats)

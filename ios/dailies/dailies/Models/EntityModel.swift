@@ -136,7 +136,7 @@ class EntityListModel: ObservableObject {
                 ],
                 yielding: Entities.self
             )
-            .handleEvents(receiveCompletion: logHandlers("entities:list"))
+            .handleEvents(receiveCompletion: logCompletionHandlers("entities:list"))
             .replaceError(with: Entities(entities: [], entityIdToIsDone: [:], entityIdToCompletionRatio: [:]))
             .receive(on: DispatchQueue.main)
             .assign(to: &$entitiesFromServer)
