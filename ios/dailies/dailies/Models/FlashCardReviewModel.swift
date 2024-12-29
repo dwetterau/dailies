@@ -164,7 +164,7 @@ class FlashCardReviewModel: ObservableObject {
             .store(in: &subscriptions)
 
         $reviewStats.sink { newValue in
-            if (isInTimeRange(getTimeRangeForDate(Date()), newValue.timestamp)) {
+            if isInTimeRange(getTimeRangeForDate(Date()), newValue.timestamp) {
                 saveToDisk(newValue, filename: flashCardReviewStatsFileName)
             } else {
                 print("completion stats were too old, and ignored")
