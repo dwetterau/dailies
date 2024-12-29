@@ -63,29 +63,6 @@ struct Entities: Decodable {
     }
 }
 
-class EntityModelWithEvents: ObservableObject {
-    @Published
-    var entity: Entity = emptyEntity
-
-    @Published
-    var events: [Event] = []
-    init(entity: Entity) {
-        self.entity = entity
-        Task {
-            client.subscribe(to: "entities:get", with: ["id": entity._id], yielding: Entity.self)
-                .handleEvents(receiveCompletion: logHandlers("entities:get"))
-                .replaceError(with: emptyEntity)
-                .receive(on: DispatchQueue.main)
-                .assign(to: &$entity)
-            client.subscribe(to: "events:list", with: ["entityId": entity._id], yielding: [Event].self)
-                .handleEvents(receiveCompletion: logHandlers("events:list"))
-                .replaceError(with: [])
-                .receive(on: DispatchQueue.main)
-                .assign(to: &$events)
-        }
-    }
-}
-
 func getColorForEntityCategory(_ entityCategory: EntityCategory) -> Color {
     switch entityCategory {
     case .care:
