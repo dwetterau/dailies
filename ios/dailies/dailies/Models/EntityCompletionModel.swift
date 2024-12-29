@@ -24,7 +24,9 @@ class EntityCompletionModel: ObservableObject {
 
     @Published
     private var completionStats: CompletionStats = .init(
-        timestamp: getCurrentTimestamp(),
+        // We don't want the initial value to be saved, since it might overwrite an older (but still current)
+        // value.
+        timestamp: 0,
         numCompletions: 0
     )
 
@@ -45,7 +47,7 @@ class EntityCompletionModel: ObservableObject {
                 print("Loaded completionStats from disk", loadedCompletionStats)
                 completionStats = loadedCompletionStats
             } else {
-                // TODO: Should we try to save these too?
+                // TODO: We should try to save these for the previous day
                 print("completion stats were too old, and ignored")
             }
         }
@@ -80,10 +82,14 @@ class EntityCompletionModel: ObservableObject {
         }
 
         $completionStats.sink { newValue in
-            saveToDisk(
-                newValue,
-                filename: getCompletionStatsFilename(entityId: entityViewModel.id)
-            )
+            if isInTimeRange(getTimeRangeForDate(Date()), newValue.timestamp) {
+                saveToDisk(
+                    newValue,
+                    filename: getCompletionStatsFilename(entityId: entityViewModel.id)
+                )
+            } else {
+                print("not saving old completionStats to disk")
+            }
         }.store(in: &subscriptions)
     }
 

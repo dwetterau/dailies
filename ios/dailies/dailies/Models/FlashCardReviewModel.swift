@@ -29,7 +29,9 @@ struct ReviewStats: Decodable, Encodable {
     init() {
         numReviewed = 0
         numCorrect = 0
-        timestamp = getCurrentTimestamp()
+        // We don't want the initial value to be saved, since it might overwrite an older (but still current)
+        // value.
+        timestamp = 0
     }
 
     init(numReviewed: Int, numCorrect: Int, timestamp: Int) {
@@ -39,9 +41,8 @@ struct ReviewStats: Decodable, Encodable {
     }
 
     func addReview(isCorrect: Bool) -> ReviewStats {
-        let storedDate = getDateFromTimestamp(timestamp)
         let numCorrectDelta = isCorrect ? 1 : 0
-        if !Calendar.current.isDate(storedDate, inSameDayAs: Date()) {
+        if !isInTimeRange(getTimeRangeForDate(Date()), timestamp) {
             return ReviewStats(numReviewed: 1, numCorrect: numCorrectDelta, timestamp: getCurrentTimestamp())
         } else {
             return ReviewStats(numReviewed: numReviewed + 1, numCorrect: numCorrect + numCorrectDelta, timestamp: timestamp)
@@ -88,7 +89,7 @@ class FlashCardReviewModel: ObservableObject {
                 print("Loaded reviewStats from disk")
                 reviewStats = loadedReviewStats
             } else {
-                // TODO: We should try to save these
+                // TODO: We should try to save these for the previous day
                 print("review stats were too old, and ignored")
             }
         }
@@ -163,7 +164,11 @@ class FlashCardReviewModel: ObservableObject {
             .store(in: &subscriptions)
 
         $reviewStats.sink { newValue in
-            saveToDisk(newValue, filename: flashCardReviewStatsFileName)
+            if (isInTimeRange(getTimeRangeForDate(Date()), newValue.timestamp)) {
+                saveToDisk(newValue, filename: flashCardReviewStatsFileName)
+            } else {
+                print("completion stats were too old, and ignored")
+            }
         }.store(in: &subscriptions)
     }
 
