@@ -16,9 +16,7 @@ enum EntityCategory: String, Codable {
 }
 
 enum EntityType: String, Codable {
-    case workoutMachineWithWeight
-    case workoutWithDistance
-    case workoutWithTime
+    case workout
     case genericCompletion
     case flashCards
     case duolingo
@@ -35,6 +33,7 @@ struct Entity: Decodable, Hashable {
     let type: EntityType
     let isRequiredDaily: Bool
     let numRequiredCompletions: Int?
+    let includedEventFields: [String]?
 }
 
 let emptyEntity = Entity(
@@ -42,9 +41,10 @@ let emptyEntity = Entity(
     ownerId: "",
     name: "",
     category: .exercise,
-    type: .workoutWithTime,
+    type: .workout,
     isRequiredDaily: false,
-    numRequiredCompletions: nil
+    numRequiredCompletions: nil,
+    includedEventFields: nil
 )
 
 struct Entities: Decodable {
@@ -102,6 +102,10 @@ class EntityViewModel: ObservableObject {
 
     public var name: String {
         return entity.name
+    }
+
+    public var includedEventFields: [String]? {
+        return entity.includedEventFields
     }
 
     public var buttonColor: Color {

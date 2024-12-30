@@ -18,9 +18,7 @@ const entityCategoriesSchema = v.union(
 )
 
 export enum EntityType {
-  WORKOUT_MACHINE_WITH_WEIGHT = "workoutMachineWithWeight",
-  WORKOUT_WITH_DISTANCE = "workoutWithDistance",
-  WORKOUT_WITH_TIME = "workoutWithTime",
+  WORKOUT = "workout",
   GENERIC_COMPLETION = "genericCompletion",
   FLASH_CARDS = "flashCards",
   DUOLINGO = "duolingo",
@@ -40,6 +38,8 @@ export const ENTITIES_SCHEMA = defineTable({
   category: entityCategoriesSchema,
   isRequiredDaily: v.boolean(),
   numRequiredCompletions: v.optional(v.number()),
+  // Used for some entity types to specify which fields are required on events for the entity.
+  includedEventFields: v.optional(v.string()),
   // TODO: Add a "resetAfterInterval" field - so that weekly events don't reset daily
 });
 
@@ -83,7 +83,7 @@ export const list = query({
             }
             break;
           }
-          case EntityType.WORKOUT_MACHINE_WITH_WEIGHT: {
+          case EntityType.WORKOUT: {
             entityIdToIsDone[entity._id] = !!currentEvent;
             entityIdToCompletionRatio[entity._id] = !!currentEvent ? 1 : 0 
             break;

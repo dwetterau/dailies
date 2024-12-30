@@ -16,7 +16,7 @@ struct ExercisePage: View {
         VStack(spacing: 20) {
             ForEach(entityListModel.getEntities(forCategory: .exercise), id: \.id) { entityViewModel in
                 switch entityViewModel.type {
-                case .workoutMachineWithWeight:
+                case .workout:
                     NavigationLink(value: entityViewModel.id) {
                         BigButton(
                             buttonText: entityViewModel.name,
@@ -34,15 +34,16 @@ struct ExercisePage: View {
         .navigationTitle("Exercise")
         .navigationDestination(for: String.self) { entityId in
             if let entityViewModel = entityListModel.getEntity(id: entityId) {
-                if entityViewModel.type == .workoutMachineWithWeight {
-                    WorkoutMachineWithWeightPage(
+                if entityViewModel.includedEventFields != nil && entityViewModel.type == .workout {
+                    WorkoutEditPage(
                         entityId: entityViewModel.id,
-                        entityName: entityViewModel.name
+                        entityName: entityViewModel.name,
+                        includedEventFields: entityViewModel.includedEventFields!
                     ) {
                         showSaveSuccessToast = true
                     }
                 } else {
-                    Text("unknown exercise entity destination")
+                    Text("could not navigate to exercise entity")
                 }
             } else {
                 Text("unknown exercise entity")

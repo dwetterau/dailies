@@ -5,23 +5,25 @@ import { getUserIdFromContextAsync } from "./users";
 import { DataModel, Doc, Id } from "./_generated/dataModel";
 
 export enum EventType {
-  WORKOUT_MACHINE_WITH_WEIGHT = "workoutMachineWithWeight",
+  WORKOUT = "workout",
   FLASH_CARDS = "flashCards",
   GENERIC_COMPLETION = "genericCompletion",
 }
 
 export const WORKOUT_DETAILS_SCHEMA = v.object({
-  type: v.literal(EventType.WORKOUT_MACHINE_WITH_WEIGHT),
+  type: v.literal(EventType.WORKOUT),
   payload: v.object({
-    weight: v.number(),
-    numReps: v.number(),
-    numSets: v.number(),
-    overrides: v.optional(
+    weight: v.optional(v.number()),
+    numReps: v.optional(v.number()),
+    numSets: v.optional(v.number()),
+    durationSeconds: v.optional(v.number()),
+    distance: v.optional(v.number()),
+    weightOverrides: v.optional(
       v.array(
         v.object({
-          weight: v.number(),
-          repIndex: v.number(),
-          setIndex: v.number(),
+          weight: v.optional(v.number()),
+          repIndex: v.optional(v.number()),
+          setIndex: v.optional(v.number()),
         })
       )
     ),
