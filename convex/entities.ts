@@ -39,7 +39,7 @@ export const ENTITIES_SCHEMA = defineTable({
   isRequiredDaily: v.boolean(),
   numRequiredCompletions: v.optional(v.number()),
   // Used for some entity types to specify which fields are required on events for the entity.
-  includedEventFields: v.optional(v.string()),
+  includedEventFields: v.optional(v.array(v.string())),
   // TODO: Add a "resetAfterInterval" field - so that weekly events don't reset daily
 });
 

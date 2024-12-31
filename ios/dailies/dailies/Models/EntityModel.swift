@@ -128,6 +128,7 @@ class EntityListModel: ObservableObject {
     private var subscriptions = Set<AnyCancellable>()
 
     init() {
+        print("Requesting entities")
         let timeRange = getTimeRangeForDate(Date())
         Task {
             client.subscribe(
@@ -140,7 +141,12 @@ class EntityListModel: ObservableObject {
                 ],
                 yielding: Entities.self
             )
-            .handleEvents(receiveCompletion: logCompletionHandlers("entities:list"))
+            .handleEvents(
+                receiveOutput: { _ in
+                    // print("receiveOutput - entities:list", output)
+                },
+                receiveCompletion: logCompletionHandlers("entities:list")
+            )
             .replaceError(with: Entities(entities: [], entityIdToIsDone: [:], entityIdToCompletionRatio: [:]))
             .receive(on: DispatchQueue.main)
             .assign(to: &$entitiesFromServer)
