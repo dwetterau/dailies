@@ -51,3 +51,11 @@ struct BigButton: View {
         }
     }
 }
+
+struct ScaleButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.95 : 1)
+            .animation(.spring(response: 0.3), value: configuration.isPressed)
+    }
+}

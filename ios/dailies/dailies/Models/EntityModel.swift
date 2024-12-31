@@ -77,6 +77,10 @@ func getColorForEntityCategory(_ entityCategory: EntityCategory) -> Color {
         return .green
     case .exercise:
         return .purple
+    case .tidying:
+        return .orange
+    case .thinking:
+        return .red
     default:
         return .gray
     }

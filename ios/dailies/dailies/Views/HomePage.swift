@@ -11,6 +11,8 @@ enum HomePageDestinations {
     case careButton
     case exerciseButton
     case learningButton
+    case tidyingButton
+    case thinkingButton
 }
 
 struct HomePage: View {
@@ -36,13 +38,19 @@ struct HomePage: View {
                 VStack(spacing: 20) {
                     NavigationLink(value: HomePageDestinations.learningButton) {
                         CategoryButton(entityListModel: entityListModel, category: .learning)
-                    }
+                    }.buttonStyle(ScaleButtonStyle())
                     NavigationLink(value: HomePageDestinations.careButton) {
                         CategoryButton(entityListModel: entityListModel, category: .care)
-                    }
+                    }.buttonStyle(ScaleButtonStyle())
                     NavigationLink(value: HomePageDestinations.exerciseButton) {
                         CategoryButton(entityListModel: entityListModel, category: .exercise)
-                    }
+                    }.buttonStyle(ScaleButtonStyle())
+                    NavigationLink(value: HomePageDestinations.tidyingButton) {
+                        CategoryButton(entityListModel: entityListModel, category: .tidying)
+                    }.buttonStyle(ScaleButtonStyle())
+                    NavigationLink(value: HomePageDestinations.thinkingButton) {
+                        CategoryButton(entityListModel: entityListModel, category: .thinking)
+                    }.buttonStyle(ScaleButtonStyle())
                     Spacer()
                     Button(action: {
                         authModel.logout()
@@ -60,6 +68,10 @@ struct HomePage: View {
                         LearningPage(entityListModel: entityListModel)
                     case .careButton:
                         CarePage(entityListModel: entityListModel)
+                    case .tidyingButton:
+                        TidyingPage(entityListModel: entityListModel)
+                    case .thinkingButton:
+                        ThinkingPage(entityListModel: entityListModel)
                     }
                 }
                 Spacer()

@@ -23,7 +23,7 @@ struct ExercisePage: View {
                             buttonCompleteColor: entityViewModel.buttonColor,
                             completionRatio: entityListModel.getCompletionRatio(for: entityViewModel.id)
                         )
-                    }
+                    }.buttonStyle(ScaleButtonStyle())
                 case .genericCompletion:
                     EntityCompletionButton(entityViewModel)
                 default:

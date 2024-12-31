@@ -27,6 +27,7 @@ struct EntityCompletionButton: View {
                 completionRatio: completionViewModel.completionRatio
             )
         }
+        .buttonStyle(ScaleButtonStyle())
         .disabled(completionViewModel.isComplete || completionViewModel.isSaving)
         .onTapGesture(count: 3) {
             showResetConfirmationAlert = true

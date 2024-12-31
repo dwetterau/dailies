@@ -29,7 +29,7 @@ struct LearningPage: View {
                         buttonCompleteColor: getColorForEntityCategory(.learning),
                         completionRatio: entityListModel.getCompletionRatio(for: flashCardsEntityId)
                     )
-                }
+                }.buttonStyle(ScaleButtonStyle())
             }
             ForEach(categoryPageModel.getEntityIdsForType(.genericCompletion), id: \.self) { entityId in
                 if let entityViewModel = entityListModel.getEntity(entityId) {
