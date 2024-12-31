@@ -42,14 +42,13 @@ struct WorkoutEditPage: View {
                 ProgressView()
             } else {
                 self.editForm()
-                // TODO: Also show the most recent event
             }
         }.task {
             for await isLoaded in eventsListViewModel.$loaded.values {
                 if isLoaded {
                     if let currentEvent = eventsListViewModel.currentEvent {
                         if case let .workout(workoutDetails) = currentEvent.details {
-                            eventId = currentEvent.entityId
+                            eventId = currentEvent._id
                             weight = workoutDetails.weight
                             numReps = workoutDetails.numReps
                             numSets = workoutDetails.numSets
@@ -68,8 +67,7 @@ struct WorkoutEditPage: View {
                 Button(action: handleSubmit) {
                     Text("Save")
                         .fontWeight(.bold)
-                    // TODO: Support saving edits - I think it needs a new endpoint
-                }.disabled(eventId != nil || isAnyRequiredFieldUnset())
+                }.disabled(isAnyRequiredFieldUnset())
             }
         }
     }
@@ -208,20 +206,28 @@ struct WorkoutEditPage: View {
         }
         Task {
             do {
-                try await client.mutation("events:create", with: [
-                    "entityId": entityId,
-                    "timestamp": Float64(getTimestampFromDate(date)),
-                    "details": EventType.workout(
-                        WorkoutDetails(
-                            weight: weight,
-                            numReps: numReps,
-                            numSets: numSets,
-                            durationSeconds: durationSeconds,
-                            distance: distance,
-                            weightOverrides: nil
-                        )
-                    ),
-                ])
+                let newWorkoutDetails = EventType.workout(
+                    WorkoutDetails(
+                        weight: weight,
+                        numReps: numReps,
+                        numSets: numSets,
+                        durationSeconds: durationSeconds,
+                        distance: distance,
+                        weightOverrides: nil
+                    )
+                )
+                if eventId == nil {
+                    try await client.mutation("events:create", with: [
+                        "entityId": entityId,
+                        "timestamp": Float64(getTimestampFromDate(date)),
+                        "details": newWorkoutDetails,
+                    ])
+                } else {
+                    try await client.mutation("events:update", with: [
+                        "id": eventId!,
+                        "details": newWorkoutDetails,
+                    ])
+                }
                 onSave()
                 dismiss()
             } catch let ClientError.ConvexError(data) {

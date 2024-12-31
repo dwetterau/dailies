@@ -1,4 +1,4 @@
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { defineTable, GenericDatabaseReader, GenericDataModel, GenericMutationCtx, GenericQueryCtx } from "convex/server";
 import { getUserIdFromContextAsync } from "./users";
@@ -168,5 +168,24 @@ export const upsertDayEvent = mutation({
         timestamp,
       });
     }
+  },
+})
+
+export const update = mutation({
+  args: {
+    id: v.id("events"),
+    details: allEventDetails,
+  },
+  handler: async (ctx, {id, details}) => {
+    // Confirm that the user owns this event
+    const ownerId = await getUserIdFromContextAsync(ctx);
+    const events = await ctx.db.query("events").filter(q => q.and(
+      q.eq(q.field("ownerId"), ownerId),
+      q.eq(q.field("_id"), id),
+    )).collect();
+    if (!events.length) {
+      throw new ConvexError(`Event not found: ${id}`);
+    }
+    await ctx.db.patch(id, {details});
   },
 })
