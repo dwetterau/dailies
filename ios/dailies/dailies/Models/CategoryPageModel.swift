@@ -9,7 +9,7 @@ import Combine
 import SwiftUI
 
 func getCategoryPageModelFilename(category: EntityCategory) -> String {
-    "CategoryPageModel-\(category.rawValue).json"
+    "CategoryPageModel-\(category.rawValue)-v2.json"
 }
 
 class CategoryPageModel: ObservableObject {
@@ -19,7 +19,7 @@ class CategoryPageModel: ObservableObject {
     // TODO: Also keep track of entityName and numRequiredCompletions, for substitution of
     // more models while offline
     @Published
-    private var entityTypeToId: [EntityType: String] = [:]
+    private var entityTypeToIds: [EntityType: [String]] = [:]
 
     @ObservedObject
     var entityListModel: EntityListModel
@@ -29,39 +29,44 @@ class CategoryPageModel: ObservableObject {
         self.entityListModel = entityListModel
         if let loadedPages = loadFromDisk(
             filename: getCategoryPageModelFilename(category: category),
-            type: [EntityType: String].self
+            type: [EntityType: [String]].self
         ) {
             print("Loaded pages for category \(category) from disk: \(loadedPages)")
-            entityTypeToId = loadedPages
+            entityTypeToIds = loadedPages
         } else {
-            entityTypeToId = getEntityTypeToId(from: entityListModel.entityViewModels)
+            entityTypeToIds = getEntityTypeToIds(from: entityListModel.entityViewModels)
         }
 
         entityListModel.$entityViewModels.sink { [weak self] newModels in
             guard let self = self else { return }
             // Exit early if `self` is nil
-            let newEntityTypeToId = self.getEntityTypeToId(from: newModels)
-            if newEntityTypeToId.isEmpty {
+            let newEntityTypeToIds = self.getEntityTypeToIds(from: newModels)
+            if newEntityTypeToIds.isEmpty {
                 print("Received empty entities, ignoring them")
             } else {
-                self.entityTypeToId = newEntityTypeToId
-                saveToDisk(newEntityTypeToId, filename: getCategoryPageModelFilename(category: category))
+                self.entityTypeToIds = newEntityTypeToIds
+                saveToDisk(newEntityTypeToIds, filename: getCategoryPageModelFilename(category: category))
             }
         }.store(in: &subscriptions)
     }
 
     public func getEntityIdForType(_ type: EntityType) -> String? {
-        entityTypeToId[type]
+        getEntityIdsForType(type).first
     }
 
-    func getEntityTypeToId(from entityViewModels: [EntityViewModel]) -> [EntityType: String] {
-        var entityTypeToId: [EntityType: String] = [:]
+    public func getEntityIdsForType(_ type: EntityType) -> [String] {
+        entityTypeToIds[type] ?? []
+    }
+
+    func getEntityTypeToIds(from entityViewModels: [EntityViewModel]) -> [EntityType: [String]] {
+        var entityTypeToId: [EntityType: [String]] = [:]
         for entityViewModel in entityViewModels {
             if entityViewModel.category == category {
                 if entityTypeToId[entityViewModel.type] != nil {
-                    print("WARNING: Overwriting entity type: \(entityViewModel.category)/\(entityViewModel.type)")
+                    entityTypeToId[entityViewModel.type]!.append(entityViewModel.id)
+                } else {
+                    entityTypeToId[entityViewModel.type] = [entityViewModel.id]
                 }
-                entityTypeToId[entityViewModel.type] = entityViewModel.id
             }
         }
         return entityTypeToId

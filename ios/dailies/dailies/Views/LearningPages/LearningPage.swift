@@ -22,7 +22,7 @@ struct LearningPage: View {
     var body: some View {
         VStack(spacing: 20) {
             if let flashCardsEntityId = categoryPageModel.getEntityIdForType(.flashCards) {
-                let buttonText = entityListModel.getEntity(id: flashCardsEntityId)?.name ?? "Flash cards"
+                let buttonText = entityListModel.getEntity(flashCardsEntityId)?.name ?? "Flash cards"
                 NavigationLink(value: "flashCards") {
                     BigButton(
                         buttonText: buttonText,
@@ -31,11 +31,10 @@ struct LearningPage: View {
                     )
                 }
             }
-            if let journalingEntity = entityListModel.getEntity(id: categoryPageModel.getEntityIdForType(.journaling)) {
-                EntityCompletionButton(journalingEntity)
-            }
-            if let duolingoEntity = entityListModel.getEntity(id: categoryPageModel.getEntityIdForType(.duolingo)) {
-                EntityCompletionButton(duolingoEntity)
+            ForEach(categoryPageModel.getEntityIdsForType(.genericCompletion), id: \.self) { entityId in
+                if let entityViewModel = entityListModel.getEntity(entityId) {
+                    EntityCompletionButton(entityViewModel)
+                }
             }
         }.navigationTitle("Learning")
             .navigationDestination(for: String.self) { destination in

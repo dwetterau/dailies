@@ -21,10 +21,6 @@ export enum EntityType {
   WORKOUT = "workout",
   GENERIC_COMPLETION = "genericCompletion",
   FLASH_CARDS = "flashCards",
-  DUOLINGO = "duolingo",
-  HYDRATION = "hydration",
-  JOURNALING = "journaling",
-  PRESCRIPTIONS = "prescriptions",
 }
 
 const entityTypesSchema = v.union(

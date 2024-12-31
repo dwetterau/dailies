@@ -29,10 +29,6 @@ enum EntityType: String, Codable {
     case workout
     case genericCompletion
     case flashCards
-    case duolingo
-    case hydration
-    case journaling
-    case prescriptions
 }
 
 struct Entity: Decodable, Hashable {
@@ -226,13 +222,13 @@ class EntityListModel: ObservableObject {
         }
     }
 
-    public func getEntity(forCategory category: EntityCategory, forType: EntityType) -> EntityViewModel? {
+    public func getEntity(forCategory category: EntityCategory, forType type: EntityType) -> EntityViewModel? {
         entityViewModels.first(where: { entityViewModel in
-            entityViewModel.category == category && entityViewModel.type == forType
+            entityViewModel.category == category && entityViewModel.type == type
         })
     }
 
-    public func getEntity(id: String?) -> EntityViewModel? {
+    public func getEntity(_ id: String?) -> EntityViewModel? {
         if id == nil {
             return nil
         }

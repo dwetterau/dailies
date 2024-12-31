@@ -12,11 +12,13 @@ struct CarePage: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            if let hydrationEntity = entityListModel.getEntity(forCategory: .care, forType: .hydration) {
-                EntityCompletionButton(hydrationEntity)
-            }
-            if let prescriptionsEntity = entityListModel.getEntity(forCategory: .care, forType: .prescriptions) {
-                EntityCompletionButton(prescriptionsEntity)
+            ForEach(entityListModel.getEntities(forCategory: .care), id: \.id) { entityViewModel in
+                switch entityViewModel.type {
+                case .genericCompletion:
+                    EntityCompletionButton(entityViewModel)
+                default:
+                    Text("unsupported entity type: \(entityViewModel.type)")
+                }
             }
         }.navigationTitle("Care")
     }

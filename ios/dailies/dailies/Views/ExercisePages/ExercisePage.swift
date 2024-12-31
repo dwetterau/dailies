@@ -33,7 +33,7 @@ struct ExercisePage: View {
         }
         .navigationTitle("Exercise")
         .navigationDestination(for: String.self) { entityId in
-            if let entityViewModel = entityListModel.getEntity(id: entityId) {
+            if let entityViewModel = entityListModel.getEntity(entityId) {
                 if entityViewModel.includedEventFields != nil && entityViewModel.type == .workout {
                     WorkoutEditPage(
                         entityId: entityViewModel.id,
