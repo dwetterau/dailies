@@ -32,7 +32,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		4F44A7DC2CFCCFDC00694873 /* dailes dev.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "dailes dev.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		4F44A7DC2CFCCFDC00694873 /* Dailies (dev).app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Dailies (dev).app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4F44A7EC2CFCCFDC00694873 /* dailiesTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = dailiesTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4F44A7F62CFCCFDC00694873 /* dailiesUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = dailiesUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4F4BCF962D1A415A0000D545 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -103,7 +103,7 @@
 		4F44A7DD2CFCCFDC00694873 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				4F44A7DC2CFCCFDC00694873 /* dailes dev.app */,
+				4F44A7DC2CFCCFDC00694873 /* Dailies (dev).app */,
 				4F44A7EC2CFCCFDC00694873 /* dailiesTests.xctest */,
 				4F44A7F62CFCCFDC00694873 /* dailiesUITests.xctest */,
 			);
@@ -120,9 +120,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		4F44A7DB2CFCCFDC00694873 /* dailes dev */ = {
+		4F44A7DB2CFCCFDC00694873 /* Dailies (dev) */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 4F44A8002CFCCFDC00694873 /* Build configuration list for PBXNativeTarget "dailes dev" */;
+			buildConfigurationList = 4F44A8002CFCCFDC00694873 /* Build configuration list for PBXNativeTarget "Dailies (dev)" */;
 			buildPhases = (
 				4F44A7D82CFCCFDC00694873 /* Sources */,
 				4F44A7D92CFCCFDC00694873 /* Frameworks */,
@@ -135,14 +135,14 @@
 			fileSystemSynchronizedGroups = (
 				4F44A7DE2CFCCFDC00694873 /* dailies */,
 			);
-			name = "dailes dev";
+			name = "Dailies (dev)";
 			packageProductDependencies = (
 				4FFF0EAA2D0E143300806225 /* ConvexMobile */,
 				4FFF0EAD2D0E146500806225 /* ConvexAuth0 */,
 				4F0B15982D19F45D00735BD4 /* AlertToast */,
 			);
 			productName = dailies;
-			productReference = 4F44A7DC2CFCCFDC00694873 /* dailes dev.app */;
+			productReference = 4F44A7DC2CFCCFDC00694873 /* Dailies (dev).app */;
 			productType = "com.apple.product-type.application";
 		};
 		4F44A7EB2CFCCFDC00694873 /* dailiesTests */ = {
@@ -233,7 +233,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				4F44A7DB2CFCCFDC00694873 /* dailes dev */,
+				4F44A7DB2CFCCFDC00694873 /* Dailies (dev) */,
 				4F44A7EB2CFCCFDC00694873 /* dailiesTests */,
 				4F44A7F52CFCCFDC00694873 /* dailiesUITests */,
 			);
@@ -293,12 +293,12 @@
 /* Begin PBXTargetDependency section */
 		4F44A7EE2CFCCFDC00694873 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 4F44A7DB2CFCCFDC00694873 /* dailes dev */;
+			target = 4F44A7DB2CFCCFDC00694873 /* Dailies (dev) */;
 			targetProxy = 4F44A7ED2CFCCFDC00694873 /* PBXContainerItemProxy */;
 		};
 		4F44A7F82CFCCFDC00694873 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 4F44A7DB2CFCCFDC00694873 /* dailes dev */;
+			target = 4F44A7DB2CFCCFDC00694873 /* Dailies (dev) */;
 			targetProxy = 4F44A7F72CFCCFDC00694873 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -571,7 +571,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		4F44A8002CFCCFDC00694873 /* Build configuration list for PBXNativeTarget "dailes dev" */ = {
+		4F44A8002CFCCFDC00694873 /* Build configuration list for PBXNativeTarget "Dailies (dev)" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4F44A8012CFCCFDC00694873 /* Debug */,

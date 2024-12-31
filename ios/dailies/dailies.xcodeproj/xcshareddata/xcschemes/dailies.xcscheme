@@ -16,8 +16,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "4F44A7DB2CFCCFDC00694873"
-               BuildableName = "dailes dev.app"
-               BlueprintName = "dailes dev"
+               BuildableName = "Dailies (dev).app"
+               BlueprintName = "Dailies (dev)"
                ReferencedContainer = "container:dailies.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -69,8 +69,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "4F44A7DB2CFCCFDC00694873"
-            BuildableName = "dailes dev.app"
-            BlueprintName = "dailes dev"
+            BuildableName = "Dailies (dev).app"
+            BlueprintName = "Dailies (dev)"
             ReferencedContainer = "container:dailies.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -93,8 +93,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "4F44A7DB2CFCCFDC00694873"
-            BuildableName = "dailes dev.app"
-            BlueprintName = "dailes dev"
+            BuildableName = "Dailies (dev).app"
+            BlueprintName = "Dailies (dev)"
             ReferencedContainer = "container:dailies.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

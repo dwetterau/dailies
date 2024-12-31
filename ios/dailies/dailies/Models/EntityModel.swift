@@ -171,6 +171,7 @@ class EntityListModel: ObservableObject {
     public func getCategoryCompletionRatio(for category: EntityCategory) -> CGFloat {
         var requiredEntityCount = 0
         var hasOptionalEntity = false
+        var numOptionalCompletions = 0
         var maxOptionalCompletionPercentage: CGFloat = 0
         var totalRequiredCompletionPercentage: CGFloat = 0
 
@@ -188,6 +189,9 @@ class EntityListModel: ObservableObject {
                 }
                 if isEntityDoneToday(entityId: entity._id) {
                     isAnyDone = true
+                    if !entity.isRequiredDaily {
+                        numOptionalCompletions += 1
+                    }
                 } else {
                     if entity.isRequiredDaily {
                         isRequiredEntityNotDone = true
@@ -199,7 +203,10 @@ class EntityListModel: ObservableObject {
             return 1
         }
         if requiredEntityCount > 0 {
-            return totalRequiredCompletionPercentage / CGFloat(requiredEntityCount)
+            // If a category has both optional and required completions,
+            // we want to show the optional completions in the bar, but they
+            // can never fill it up
+            return (totalRequiredCompletionPercentage + CGFloat(numOptionalCompletions)) / CGFloat(requiredEntityCount + numOptionalCompletions)
         } else {
             if !hasOptionalEntity {
                 // There are no entities?
