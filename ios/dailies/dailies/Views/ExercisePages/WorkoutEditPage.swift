@@ -56,6 +56,20 @@ struct WorkoutEditPage: View {
                             distance = workoutDetails.distance
                         }
                     }
+                    // If there isn't a current event but there is a most recent event - pre-fill the
+                    // details based off the previous event (these are also shown below).
+                    if eventId == nil {
+                        if let mostRecentEvent = eventsListViewModel.mostRecentEvent {
+                            if case let .workout(workoutDetails) = mostRecentEvent.details {
+                                weight = workoutDetails.weight
+                                numReps = workoutDetails.numReps
+                                numSets = workoutDetails.numSets
+                                durationSeconds = workoutDetails.durationSeconds
+                                distance = workoutDetails.distance
+                            }
+                        }
+                    }
+
                     self.initialStateLoaded = true
                     return
                 }
