@@ -13,6 +13,16 @@ enum EntityCategory: String, Codable {
     case care
     case thinking
     case tidying
+
+    func displayName() -> String {
+        switch self {
+        case .exercise: return "Exercise"
+        case .learning: return "Learning"
+        case .care: return "Care"
+        case .thinking: return "Thinking"
+        case .tidying: return "Tidying"
+        }
+    }
 }
 
 enum EntityType: String, Codable {

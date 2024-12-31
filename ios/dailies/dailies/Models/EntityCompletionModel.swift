@@ -87,8 +87,6 @@ class EntityCompletionModel: ObservableObject {
                     newValue,
                     filename: getCompletionStatsFilename(entityId: entityViewModel.id)
                 )
-            } else {
-                print("not saving old completionStats to disk")
             }
         }.store(in: &subscriptions)
     }

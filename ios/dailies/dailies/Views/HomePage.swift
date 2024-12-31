@@ -35,13 +35,13 @@ struct HomePage: View {
                 // Buttons Section
                 VStack(spacing: 20) {
                     NavigationLink(value: HomePageDestinations.learningButton) {
-                        LearningPageButton(entityListModel: self.entityListModel)
+                        CategoryButton(entityListModel: entityListModel, category: .learning)
                     }
                     NavigationLink(value: HomePageDestinations.careButton) {
-                        CarePageButton(entityListModel: self.entityListModel)
+                        CategoryButton(entityListModel: entityListModel, category: .care)
                     }
                     NavigationLink(value: HomePageDestinations.exerciseButton) {
-                        ExercisePageButton(entityListModel: self.entityListModel)
+                        CategoryButton(entityListModel: entityListModel, category: .exercise)
                     }
                     Spacer()
                     Button(action: {
