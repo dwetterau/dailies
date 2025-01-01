@@ -10,6 +10,11 @@ import Combine
 import ConvexMobile
 import SwiftUI
 
+func onSuccessfulLogin(source: String) {
+    print("Successfully logged in (from \(source)")
+    setupReminderNotification()
+}
+
 class AuthModel: ObservableObject {
     @Published var authState: AuthState<Credentials> = .loading
 
@@ -24,7 +29,7 @@ class AuthModel: ObservableObject {
             let result = await client.loginFromCache()
             switch result {
             case .success:
-                print("Successfully logged in (from cache)")
+                onSuccessfulLogin(source: "cache")
             case let .failure(error):
                 if error as? CredentialsManagerError == CredentialsManagerError.noCredentials {
                     print("No credentials in store found.")
@@ -46,7 +51,7 @@ class AuthModel: ObservableObject {
             let result = await client.login()
             switch result {
             case .success:
-                print("Successfully logged in")
+                onSuccessfulLogin(source: "explicit")
             case let .failure(error):
                 print("An unknown error occurred while trying to login \(error)")
             }
