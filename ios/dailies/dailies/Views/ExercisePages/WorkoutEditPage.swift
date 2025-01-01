@@ -8,14 +8,6 @@
 import ConvexMobile
 import SwiftUI
 
-func getHoursMinutesSeconds(forDurationSeconds durationSeconds: Double) -> (hours: Int, minutes: Int, seconds: Int) {
-    let hours = Int(durationSeconds / 3600)
-    let minutes = Int((durationSeconds - Double(hours) * 3600) / 60)
-    let seconds = Int(durationSeconds - Double(hours) * 3600 - Double(minutes) * 60)
-
-    return (hours, minutes, seconds)
-}
-
 struct WorkoutEditPage: View {
     @StateObject private var eventsListViewModel: EventsListViewModel
     @State private var initialStateLoaded = false
@@ -25,10 +17,6 @@ struct WorkoutEditPage: View {
     @State private var weight: Double? = nil
     @State private var numReps: Int? = nil
     @State private var numSets: Int? = nil
-
-    @State private var hours: Int = 0
-    @State private var minutes: Int = 0
-    @State private var seconds: Int = 0
 
     @State private var durationSeconds: Double? = nil
     @State private var distance: Double? = nil
@@ -71,9 +59,7 @@ struct WorkoutEditPage: View {
                             weight = workoutDetails.weight
                             numReps = workoutDetails.numReps
                             numSets = workoutDetails.numSets
-
-                            // TODO: also set hours, minutes, and seconds
-
+                            durationSeconds = workoutDetails.durationSeconds
                             distance = workoutDetails.distance
                         }
                     }
@@ -85,9 +71,7 @@ struct WorkoutEditPage: View {
                                 weight = workoutDetails.weight
                                 numReps = workoutDetails.numReps
                                 numSets = workoutDetails.numSets
-
-                                // TODO: also set hours, minutes, and seconds
-
+                                durationSeconds = workoutDetails.durationSeconds
                                 distance = workoutDetails.distance
                             }
                         }
@@ -122,7 +106,7 @@ struct WorkoutEditPage: View {
                 isAnyRequiredFieldUnset = isAnyRequiredFieldUnset || numSets == nil
             }
             if field == "durationSeconds" {
-                isAnyRequiredFieldUnset = isAnyRequiredFieldUnset || (hours == 0 && minutes == 0 && seconds == 0)
+                isAnyRequiredFieldUnset = isAnyRequiredFieldUnset || durationSeconds == nil
             }
             if field == "distance" {
                 isAnyRequiredFieldUnset = isAnyRequiredFieldUnset || distance == nil
@@ -147,12 +131,16 @@ struct WorkoutEditPage: View {
                 )
             }
             Section(header: Text("Details")) {
-                self.detailsSection(
+                WorkoutDetailsForm(
                     weight: $weight,
                     numReps: $numReps,
                     numSets: $numSets,
-                    hours: $hours,
-                    distance: $distance
+                    durationSeconds: $durationSeconds,
+                    distance: $distance,
+                    isDisabled: false,
+                    isFieldRequired: { fieldName in
+                        self.isFieldRequired(fieldName: fieldName)
+                    }
                 )
             }
             if let mostRecentEvent = eventsListViewModel.mostRecentEvent {
@@ -163,125 +151,20 @@ struct WorkoutEditPage: View {
                             Spacer()
                             Text(getDateString(getDateFromTimestamp(mostRecentEvent.timestamp)))
                         }
-                        self.detailsSection(
+                        WorkoutDetailsForm(
                             weight: Binding(get: { mostRecentDetails.weight }, set: { _ in }),
                             numReps: Binding(get: { mostRecentDetails.numReps }, set: { _ in }),
                             numSets: Binding(get: { mostRecentDetails.numSets }, set: { _ in }),
-                            hours: Binding(get: { getHoursMinutesSeconds(forDurationSeconds: mostRecentEvent.durationSeconds).hours }, set: { _ in }),
+                            durationSeconds: Binding(get: { mostRecentDetails.durationSeconds }, set: { _ in }),
                             distance: Binding(get: { mostRecentDetails.distance }, set: { _ in }),
-                            isDisabled: true
+                            isDisabled: true,
+                            isFieldRequired: { fieldName in
+                                self.isFieldRequired(fieldName: fieldName)
+                            }
                         )
                     }
                 }
             }
-        }
-    }
-
-    @ViewBuilder
-    func detailsSection(
-        weight: Binding<Double?>,
-        numReps: Binding<Int?>,
-        numSets: Binding<Int?>,
-        hours _: Binding<Int>,
-        distance: Binding<Double?>,
-        isDisabled: Bool = false
-    ) -> some View {
-        Group {
-            if isFieldRequired(fieldName: "weight") {
-                HStack {
-                    Text("Weight")
-                    TextField("0", value: weight, format: .number)
-                        .keyboardType(.decimalPad)
-                        .disabled(isDisabled)
-                        .multilineTextAlignment(.trailing)
-                    Text("lbs").foregroundColor(.gray)
-                }
-            }
-            if isFieldRequired(fieldName: "numReps") {
-                HStack {
-                    Text("Repetitions")
-                    TextField("0", value: numReps, format: .number)
-                        .keyboardType(.numberPad)
-                        .disabled(isDisabled)
-                        .multilineTextAlignment(.trailing)
-                }
-            }
-            if isFieldRequired(fieldName: "numSets") {
-                HStack {
-                    Text("Sets")
-                    TextField("0", value: numSets, format: .number)
-                        .keyboardType(.numberPad)
-                        .disabled(isDisabled)
-                        .multilineTextAlignment(.trailing)
-                }
-            }
-            if isFieldRequired(fieldName: "distance") {
-                HStack {
-                    Text("Distance")
-                    TextField("0", value: distance, format: .number)
-                        .keyboardType(.decimalPad)
-                        .disabled(isDisabled)
-                        .multilineTextAlignment(.trailing)
-                    Text("mi").foregroundColor(.gray)
-                }
-            }
-            if isFieldRequired(fieldName: "durationSeconds") {
-                Text("what")
-                // self.durationPicker(hours: hours, minutes: minutes, seconds: seconds)
-            }
-        }
-    }
-
-    @ViewBuilder
-    func durationPicker(
-        hours: Binding<Int>,
-        minutes: Binding<Int>,
-        seconds: Binding<Int>,
-        isDisabled: Bool
-    ) -> some View {
-        HStack {
-            Text("Duration")
-            Spacer()
-            Menu {
-                Picker("Hours", selection: hours) {
-                    ForEach(0 ..< 24) { hour in Text("\(hour)").tag(hour)
-                    }
-                }
-            }
-            label: {
-                Text("\(hours.wrappedValue)")
-                    .frame(minWidth: 15)
-                    .foregroundColor(.primary)
-            }.disabled(isDisabled)
-            Text("hr")
-
-            Menu {
-                Picker("Minutes", selection: minutes) {
-                    ForEach(0 ..< 60) { minute in
-                        Text("\(minute)").tag(minute)
-                    }
-                }
-            } label: {
-                Text("\(minutes.wrappedValue)")
-                    .frame(minWidth: 15)
-                    .foregroundColor(.primary)
-            }.disabled(isDisabled)
-
-            Text("min")
-
-            Menu {
-                Picker("Seconds", selection: seconds) {
-                    ForEach(0 ..< 60) { second in
-                        Text("\(String(format: "%02d", second))").tag(second)
-                    }
-                }
-            } label: {
-                Text("\(String(format: "%02d", seconds.wrappedValue))")
-                    .frame(minWidth: 30)
-                    .foregroundColor(.primary)
-            }.disabled(isDisabled)
-
-            Text("sec")
         }
     }
 
