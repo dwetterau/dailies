@@ -50,6 +50,10 @@ class CategoryPageModel: ObservableObject {
         }.store(in: &subscriptions)
     }
 
+    public func hasEntities() -> Bool {
+        return !entityTypeToIds.isEmpty
+    }
+
     public func getEntityIdForType(_ type: EntityType) -> String? {
         getEntityIdsForType(type).first
     }

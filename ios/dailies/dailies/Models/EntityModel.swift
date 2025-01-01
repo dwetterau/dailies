@@ -251,6 +251,10 @@ class EntityListModel: ObservableObject {
         })
     }
 
+    public func hasEntities(forCategory category: EntityCategory) -> Bool {
+        return !getEntities(forCategory: category).isEmpty
+    }
+
     public func getEntities(forCategory category: EntityCategory) -> [EntityViewModel] {
         entityViewModels.filter { entityViewModel in
             entityViewModel.category == category

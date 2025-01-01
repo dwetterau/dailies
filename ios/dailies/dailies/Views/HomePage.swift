@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-enum HomePageDestinations {
+enum HomePageDestination {
     case careButton
     case exerciseButton
     case learningButton
@@ -15,14 +15,36 @@ enum HomePageDestinations {
     case thinkingButton
 }
 
+func getHomePageDestination(forCategory category: EntityCategory) -> HomePageDestination {
+    switch category {
+    case .care:
+        .careButton
+    case .exercise:
+        .exerciseButton
+    case .learning:
+        .learningButton
+    case .tidying:
+        .tidyingButton
+    case .thinking:
+        .thinkingButton
+    }
+}
+
 struct HomePage: View {
     @StateObject
     var entityListModel: EntityListModel
+    @StateObject
+    var learningCategoryPageModel: CategoryPageModel
     var authModel: AuthModel
 
     init(authModel: AuthModel) {
         self.authModel = authModel
-        _entityListModel = StateObject(wrappedValue: EntityListModel())
+        let entityListModel = EntityListModel()
+        _entityListModel = StateObject(wrappedValue: entityListModel)
+        _learningCategoryPageModel = StateObject(wrappedValue: CategoryPageModel(
+            .learning,
+            entityListModel: entityListModel
+        ))
     }
 
     var body: some View {
@@ -36,21 +58,18 @@ struct HomePage: View {
 
                 // Buttons Section
                 VStack(spacing: 20) {
-                    NavigationLink(value: HomePageDestinations.learningButton) {
-                        CategoryButton(entityListModel: entityListModel, category: .learning)
-                    }.buttonStyle(ScaleButtonStyle())
-                    NavigationLink(value: HomePageDestinations.careButton) {
-                        CategoryButton(entityListModel: entityListModel, category: .care)
-                    }.buttonStyle(ScaleButtonStyle())
-                    NavigationLink(value: HomePageDestinations.exerciseButton) {
-                        CategoryButton(entityListModel: entityListModel, category: .exercise)
-                    }.buttonStyle(ScaleButtonStyle())
-                    NavigationLink(value: HomePageDestinations.tidyingButton) {
-                        CategoryButton(entityListModel: entityListModel, category: .tidying)
-                    }.buttonStyle(ScaleButtonStyle())
-                    NavigationLink(value: HomePageDestinations.thinkingButton) {
-                        CategoryButton(entityListModel: entityListModel, category: .thinking)
-                    }.buttonStyle(ScaleButtonStyle())
+                    if learningCategoryPageModel.hasEntities() {
+                        NavigationLink(value: HomePageDestination.learningButton) {
+                            CategoryButton(entityListModel: entityListModel, category: .learning)
+                        }.buttonStyle(ScaleButtonStyle())
+                    }
+                    ForEach([EntityCategory]([.care, .exercise, .tidying, .thinking]), id: \.self) { category in
+                        if entityListModel.hasEntities(forCategory: category) {
+                            NavigationLink(value: getHomePageDestination(forCategory: category)) {
+                                CategoryButton(entityListModel: entityListModel, category: category)
+                            }.buttonStyle(ScaleButtonStyle())
+                        }
+                    }
                     Spacer()
                     Button(action: {
                         authModel.logout()
@@ -60,12 +79,12 @@ struct HomePage: View {
                     }
                 }
                 .padding(.top, 100) // Spacing from the top
-                .navigationDestination(for: HomePageDestinations.self) { destination in
+                .navigationDestination(for: HomePageDestination.self) { destination in
                     switch destination {
                     case .exerciseButton:
                         ExercisePage(entityListModel: entityListModel)
                     case .learningButton:
-                        LearningPage(entityListModel: entityListModel)
+                        LearningPage(entityListModel: entityListModel, categoryPageModel: learningCategoryPageModel)
                     case .careButton:
                         CarePage(entityListModel: entityListModel)
                     case .tidyingButton:

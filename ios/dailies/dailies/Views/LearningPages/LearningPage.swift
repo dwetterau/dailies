@@ -9,15 +9,7 @@ import SwiftUI
 
 struct LearningPage: View {
     @ObservedObject var entityListModel: EntityListModel
-    @StateObject var categoryPageModel: CategoryPageModel
-
-    init(entityListModel: EntityListModel) {
-        self.entityListModel = entityListModel
-        _categoryPageModel = StateObject(wrappedValue: CategoryPageModel(
-            .learning,
-            entityListModel: entityListModel
-        ))
-    }
+    @ObservedObject var categoryPageModel: CategoryPageModel
 
     var body: some View {
         VStack(spacing: 20) {
