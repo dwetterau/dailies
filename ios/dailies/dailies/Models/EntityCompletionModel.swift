@@ -38,7 +38,7 @@ class EntityCompletionModel: ObservableObject {
     init(_ entityViewModel: EntityViewModel) {
         self.entityViewModel = entityViewModel
 
-        let timeRange = getTimeRangeForDate(Date())
+        let timeRange = getTimeRangeForDate(Date(), resetInterval: self.entityViewModel.resetInterval)
         if let loadedCompletionStats: CompletionStats = loadFromDisk(
             filename: getCompletionStatsFilename(entityId: self.entityViewModel.id),
             type: CompletionStats.self
@@ -53,14 +53,14 @@ class EntityCompletionModel: ObservableObject {
         }
 
         Task {
-            client.subscribe(to: "events:getCurrentDayEvent", with: [
+            client.subscribe(to: "events:getCurrentEvent", with: [
                 "entityId": self.entityViewModel.id,
                 "timeRange": [
                     "startTimestamp": timeRange.start,
                     "endTimestamp": timeRange.end,
                 ],
             ], yielding: Event?.self)
-                .handleEvents(receiveCompletion: logCompletionHandlers("EntityCompletionModel events:getCurrentDayEvent"))
+                .handleEvents(receiveCompletion: logCompletionHandlers("EntityCompletionModel events:getCurrentEvent"))
                 .replaceError(with: nil)
                 .receive(on: DispatchQueue.main)
                 .combineLatest($completionStats)
@@ -82,7 +82,10 @@ class EntityCompletionModel: ObservableObject {
         }
 
         $completionStats.sink { newValue in
-            if isInTimeRange(getTimeRangeForDate(Date()), newValue.timestamp) {
+            if isInTimeRange(
+                getTimeRangeForDate(Date(), resetInterval: entityViewModel.resetInterval),
+                newValue.timestamp
+            ) {
                 saveToDisk(
                     newValue,
                     filename: getCompletionStatsFilename(entityId: entityViewModel.id)
@@ -97,7 +100,10 @@ class EntityCompletionModel: ObservableObject {
 
     public func logCompletion() {
         let newTimestamp = getCurrentTimestamp()
-        let timeRange = getTimeRangeForDate(getDateFromTimestamp(newTimestamp))
+        let timeRange = getTimeRangeForDate(
+            getDateFromTimestamp(newTimestamp),
+            resetInterval: entityViewModel.resetInterval
+        )
         if isInTimeRange(timeRange, completionStats.timestamp) {
             if isComplete {
                 print("ignoring additional completion press")
@@ -143,10 +149,13 @@ class EntityCompletionModel: ObservableObject {
     private func saveCompletionStats(_ completionStats: CompletionStats, completionCallback: @escaping () -> Void) {
         isSaving = true
 
-        let timeRange = getTimeRangeForDate(getDateFromTimestamp(completionStats.timestamp))
+        let timeRange = getTimeRangeForDate(
+            getDateFromTimestamp(completionStats.timestamp),
+            resetInterval: entityViewModel.resetInterval
+        )
         Task {
             do {
-                try await client.mutation("events:upsertDayEvent", with: [
+                try await client.mutation("events:upsertCurrentEvent", with: [
                     "entityId": entityViewModel.id,
                     "timeRange": [
                         "startTimestamp": timeRange.start,

@@ -25,6 +25,7 @@ struct ReviewStats: Decodable, Encodable {
     let numReviewed: Int
     let numCorrect: Int
     let timestamp: Int
+    let resetInterval: ResetInterval
 
     init() {
         numReviewed = 0
@@ -32,20 +33,32 @@ struct ReviewStats: Decodable, Encodable {
         // We don't want the initial value to be saved, since it might overwrite an older (but still current)
         // value.
         timestamp = 0
+        resetInterval = .daily
     }
 
-    init(numReviewed: Int, numCorrect: Int, timestamp: Int) {
+    init(numReviewed: Int, numCorrect: Int, timestamp: Int, resetInterval: ResetInterval) {
         self.numReviewed = numReviewed
         self.numCorrect = numCorrect
         self.timestamp = timestamp
+        self.resetInterval = resetInterval
     }
 
     func addReview(isCorrect: Bool) -> ReviewStats {
         let numCorrectDelta = isCorrect ? 1 : 0
-        if !isInTimeRange(getTimeRangeForDate(Date()), timestamp) {
-            return ReviewStats(numReviewed: 1, numCorrect: numCorrectDelta, timestamp: getCurrentTimestamp())
+        if !isInTimeRange(getTimeRangeForDate(Date(), resetInterval: resetInterval), timestamp) {
+            return ReviewStats(
+                numReviewed: 1,
+                numCorrect: numCorrectDelta,
+                timestamp: getCurrentTimestamp(),
+                resetInterval: resetInterval
+            )
         } else {
-            return ReviewStats(numReviewed: numReviewed + 1, numCorrect: numCorrect + numCorrectDelta, timestamp: timestamp)
+            return ReviewStats(
+                numReviewed: numReviewed + 1,
+                numCorrect: numCorrect + numCorrectDelta,
+                timestamp: timestamp,
+                resetInterval: resetInterval
+            )
         }
     }
 
@@ -76,9 +89,9 @@ class FlashCardReviewModel: ObservableObject {
     private var subscriptions = Set<AnyCancellable>()
 
     // Note: We don't use a full entityViewModel so that we can support offline
-    init(_ entityId: String) {
+    init(_ entityId: String, resetInterval: ResetInterval) {
         self.entityId = entityId
-        let timeRange = getTimeRangeForDate(Date())
+        let timeRange = getTimeRangeForDate(Date(), resetInterval: resetInterval)
 
         if let loadedFlashCards: [FlashCard] = loadFromDisk(filename: flashCardFileName, type: [FlashCard].self) {
             print("Loaded \(loadedFlashCards.count) flash cards from disk")
@@ -127,14 +140,14 @@ class FlashCardReviewModel: ObservableObject {
                     return mergedFlashCards
                 }
                 .assign(to: &$flashCards)
-            client.subscribe(to: "events:getCurrentDayEvent", with: [
+            client.subscribe(to: "events:getCurrentEvent", with: [
                 "entityId": entityId,
                 "timeRange": [
                     "startTimestamp": timeRange.start,
                     "endTimestamp": timeRange.end,
                 ],
             ], yielding: Event?.self)
-                .handleEvents(receiveCompletion: logCompletionHandlers("FlashCardReviewModel events:getCurrentDayEvent"))
+                .handleEvents(receiveCompletion: logCompletionHandlers("FlashCardReviewModel events:getCurrentEvent"))
                 .replaceError(with: nil)
                 .receive(on: DispatchQueue.main)
                 .combineLatest($reviewStats)
@@ -145,7 +158,8 @@ class FlashCardReviewModel: ObservableObject {
                                 return ReviewStats(
                                     numReviewed: flashCardsEvent.numReviewed,
                                     numCorrect: flashCardsEvent.numCorrect,
-                                    timestamp: newCurrentEvent!.timestamp
+                                    timestamp: newCurrentEvent!.timestamp,
+                                    resetInterval: resetInterval
                                 )
                             }
                         }
@@ -164,7 +178,7 @@ class FlashCardReviewModel: ObservableObject {
             .store(in: &subscriptions)
 
         $reviewStats.sink { newValue in
-            if isInTimeRange(getTimeRangeForDate(Date()), newValue.timestamp) {
+            if isInTimeRange(getTimeRangeForDate(Date(), resetInterval: newValue.resetInterval), newValue.timestamp) {
                 saveToDisk(newValue, filename: flashCardReviewStatsFileName)
             } else {
                 print("completion stats were too old, and ignored")
@@ -217,13 +231,13 @@ class FlashCardReviewModel: ObservableObject {
             ["id": card._id, "reviewStatus": card.reviewStatus!]
         }
         let timestamp = reviewStats.timestamp
-        let timeRange = getTimeRangeForDate(getDateFromTimestamp(timestamp))
+        let timeRange = getTimeRangeForDate(getDateFromTimestamp(timestamp), resetInterval: reviewStats.resetInterval)
         Task {
             do {
                 try await client.mutation("flashCards:startSaveReviewStatus", with: [
                     "cards": cardsToSave,
                 ])
-                try await client.mutation("events:upsertDayEvent", with: [
+                try await client.mutation("events:upsertCurrentEvent", with: [
                     "entityId": self.entityId,
                     "timeRange": [
                         "startTimestamp": timeRange.start,

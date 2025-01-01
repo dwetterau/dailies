@@ -37,9 +37,10 @@ struct Entity: Decodable, Hashable {
     let name: String
     let category: EntityCategory
     let type: EntityType
-    let isRequiredDaily: Bool
+    let isRequired: Bool
     let numRequiredCompletions: Int?
     let includedEventFields: [String]?
+    let resetAfterInterval: ResetInterval
 }
 
 let emptyEntity = Entity(
@@ -48,9 +49,10 @@ let emptyEntity = Entity(
     name: "",
     category: .exercise,
     type: .workout,
-    isRequiredDaily: false,
+    isRequired: false,
     numRequiredCompletions: nil,
-    includedEventFields: nil
+    includedEventFields: nil,
+    resetAfterInterval: .daily
 )
 
 struct Entities: Decodable {
@@ -81,8 +83,6 @@ func getColorForEntityCategory(_ entityCategory: EntityCategory) -> Color {
         return .orange
     case .thinking:
         return .red
-    default:
-        return .gray
     }
 }
 
@@ -125,6 +125,10 @@ class EntityViewModel: ObservableObject {
     public var numRequiredCompletions: Int {
         return entity.numRequiredCompletions ?? 0
     }
+
+    public var resetInterval: ResetInterval {
+        return entity.resetAfterInterval
+    }
 }
 
 class EntityListModel: ObservableObject {
@@ -139,14 +143,20 @@ class EntityListModel: ObservableObject {
 
     init() {
         print("Requesting entities")
-        let timeRange = getTimeRangeForDate(Date())
+        let now = Date()
+        let dailyTimeRange = getDayTimeRangeForDate(now)
+        let weeklyTimeRange = getWeekTimeRangeForDate(now)
         Task {
             client.subscribe(
                 to: "entities:list",
                 with: [
-                    "timeRange": [
-                        "startTimestamp": timeRange.start,
-                        "endTimestamp": timeRange.end,
+                    "dailyTimeRange": [
+                        "startTimestamp": dailyTimeRange.start,
+                        "endTimestamp": dailyTimeRange.end,
+                    ],
+                    "weeklyTimeRange": [
+                        "startTimestamp": weeklyTimeRange.start,
+                        "endTimestamp": weeklyTimeRange.end,
                     ],
                 ],
                 yielding: Entities.self
@@ -190,7 +200,7 @@ class EntityListModel: ObservableObject {
 
         for entity in entitiesFromServer.entities {
             if entity.category == category {
-                if entity.isRequiredDaily {
+                if entity.isRequired {
                     requiredEntityCount += 1
                     totalRequiredCompletionPercentage += getCompletionRatio(for: entity._id)
                 } else {
@@ -199,11 +209,11 @@ class EntityListModel: ObservableObject {
                 }
                 if isEntityDoneToday(entityId: entity._id) {
                     isAnyDone = true
-                    if !entity.isRequiredDaily {
+                    if !entity.isRequired {
                         numOptionalCompletions += 1
                     }
                 } else {
-                    if entity.isRequiredDaily {
+                    if entity.isRequired {
                         isRequiredEntityNotDone = true
                     }
                 }

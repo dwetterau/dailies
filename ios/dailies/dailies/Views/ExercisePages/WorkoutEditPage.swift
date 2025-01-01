@@ -27,13 +27,19 @@ struct WorkoutEditPage: View {
     private let includedEventFields: Set<String>
     private let onSave: () -> Void
 
-    init(entityId: String, entityName: String, includedEventFields: [String], onSave: @escaping () -> Void = {}) {
+    init(
+        entityId: String,
+        entityName: String,
+        includedEventFields: [String],
+        resetInterval: ResetInterval,
+        onSave: @escaping () -> Void = {}
+    ) {
         self.entityId = entityId
         self.entityName = entityName
         self.includedEventFields = Set(includedEventFields)
         self.onSave = onSave
 
-        _eventsListViewModel = StateObject(wrappedValue: EventsListViewModel(entityId: entityId))
+        _eventsListViewModel = StateObject(wrappedValue: EventsListViewModel(entityId: entityId, resetInterval: resetInterval))
     }
 
     var body: some View {
@@ -257,5 +263,10 @@ struct WorkoutEditPage: View {
 }
 
 #Preview {
-    WorkoutEditPage(entityId: "", entityName: "Test name", includedEventFields: ["distance", "durationSeconds"])
+    WorkoutEditPage(
+        entityId: "",
+        entityName: "Test name",
+        includedEventFields: ["distance", "durationSeconds"],
+        resetInterval: .daily
+    )
 }

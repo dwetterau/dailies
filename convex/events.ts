@@ -99,7 +99,7 @@ export const create = mutation({
   },
 });
 
-export const getCurrentEvent = async ({
+export const getCurrentEventWithDb = async ({
   db,
   ownerId,
   entityId,
@@ -126,7 +126,7 @@ export const getCurrentEvent = async ({
     return existingEvents[0] ?? null;
 }
 
-export const getCurrentDayEvent = query({
+export const getCurrentEvent = query({
   args: {
     entityId: v.id("entities"),
     timeRange: v.object({
@@ -136,11 +136,11 @@ export const getCurrentDayEvent = query({
   },
   handler: async (ctx, {entityId, timeRange}) => {
     const ownerId = await getUserIdFromContextAsync(ctx)
-    return await getCurrentEvent({db: ctx.db, ownerId, entityId, timeRange});
+    return await getCurrentEventWithDb({db: ctx.db, ownerId, entityId, timeRange});
   },
 })
 
-export const upsertDayEvent = mutation({
+export const upsertCurrentEvent = mutation({
   args: {
     entityId: v.id("entities"),
     timeRange: v.object({
@@ -152,15 +152,15 @@ export const upsertDayEvent = mutation({
   },
   handler: async (ctx, { entityId, details, timeRange, timestamp }) => {
     const ownerId = await getUserIdFromContextAsync(ctx)
-    const existingEvent = await getCurrentEvent({db: ctx.db, ownerId, timeRange, entityId});
+    const existingEvent = await getCurrentEventWithDb({db: ctx.db, ownerId, timeRange, entityId});
     if (existingEvent) {
-      console.log("Patching current day event to", details)
+      console.log("Patching current interval event to", details)
       await ctx.db.patch(existingEvent._id, {
         timestamp,
         details,
       });
     } else {
-      // No existing event for the day - create it
+      // No existing event for the interval - create it
       await ctx.db.insert("events", {
         details,
         entityId,

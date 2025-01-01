@@ -38,7 +38,8 @@ struct ExercisePage: View {
                     WorkoutEditPage(
                         entityId: entityViewModel.id,
                         entityName: entityViewModel.name,
-                        includedEventFields: entityViewModel.includedEventFields!
+                        includedEventFields: entityViewModel.includedEventFields!,
+                        resetInterval: entityViewModel.resetInterval
                     ) {
                         showSaveSuccessToast = true
                     }

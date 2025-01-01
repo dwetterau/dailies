@@ -16,8 +16,10 @@ class EventsListViewModel: ObservableObject {
     public private(set) var loaded: Bool = false
 
     private var subscriptions = Set<AnyCancellable>()
+    private let resetInterval: ResetInterval
 
-    init(entityId: String) {
+    init(entityId: String, resetInterval: ResetInterval) {
+        self.resetInterval = resetInterval
         Task {
             client.subscribe(to: "events:list", with: ["entityId": entityId], yielding: [Event].self)
                 .handleEvents(receiveCompletion: logCompletionHandlers("events:list"))
@@ -34,7 +36,10 @@ class EventsListViewModel: ObservableObject {
 
     public var currentEvent: Event? {
         let currentTimestamp = getCurrentTimestamp()
-        let timeRange = getTimeRangeForDate(getDateFromTimestamp(currentTimestamp))
+        let timeRange = getTimeRangeForDate(
+            getDateFromTimestamp(currentTimestamp),
+            resetInterval: resetInterval
+        )
 
         let event = events.first { event in
             Float64(event.timestamp) >= timeRange.start &&
@@ -47,7 +52,10 @@ class EventsListViewModel: ObservableObject {
         var maxTimestampEvent: Event? = nil
 
         let currentTimestamp = getCurrentTimestamp()
-        let timeRange = getTimeRangeForDate(getDateFromTimestamp(currentTimestamp))
+        let timeRange = getTimeRangeForDate(
+            getDateFromTimestamp(currentTimestamp),
+            resetInterval: resetInterval
+        )
         for event in events {
             // We intentionally skip the "current" event
             if Float64(event.timestamp) >= timeRange.start &&

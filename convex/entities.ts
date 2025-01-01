@@ -3,7 +3,7 @@ import { mutation, query } from "./_generated/server";
 import { defineTable } from "convex/server";
 import { getUserIdFromContextAsync } from "./users";
 import { Id } from "./_generated/dataModel";
-import { EventType, getCurrentEvent } from "./events";
+import { EventType, getCurrentEventWithDb } from "./events";
 
 export enum EntityCategory {
   EXERCISE = "exercise",
@@ -32,22 +32,26 @@ export const ENTITIES_SCHEMA = defineTable({
   name: v.string(),
   type: entityTypesSchema,
   category: entityCategoriesSchema,
-  isRequiredDaily: v.boolean(),
+  isRequired: v.boolean(),
   numRequiredCompletions: v.optional(v.number()),
   // Used for some entity types to specify which fields are required on events for the entity.
   includedEventFields: v.optional(v.array(v.string())),
-  // TODO: Add a "resetAfterInterval" field - so that weekly events don't reset daily
+  resetAfterInterval: v.union(v.literal("daily"), v.literal("weekly")),
 });
 
 export const list = query({
   args: {
-    timeRange: v.optional(v.object({
+    weeklyTimeRange: v.optional(v.object({
+      startTimestamp: v.number(),
+      endTimestamp: v.number(),
+    })),
+    dailyTimeRange: v.optional(v.object({
       startTimestamp: v.number(),
       endTimestamp: v.number(),
     })),
     type: v.optional(entityTypesSchema),
   },
-  handler: async (ctx, { timeRange, type }) => {
+  handler: async (ctx, { dailyTimeRange, type, weeklyTimeRange }) => {
     const ownerId = await getUserIdFromContextAsync(ctx)
     const entities = await ctx.db
       .query("entities")
@@ -59,10 +63,11 @@ export const list = query({
 
     const entityIdToIsDone: Record<Id<"entities">, boolean> = {};
     const entityIdToCompletionRatio: Record<Id<"entities">, number> = {};
-    if (timeRange) {
+    if (dailyTimeRange && weeklyTimeRange) {
       for (const entity of entities) {
         // TODO: Can this happen in parallel?
-        const currentEvent = await getCurrentEvent({db: ctx.db, ownerId, entityId: entity._id, timeRange});
+        const timeRange = entity.resetAfterInterval === "daily" ? dailyTimeRange : weeklyTimeRange;
+        const currentEvent = await getCurrentEventWithDb({db: ctx.db, ownerId, entityId: entity._id, timeRange});
         if (currentEvent?.details.type === EventType.GENERIC_COMPLETION) {
           // TODO: We probably don't need both of these numRequiredCompletions fields (on the entity too)
           const {numCompletions, numRequiredCompletions} = currentEvent.details.payload;
@@ -134,7 +139,8 @@ export const create = mutation({
       ownerId,
       type,
       category,
-      isRequiredDaily: false,
+      isRequired: false,
+      resetAfterInterval: "daily",
     });
   },
 });

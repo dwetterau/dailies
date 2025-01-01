@@ -15,7 +15,11 @@ struct FlashCardReviewPage: View {
     @State var showLoadSuccessToast = false
 
     init(_ entityId: String) {
-        _viewModel = StateObject(wrappedValue: FlashCardReviewModel(entityId))
+        // TODO: Finish supporting weekly mode for flash card review
+        _viewModel = StateObject(wrappedValue: FlashCardReviewModel(
+            entityId,
+            resetInterval: .daily
+        ))
     }
 
     var body: some View {
