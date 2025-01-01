@@ -8,6 +8,14 @@
 import ConvexMobile
 import SwiftUI
 
+func getHoursMinutesSeconds(forDurationSeconds durationSeconds: Double) -> (hours: Int, minutes: Int, seconds: Int) {
+    let hours = Int(durationSeconds / 3600)
+    let minutes = Int((durationSeconds - Double(hours) * 3600) / 60)
+    let seconds = Int(durationSeconds - Double(hours) * 3600 - Double(minutes) * 60)
+
+    return (hours, minutes, seconds)
+}
+
 struct WorkoutEditPage: View {
     @StateObject private var eventsListViewModel: EventsListViewModel
     @State private var initialStateLoaded = false
@@ -17,6 +25,11 @@ struct WorkoutEditPage: View {
     @State private var weight: Double? = nil
     @State private var numReps: Int? = nil
     @State private var numSets: Int? = nil
+
+    @State private var hours: Int = 0
+    @State private var minutes: Int = 0
+    @State private var seconds: Int = 0
+
     @State private var durationSeconds: Double? = nil
     @State private var distance: Double? = nil
 
@@ -58,7 +71,9 @@ struct WorkoutEditPage: View {
                             weight = workoutDetails.weight
                             numReps = workoutDetails.numReps
                             numSets = workoutDetails.numSets
-                            durationSeconds = workoutDetails.durationSeconds
+
+                            // TODO: also set hours, minutes, and seconds
+
                             distance = workoutDetails.distance
                         }
                     }
@@ -70,7 +85,9 @@ struct WorkoutEditPage: View {
                                 weight = workoutDetails.weight
                                 numReps = workoutDetails.numReps
                                 numSets = workoutDetails.numSets
-                                durationSeconds = workoutDetails.durationSeconds
+
+                                // TODO: also set hours, minutes, and seconds
+
                                 distance = workoutDetails.distance
                             }
                         }
@@ -105,7 +122,7 @@ struct WorkoutEditPage: View {
                 isAnyRequiredFieldUnset = isAnyRequiredFieldUnset || numSets == nil
             }
             if field == "durationSeconds" {
-                isAnyRequiredFieldUnset = isAnyRequiredFieldUnset || durationSeconds == nil
+                isAnyRequiredFieldUnset = isAnyRequiredFieldUnset || (hours == 0 && minutes == 0 && seconds == 0)
             }
             if field == "distance" {
                 isAnyRequiredFieldUnset = isAnyRequiredFieldUnset || distance == nil
@@ -118,6 +135,7 @@ struct WorkoutEditPage: View {
         includedEventFields.contains(fieldName)
     }
 
+    @ViewBuilder
     private func editForm() -> some View {
         Form {
             Section(header: Text(self.entityName)) {
@@ -133,7 +151,7 @@ struct WorkoutEditPage: View {
                     weight: $weight,
                     numReps: $numReps,
                     numSets: $numSets,
-                    durationSeconds: $durationSeconds,
+                    hours: $hours,
                     distance: $distance
                 )
             }
@@ -149,7 +167,7 @@ struct WorkoutEditPage: View {
                             weight: Binding(get: { mostRecentDetails.weight }, set: { _ in }),
                             numReps: Binding(get: { mostRecentDetails.numReps }, set: { _ in }),
                             numSets: Binding(get: { mostRecentDetails.numSets }, set: { _ in }),
-                            durationSeconds: Binding(get: { mostRecentDetails.durationSeconds }, set: { _ in }),
+                            hours: Binding(get: { getHoursMinutesSeconds(forDurationSeconds: mostRecentEvent.durationSeconds).hours }, set: { _ in }),
                             distance: Binding(get: { mostRecentDetails.distance }, set: { _ in }),
                             isDisabled: true
                         )
@@ -159,11 +177,12 @@ struct WorkoutEditPage: View {
         }
     }
 
+    @ViewBuilder
     func detailsSection(
         weight: Binding<Double?>,
         numReps: Binding<Int?>,
         numSets: Binding<Int?>,
-        durationSeconds: Binding<Double?>,
+        hours _: Binding<Int>,
         distance: Binding<Double?>,
         isDisabled: Bool = false
     ) -> some View {
@@ -207,15 +226,62 @@ struct WorkoutEditPage: View {
                 }
             }
             if isFieldRequired(fieldName: "durationSeconds") {
-                // TODO: see if there is a better duration picker
-                HStack {
-                    Text("Duration")
-                    TextField("0", value: durationSeconds, format: .number)
-                        .keyboardType(.numberPad)
-                        .disabled(isDisabled)
-                        .multilineTextAlignment(.trailing)
+                Text("what")
+                // self.durationPicker(hours: hours, minutes: minutes, seconds: seconds)
+            }
+        }
+    }
+
+    @ViewBuilder
+    func durationPicker(
+        hours: Binding<Int>,
+        minutes: Binding<Int>,
+        seconds: Binding<Int>,
+        isDisabled: Bool
+    ) -> some View {
+        HStack {
+            Text("Duration")
+            Spacer()
+            Menu {
+                Picker("Hours", selection: hours) {
+                    ForEach(0 ..< 24) { hour in Text("\(hour)").tag(hour)
+                    }
                 }
             }
+            label: {
+                Text("\(hours.wrappedValue)")
+                    .frame(minWidth: 15)
+                    .foregroundColor(.primary)
+            }.disabled(isDisabled)
+            Text("hr")
+
+            Menu {
+                Picker("Minutes", selection: minutes) {
+                    ForEach(0 ..< 60) { minute in
+                        Text("\(minute)").tag(minute)
+                    }
+                }
+            } label: {
+                Text("\(minutes.wrappedValue)")
+                    .frame(minWidth: 15)
+                    .foregroundColor(.primary)
+            }.disabled(isDisabled)
+
+            Text("min")
+
+            Menu {
+                Picker("Seconds", selection: seconds) {
+                    ForEach(0 ..< 60) { second in
+                        Text("\(String(format: "%02d", second))").tag(second)
+                    }
+                }
+            } label: {
+                Text("\(String(format: "%02d", seconds.wrappedValue))")
+                    .frame(minWidth: 30)
+                    .foregroundColor(.primary)
+            }.disabled(isDisabled)
+
+            Text("sec")
         }
     }
 
