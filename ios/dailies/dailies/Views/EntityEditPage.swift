@@ -37,13 +37,9 @@ struct EntityEditPage: View {
                     TextField("Entity...", text: $name)
                         .keyboardType(.default)
                 }
-                Section(header: Text("Category")) {
+                Section(header: Text("Options")) {
                     self.categoryMenu()
-                }
-                Section(header: Text("Type")) {
                     self.typeMenu()
-                }
-                Section(header: Text("Frequency")) {
                     self.isRequiredPicker()
                     self.resetIntervalMenu()
                     if requiresNumberOfCompletions() {
@@ -65,42 +61,29 @@ struct EntityEditPage: View {
 
     @ViewBuilder
     func categoryMenu() -> some View {
-        Menu {
-            Picker("Category", selection: $category) {
-                ForEach(EntityCategory.allCases, id: \.self) { category in
-                    Text(category.displayName())
-                }
+        Picker("Category", selection: $category) {
+            ForEach(EntityCategory.allCases, id: \.self) { category in
+                Text(category.displayName()).tag(category)
             }
-        } label: {
-            Text("\(category.displayName())")
-                .foregroundColor(.primary)
-        }
+        }.pickerStyle(MenuPickerStyle())
     }
 
     @ViewBuilder
     func typeMenu() -> some View {
-        Menu {
-            Picker("Type", selection: $type) {
-                ForEach(EntityType.allCases, id: \.self) { type in
-                    Text(type.displayName())
-                }
+        Picker("Type", selection: $type) {
+            ForEach(EntityType.allCases, id: \.self) { type in
+                Text(type.displayName()).tag(type)
             }
-        } label: {
-            Text("\(type.displayName())")
-        }
+        }.pickerStyle(MenuPickerStyle())
     }
 
     @ViewBuilder
     func resetIntervalMenu() -> some View {
-        Menu {
-            Picker("ResetInterval", selection: $resetInterval) {
-                ForEach(ResetInterval.allCases, id: \.self) { type in
-                    Text(type.displayName())
-                }
+        Picker("Interval", selection: $resetInterval) {
+            ForEach(ResetInterval.allCases, id: \.self) { type in
+                Text(type.displayName()).tag(type)
             }
-        } label: {
-            Text("\(resetInterval.displayName())")
-        }
+        }.pickerStyle(MenuPickerStyle())
     }
 
     @ViewBuilder
@@ -115,7 +98,7 @@ struct EntityEditPage: View {
     @ViewBuilder
     func numRequiredCompletionsInput() -> some View {
         HStack {
-            Text("# Completions")
+            Text("Completions / Interval")
             TextField("0", value: $numRequiredCompletions, format: .number)
                 .keyboardType(.numberPad)
                 .multilineTextAlignment(.trailing)
@@ -138,9 +121,12 @@ struct EntityEditPage: View {
         var newEntityArgs: [String: ConvexEncodable] = [
             "name": name,
             "category": category.rawValue,
+            "type": type.rawValue,
+            "isRequired": isRequired,
+            "resetAfterInterval": resetInterval.rawValue,
         ]
         if requiresNumberOfCompletions() {
-            newEntityArgs["numRequiredCompletions"] = numRequiredCompletions!
+            newEntityArgs["numRequiredCompletions"] = Float64(numRequiredCompletions!)
         }
         Task {
             do {

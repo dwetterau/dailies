@@ -33,7 +33,7 @@ enum EntityType: String, Codable, CaseIterable {
     func displayName() -> String {
         switch self {
         case .workout: return "Workout"
-        case .genericCompletion: return "# Completions"
+        case .genericCompletion: return "Completions"
         case .flashCards: return "Flash Cards"
         }
     }
