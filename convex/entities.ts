@@ -1,4 +1,4 @@
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { defineTable } from "convex/server";
 import { getUserIdFromContextAsync } from "./users";
@@ -131,16 +131,42 @@ export const create = mutation({
     name: v.string(),
     type: entityTypesSchema,
     category: entityCategoriesSchema,
+    isRequired: v.boolean(),
+    resetAfterInterval: v.union(v.literal("daily"), v.literal("weekly")),
+    numRequiredCompletions: v.optional(v.number()),
   },
-  handler: async (ctx, { category, name, type }) => {
+  handler: async (ctx, args) => {
     const ownerId = await getUserIdFromContextAsync(ctx)
     await ctx.db.insert("entities", {
-      name,
+      ...args,
       ownerId,
-      type,
-      category,
-      isRequired: false,
-      resetAfterInterval: "daily",
     });
   },
 });
+
+export const update = mutation({
+  args: {
+    id: v.id("entities"),
+    name: v.string(),
+    type: entityTypesSchema,
+    category: entityCategoriesSchema,
+    isRequired: v.boolean(),
+    resetAfterInterval: v.union(v.literal("daily"), v.literal("weekly")),
+    numRequiredCompletions: v.optional(v.number()),
+  },
+  handler: async (ctx, {id, ...remainingArgs}) => {
+    // Confirm that the user owns this event
+    const ownerId = await getUserIdFromContextAsync(ctx);
+    const entities = await ctx.db.query("entities").filter(q => q.and(
+      q.eq(q.field("ownerId"), ownerId),
+      q.eq(q.field("_id"), id),
+    )).collect();
+    if (!entities.length) {
+      throw new ConvexError(`Entity not found: ${id}`);
+    }
+    await ctx.db.patch(id, {
+      ...remainingArgs,
+      ownerId,
+    });
+  },
+})

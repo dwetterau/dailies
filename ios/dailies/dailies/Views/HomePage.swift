@@ -5,6 +5,7 @@
 //  Created by David Wetterau on 12/22/24.
 //
 
+import AlertToast
 import SwiftUI
 
 enum HomePageDestination {
@@ -13,6 +14,7 @@ enum HomePageDestination {
     case learningButton
     case tidyingButton
     case thinkingButton
+    case newEntityButton
 }
 
 func getHomePageDestination(forCategory category: EntityCategory) -> HomePageDestination {
@@ -35,6 +37,7 @@ struct HomePage: View {
     var entityListModel: EntityListModel
     @StateObject
     var learningCategoryPageModel: CategoryPageModel
+    @State var showSaveSuccessToast = false
     var authModel: AuthModel
 
     init(authModel: AuthModel) {
@@ -91,9 +94,22 @@ struct HomePage: View {
                         TidyingPage(entityListModel: entityListModel)
                     case .thinkingButton:
                         ThinkingPage(entityListModel: entityListModel)
+                    case .newEntityButton:
+                        EntityEditPage {
+                            showSaveSuccessToast = true
+                        }
                     }
                 }
                 Spacer()
+            }
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink(value: HomePageDestination.newEntityButton) {
+                        Text("New")
+                    }
+                }
+            }.toast(isPresenting: $showSaveSuccessToast) {
+                AlertToast(type: .complete(.green), title: "Saved!")
             }
             .padding()
             .background(Color(.systemBackground)) // Default background

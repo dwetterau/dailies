@@ -7,9 +7,18 @@
 
 import Foundation
 
-enum ResetInterval: String, Codable {
+enum ResetInterval: String, Codable, CaseIterable {
     case daily
     case weekly
+
+    func displayName() -> String {
+        switch self {
+        case .daily:
+            return "Daily"
+        case .weekly:
+            return "Weekly"
+        }
+    }
 }
 
 func getTimeRangeForDate(_ date: Date, resetInterval: ResetInterval) -> (start: Float64, end: Float64) {

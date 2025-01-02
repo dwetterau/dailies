@@ -7,7 +7,7 @@
 import Combine
 import SwiftUI
 
-enum EntityCategory: String, Codable {
+enum EntityCategory: String, Codable, CaseIterable {
     case exercise
     case learning
     case care
@@ -25,10 +25,18 @@ enum EntityCategory: String, Codable {
     }
 }
 
-enum EntityType: String, Codable {
+enum EntityType: String, Codable, CaseIterable {
     case workout
     case genericCompletion
     case flashCards
+
+    func displayName() -> String {
+        switch self {
+        case .workout: return "Workout"
+        case .genericCompletion: return "# Completions"
+        case .flashCards: return "Flash Cards"
+        }
+    }
 }
 
 struct Entity: Decodable, Hashable {
