@@ -11,15 +11,18 @@ struct TidyingPage: View {
     @ObservedObject var entityListModel: EntityListModel
 
     var body: some View {
-        VStack(spacing: 20) {
-            ForEach(entityListModel.getEntities(forCategory: .tidying), id: \.id) { entityViewModel in
-                switch entityViewModel.type {
-                case .genericCompletion:
-                    EntityCompletionButton(entityViewModel)
-                default:
-                    Text("unsupported entity type: \(entityViewModel.type)")
+        ScrollView {
+            VStack(spacing: 20) {
+                ForEach(entityListModel.getEntities(forCategory: .tidying), id: \.id) { entityViewModel in
+                    switch entityViewModel.type {
+                    case .genericCompletion:
+                        EntityCompletionButton(entityViewModel)
+                    default:
+                        Text("unsupported entity type: \(entityViewModel.type)")
+                    }
                 }
             }
+            .padding(.top, 40)
         }.navigationTitle("Tidying")
     }
 }

@@ -13,23 +13,26 @@ struct ExercisePage: View {
     @State var showSaveSuccessToast = false
 
     var body: some View {
-        VStack(spacing: 20) {
-            ForEach(entityListModel.getEntities(forCategory: .exercise), id: \.id) { entityViewModel in
-                switch entityViewModel.type {
-                case .workout:
-                    NavigationLink(value: entityViewModel.id) {
-                        BigButton(
-                            buttonText: entityViewModel.name,
-                            buttonCompleteColor: entityViewModel.buttonColor,
-                            completionRatio: entityListModel.getCompletionRatio(for: entityViewModel.id)
-                        )
-                    }.buttonStyle(ScaleButtonStyle())
-                case .genericCompletion:
-                    EntityCompletionButton(entityViewModel)
-                default:
-                    Text("unknown entity type: \(entityViewModel.type)")
+        ScrollView {
+            VStack(spacing: 20) {
+                ForEach(entityListModel.getEntities(forCategory: .exercise), id: \.id) { entityViewModel in
+                    switch entityViewModel.type {
+                    case .workout:
+                        NavigationLink(value: entityViewModel.id) {
+                            BigButton(
+                                buttonText: entityViewModel.name,
+                                buttonCompleteColor: entityViewModel.buttonColor,
+                                completionRatio: entityListModel.getCompletionRatio(for: entityViewModel.id)
+                            )
+                        }.buttonStyle(ScaleButtonStyle())
+                    case .genericCompletion:
+                        EntityCompletionButton(entityViewModel)
+                    default:
+                        Text("unknown entity type: \(entityViewModel.type)")
+                    }
                 }
             }
+            .padding(.top, 40)
         }
         .navigationTitle("Exercise")
         .navigationDestination(for: String.self) { entityId in

@@ -12,22 +12,25 @@ struct LearningPage: View {
     @ObservedObject var categoryPageModel: CategoryPageModel
 
     var body: some View {
-        VStack(spacing: 20) {
-            if let flashCardsEntityId = categoryPageModel.getEntityIdForType(.flashCards) {
-                let buttonText = entityListModel.getEntity(flashCardsEntityId)?.name ?? "Flash cards"
-                NavigationLink(value: "flashCards") {
-                    BigButton(
-                        buttonText: buttonText,
-                        buttonCompleteColor: getColorForEntityCategory(.learning),
-                        completionRatio: entityListModel.getCompletionRatio(for: flashCardsEntityId)
-                    )
-                }.buttonStyle(ScaleButtonStyle())
-            }
-            ForEach(categoryPageModel.getEntityIdsForType(.genericCompletion), id: \.self) { entityId in
-                if let entityViewModel = entityListModel.getEntity(entityId) {
-                    EntityCompletionButton(entityViewModel)
+        ScrollView {
+            VStack(spacing: 20) {
+                if let flashCardsEntityId = categoryPageModel.getEntityIdForType(.flashCards) {
+                    let buttonText = entityListModel.getEntity(flashCardsEntityId)?.name ?? "Flash cards"
+                    NavigationLink(value: "flashCards") {
+                        BigButton(
+                            buttonText: buttonText,
+                            buttonCompleteColor: getColorForEntityCategory(.learning),
+                            completionRatio: entityListModel.getCompletionRatio(for: flashCardsEntityId)
+                        )
+                    }.buttonStyle(ScaleButtonStyle())
+                }
+                ForEach(categoryPageModel.getEntityIdsForType(.genericCompletion), id: \.self) { entityId in
+                    if let entityViewModel = entityListModel.getEntity(entityId) {
+                        EntityCompletionButton(entityViewModel)
+                    }
                 }
             }
+            .padding(.top, 40)
         }.navigationTitle("Learning")
             .navigationDestination(for: String.self) { destination in
                 switch destination {
