@@ -104,22 +104,25 @@ class EntityCompletionModel: ObservableObject {
             getDateFromTimestamp(newTimestamp),
             resetInterval: entityViewModel.resetInterval
         )
+        var newCompletionStats = completionStats
         if isInTimeRange(timeRange, completionStats.timestamp) {
             if isComplete {
                 print("ignoring additional completion press")
                 return
             }
-            completionStats = CompletionStats(
+            newCompletionStats = CompletionStats(
                 timestamp: newTimestamp,
                 numCompletions: completionStats.numCompletions + 1
             )
         } else {
-            completionStats = CompletionStats(
+            newCompletionStats = CompletionStats(
                 timestamp: newTimestamp,
                 numCompletions: 1
             )
         }
-        saveCurrentCompletionEvent()
+        saveCompletionStats(newCompletionStats) {
+            self.completionStats = newCompletionStats
+        }
     }
 
     public func removeAllCompletions(_ completionCallback: @escaping () -> Void) {
@@ -140,10 +143,6 @@ class EntityCompletionModel: ObservableObject {
             return 0
         }
         return CGFloat(completionStats.numCompletions) / CGFloat(entityViewModel.numRequiredCompletions)
-    }
-
-    private func saveCurrentCompletionEvent() {
-        saveCompletionStats(completionStats, completionCallback: {})
     }
 
     private func saveCompletionStats(_ completionStats: CompletionStats, completionCallback: @escaping () -> Void) {
