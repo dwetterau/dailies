@@ -25,13 +25,13 @@ struct WorkoutEditPage: View {
 
     private let entityId: String
     private let entityName: String
-    private let includedEventFields: Set<String>
+    private let includedEventFields: Set<EventField>
     private let onSave: () -> Void
 
     init(
         entityId: String,
         entityName: String,
-        includedEventFields: [String],
+        includedEventFields: [EventField],
         resetInterval: ResetInterval,
         onSave: @escaping () -> Void = {}
     ) {
@@ -94,28 +94,28 @@ struct WorkoutEditPage: View {
     }
 
     func isAnyRequiredFieldUnset() -> Bool {
-        var isAnyRequiredFieldUnset = false
         for field in includedEventFields {
-            if field == "weight" {
-                isAnyRequiredFieldUnset = isAnyRequiredFieldUnset || weight == nil
+            var isUnset = false
+            switch field {
+            case .weight:
+                isUnset = weight == nil
+            case .numReps:
+                isUnset = numReps == nil
+            case .numSets:
+                isUnset = numSets == nil
+            case .durationSeconds:
+                isUnset = durationSeconds == nil
+            case .distance:
+                isUnset = distance == nil
             }
-            if field == "numReps" {
-                isAnyRequiredFieldUnset = isAnyRequiredFieldUnset || numReps == nil
-            }
-            if field == "numSets" {
-                isAnyRequiredFieldUnset = isAnyRequiredFieldUnset || numSets == nil
-            }
-            if field == "durationSeconds" {
-                isAnyRequiredFieldUnset = isAnyRequiredFieldUnset || durationSeconds == nil
-            }
-            if field == "distance" {
-                isAnyRequiredFieldUnset = isAnyRequiredFieldUnset || distance == nil
+            if isUnset {
+                return true
             }
         }
-        return isAnyRequiredFieldUnset
+        return false
     }
 
-    func isFieldRequired(fieldName: String) -> Bool {
+    func isFieldRequired(fieldName: EventField) -> Bool {
         includedEventFields.contains(fieldName)
     }
 
@@ -215,7 +215,7 @@ struct WorkoutEditPage: View {
     WorkoutEditPage(
         entityId: "",
         entityName: "Test name",
-        includedEventFields: ["distance", "durationSeconds"],
+        includedEventFields: [.distance, .durationSeconds],
         resetInterval: .daily
     )
 }

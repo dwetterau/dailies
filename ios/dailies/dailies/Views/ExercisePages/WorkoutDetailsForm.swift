@@ -26,7 +26,7 @@ struct WorkoutDetailsForm: View {
     @Binding var durationSeconds: Double?
     @Binding var distance: Double?
     let isDisabled: Bool
-    let isFieldRequired: (_ fieldName: String) -> Bool
+    let isFieldRequired: (_: EventField) -> Bool
 
     @State private var hours: Int = 0
     @State private var minutes: Int = 0
@@ -51,9 +51,9 @@ struct WorkoutDetailsForm: View {
     }
 
     var body: some View {
-        if isFieldRequired("weight") {
+        if isFieldRequired(.weight) {
             HStack {
-                Text("Weight")
+                Text(EventField.weight.displayName())
                 TextField("0", value: $weight, format: .number)
                     .keyboardType(.decimalPad)
                     .disabled(isDisabled)
@@ -61,27 +61,27 @@ struct WorkoutDetailsForm: View {
                 Text("lbs").foregroundColor(.gray)
             }
         }
-        if isFieldRequired("numReps") {
+        if isFieldRequired(.numReps) {
             HStack {
-                Text("Repetitions")
+                Text(EventField.numReps.displayName())
                 TextField("0", value: $numReps, format: .number)
                     .keyboardType(.numberPad)
                     .disabled(isDisabled)
                     .multilineTextAlignment(.trailing)
             }
         }
-        if isFieldRequired("numSets") {
+        if isFieldRequired(.numSets) {
             HStack {
-                Text("Sets")
+                Text(EventField.numSets.displayName())
                 TextField("0", value: $numSets, format: .number)
                     .keyboardType(.numberPad)
                     .disabled(isDisabled)
                     .multilineTextAlignment(.trailing)
             }
         }
-        if isFieldRequired("distance") {
+        if isFieldRequired(.distance) {
             HStack {
-                Text("Distance")
+                Text(EventField.distance.displayName())
                 TextField("0", value: $distance, format: .number)
                     .keyboardType(.decimalPad)
                     .disabled(isDisabled)
@@ -89,7 +89,7 @@ struct WorkoutDetailsForm: View {
                 Text("mi").foregroundColor(.gray)
             }
         }
-        if isFieldRequired("durationSeconds") {
+        if isFieldRequired(.durationSeconds) {
             durationPicker()
         }
     }
@@ -97,7 +97,7 @@ struct WorkoutDetailsForm: View {
     @ViewBuilder
     func durationPicker() -> some View {
         HStack {
-            Text("Duration")
+            Text(EventField.durationSeconds.displayName())
             Spacer()
             Menu {
                 Picker("Hours", selection: $hours) {

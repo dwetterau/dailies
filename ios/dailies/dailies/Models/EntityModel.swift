@@ -25,6 +25,24 @@ enum EntityCategory: String, Codable, CaseIterable {
     }
 }
 
+enum EventField: String, Codable {
+    case weight
+    case numReps
+    case numSets
+    case distance
+    case durationSeconds
+
+    func displayName() -> String {
+        switch self {
+        case .weight: "Weight"
+        case .numReps: "Repetitions"
+        case .numSets: "Sets"
+        case .distance: "Distance"
+        case .durationSeconds: "Duration"
+        }
+    }
+}
+
 enum EntityType: String, Codable, CaseIterable {
     case workout
     case genericCompletion
@@ -37,6 +55,20 @@ enum EntityType: String, Codable, CaseIterable {
         case .flashCards: return "Flash Cards"
         }
     }
+
+    func getSupportedEventFields() -> [EventField] {
+        switch self {
+        case .workout: return [
+                .weight,
+                .numReps,
+                .numSets,
+                .distance,
+                .durationSeconds,
+            ]
+        case .genericCompletion: return []
+        case .flashCards: return []
+        }
+    }
 }
 
 struct Entity: Decodable, Hashable {
@@ -47,7 +79,7 @@ struct Entity: Decodable, Hashable {
     let type: EntityType
     let isRequired: Bool
     let numRequiredCompletions: Int?
-    let includedEventFields: [String]?
+    let includedEventFields: [EventField]?
     let resetAfterInterval: ResetInterval
 }
 
@@ -122,7 +154,7 @@ class EntityViewModel: ObservableObject {
         return entity.name
     }
 
-    public var includedEventFields: [String]? {
+    public var includedEventFields: [EventField]? {
         return entity.includedEventFields
     }
 

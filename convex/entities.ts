@@ -126,15 +126,18 @@ function getEnumType(typeString: string): EntityType {
   throw new Error(`Invalid type: ${typeString}`);
 }
 
-export const create = mutation({
-  args: {
-    name: v.string(),
+const COMMON_ENTITY_CREATE_ARGS = {
+   name: v.string(),
     type: entityTypesSchema,
     category: entityCategoriesSchema,
     isRequired: v.boolean(),
     resetAfterInterval: v.union(v.literal("daily"), v.literal("weekly")),
     numRequiredCompletions: v.optional(v.number()),
-  },
+    includedEventFields: v.optional(v.array(v.string())),
+}
+
+export const create = mutation({
+  args: COMMON_ENTITY_CREATE_ARGS,
   handler: async (ctx, args) => {
     const ownerId = await getUserIdFromContextAsync(ctx)
     await ctx.db.insert("entities", {
@@ -147,12 +150,7 @@ export const create = mutation({
 export const update = mutation({
   args: {
     id: v.id("entities"),
-    name: v.string(),
-    type: entityTypesSchema,
-    category: entityCategoriesSchema,
-    isRequired: v.boolean(),
-    resetAfterInterval: v.union(v.literal("daily"), v.literal("weekly")),
-    numRequiredCompletions: v.optional(v.number()),
+    ...COMMON_ENTITY_CREATE_ARGS,
   },
   handler: async (ctx, {id, ...remainingArgs}) => {
     // Confirm that the user owns this event

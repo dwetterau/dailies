@@ -19,6 +19,7 @@ struct EntityEditPage: View {
     @State private var resetInterval: ResetInterval = .daily
     @State private var isRequired: Bool = false
     @State private var numRequiredCompletions: Int? = nil
+    @State private var includedEventFields: [EventField] = []
 
     @Environment(\.dismiss) private var dismiss
 
@@ -46,6 +47,9 @@ struct EntityEditPage: View {
                         self.numRequiredCompletionsInput()
                     }
                 }
+                if requiresIncludedEventFields() {
+                    self.includedEventFieldsSection()
+                }
             }
         }
         .navigationTitle("New entity")
@@ -54,7 +58,7 @@ struct EntityEditPage: View {
                 Button(action: handleSubmit) {
                     Text("Save")
                         .fontWeight(.bold)
-                }.disabled(isAnyFieldUnset())
+                }.disabled(isNewEntityInvalid())
             }
         }
     }
@@ -105,16 +109,70 @@ struct EntityEditPage: View {
         }
     }
 
-    func isAnyFieldUnset() -> Bool {
-        return name.isEmpty || (numRequiredCompletions == nil && requiresNumberOfCompletions())
+    @ViewBuilder
+    func includedEventFieldsSection() -> some View {
+        Section(header: Text("Event fields")) {
+            List {
+                ForEach(type.getSupportedEventFields(), id: \.self) { eventField in
+                    HStack {
+                        Text(eventField.displayName())
+                        Spacer()
+                        if includedEventFields.contains(eventField) {
+                            Image(systemName: "checkmark")
+                                .foregroundColor(.blue)
+                        }
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        self.toggleIncludedEventFieldSelection(for: eventField)
+                    }
+                }
+            }
+            .frame(maxHeight: 200)
+            .cornerRadius(8)
+        }
+    }
+
+    private func toggleIncludedEventFieldSelection(for field: EventField) {
+        if let index = includedEventFields.firstIndex(of: field) {
+            includedEventFields.remove(at: index)
+        } else {
+            includedEventFields.append(field)
+        }
+    }
+
+    func isNewEntityInvalid() -> Bool {
+        if name.isEmpty {
+            return true
+        }
+        if numRequiredCompletions == nil && requiresNumberOfCompletions() {
+            return true
+        }
+        if includedEventFields.isEmpty && requiresIncludedEventFields() {
+            return true
+        }
+
+        // TODO: For now these rules are required by the pages that render them
+        if type == .workout && category != .exercise {
+            return true
+        }
+        if type == .flashCards && category != .learning {
+            return true
+        }
+
+        return false
     }
 
     func requiresNumberOfCompletions() -> Bool {
         return type != .workout
     }
 
+    func requiresIncludedEventFields() -> Bool {
+        return type == .workout
+    }
+
     private func handleSubmit() {
-        guard !isAnyFieldUnset() else {
+        guard !isNewEntityInvalid() else {
             print("WARN: Not saving new entity, missing field")
             return
         }
@@ -127,6 +185,9 @@ struct EntityEditPage: View {
         ]
         if requiresNumberOfCompletions() {
             newEntityArgs["numRequiredCompletions"] = Float64(numRequiredCompletions!)
+        }
+        if requiresIncludedEventFields() {
+            newEntityArgs["includedEventFields"] = includedEventFields.map { $0.rawValue }
         }
         Task {
             do {
