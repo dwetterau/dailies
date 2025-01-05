@@ -266,7 +266,11 @@ class EntityListModel: ObservableObject {
             // If a category has both optional and required completions,
             // we want to show the optional completions in the bar, but they
             // can never fill it up
-            return (totalRequiredCompletionPercentage + CGFloat(numOptionalCompletions)) / CGFloat(requiredEntityCount + numOptionalCompletions)
+            // This early case is to make sure we show some progress even if an optional event is only partially done.
+            let optionalNumerator = maxOptionalCompletionPercentage < 1 && maxOptionalCompletionPercentage > 0 ? maxOptionalCompletionPercentage : CGFloat(numOptionalCompletions)
+            let optionalDenominator = maxOptionalCompletionPercentage < 1 && maxOptionalCompletionPercentage > 0 ? 1 : numOptionalCompletions
+
+            return (totalRequiredCompletionPercentage + optionalNumerator) / CGFloat(requiredEntityCount + optionalDenominator)
         } else {
             if !hasOptionalEntity {
                 // There are no entities?
