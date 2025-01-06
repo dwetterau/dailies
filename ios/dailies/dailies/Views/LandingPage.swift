@@ -26,6 +26,7 @@ struct LandingPage: View {
                 case .authenticated:
                     NavigationStack {
                         HomePage(authModel: authModel)
+                            .id("HomePage-\(Int(getDayTimeRangeForDate(Date()).start))")
                     }
                 }
             }

@@ -182,7 +182,7 @@ class EntityListModel: ObservableObject {
     private var subscriptions = Set<AnyCancellable>()
 
     init() {
-        print("Requesting entities")
+        print("EntityListModel init() called")
         let now = Date()
         let dailyTimeRange = getDayTimeRangeForDate(now)
         let weeklyTimeRange = getWeekTimeRangeForDate(now)

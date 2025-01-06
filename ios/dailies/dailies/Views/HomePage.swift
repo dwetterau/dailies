@@ -38,7 +38,7 @@ struct HomePage: View {
     @StateObject
     var learningCategoryPageModel: CategoryPageModel
     @State var showSaveSuccessToast = false
-    var authModel: AuthModel
+    @ObservedObject var authModel: AuthModel
 
     init(authModel: AuthModel) {
         self.authModel = authModel
