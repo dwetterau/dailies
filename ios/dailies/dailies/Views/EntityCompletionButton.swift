@@ -8,13 +8,15 @@
 import SwiftUI
 
 struct EntityCompletionButton: View {
-    @StateObject var completionViewModel: EntityCompletionModel
     @ObservedObject var entityViewModel: EntityViewModel
     @State var showResetConfirmationAlert = false
 
     init(_ entity: EntityViewModel) {
         entityViewModel = entity
-        _completionViewModel = StateObject(wrappedValue: EntityCompletionModel(entity))
+    }
+    
+    var completionViewModel: EntityCompletionModel {
+        entityViewModel.completionModel
     }
 
     var body: some View {

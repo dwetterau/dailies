@@ -132,10 +132,17 @@ class EntityViewModel: ObservableObject {
 
     @Published
     public private(set) var isDone: Bool
+    
+    @Published
+    private var completionModelIfExists: EntityCompletionModel? = nil
 
     init(_ entity: Entity, isDone: Bool) {
         self.entity = entity
         self.isDone = isDone
+        
+        if (self.type == .genericCompletion) {
+            self.completionModelIfExists = EntityCompletionModel(self)
+        }
     }
 
     public var id: String {
@@ -168,6 +175,14 @@ class EntityViewModel: ObservableObject {
 
     public var resetInterval: ResetInterval {
         return entity.resetAfterInterval
+    }
+    
+    public var completionModel: EntityCompletionModel {
+        if let model = self.completionModelIfExists {
+            return model
+        } else {
+            fatalError("attempted to access completionModel on non-completion entity")
+        }
     }
 }
 
