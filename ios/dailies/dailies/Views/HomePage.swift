@@ -38,16 +38,8 @@ struct HomePage: View {
 
     @StateObject
     var homePageModel = HomePageModel()
-    
+
     @State var showSaveSuccessToast = false
-    
-    var entityListModel: EntityListModel {
-        self.homePageModel.entityListModel
-    }
-    
-    var learningCategoryPageModel: CategoryPageModel {
-        self.homePageModel.learningCategoryPageModel
-    }
 
     var body: some View {
         NavigationStack {
@@ -60,15 +52,15 @@ struct HomePage: View {
 
                 // Buttons Section
                 VStack(spacing: 20) {
-                    if learningCategoryPageModel.hasEntities() {
+                    if self.homePageModel.learningCategoryPageModel.hasEntities() {
                         NavigationLink(value: HomePageDestination.learningButton) {
-                            CategoryButton(entityListModel: entityListModel, category: .learning)
+                            CategoryButton(entityListModel: self.homePageModel.entityListModel, category: .learning)
                         }.buttonStyle(ScaleButtonStyle())
                     }
                     ForEach([EntityCategory]([.care, .exercise, .tidying, .thinking]), id: \.self) { category in
-                        if entityListModel.hasEntities(forCategory: category) {
+                        if hasEntitiesInCategory(category) {
                             NavigationLink(value: getHomePageDestination(forCategory: category)) {
-                                CategoryButton(entityListModel: entityListModel, category: category)
+                                CategoryButton(entityListModel: self.homePageModel.entityListModel, category: category)
                             }.buttonStyle(ScaleButtonStyle())
                         }
                     }
@@ -84,15 +76,15 @@ struct HomePage: View {
                 .navigationDestination(for: HomePageDestination.self) { destination in
                     switch destination {
                     case .exerciseButton:
-                        ExercisePage(entityListModel: entityListModel)
+                        ExercisePage(entityListModel: self.homePageModel.entityListModel)
                     case .learningButton:
-                        LearningPage(entityListModel: entityListModel, categoryPageModel: learningCategoryPageModel)
+                        LearningPage(entityListModel: self.homePageModel.entityListModel, categoryPageModel: self.homePageModel.learningCategoryPageModel)
                     case .careButton:
-                        CarePage(entityListModel: entityListModel)
+                        CarePage(entityListModel: self.homePageModel.entityListModel)
                     case .tidyingButton:
-                        TidyingPage(entityListModel: entityListModel)
+                        TidyingPage(entityListModel: self.homePageModel.entityListModel)
                     case .thinkingButton:
-                        ThinkingPage(entityListModel: entityListModel)
+                        ThinkingPage(entityListModel: self.homePageModel.entityListModel)
                     case .newEntityButton:
                         EntityEditPage {
                             showSaveSuccessToast = true
@@ -114,6 +106,10 @@ struct HomePage: View {
             .background(Color(.systemBackground)) // Default background
             .edgesIgnoringSafeArea(.all) // To allow the background to fill the screen
         }
+    }
+
+    func hasEntitiesInCategory(_ category: EntityCategory) -> Bool {
+        homePageModel.entityListModel.entities.entityViewModels.contains(where: { $0.category == category })
     }
 }
 

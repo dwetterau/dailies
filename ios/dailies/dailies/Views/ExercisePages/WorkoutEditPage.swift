@@ -9,7 +9,7 @@ import ConvexMobile
 import SwiftUI
 
 struct WorkoutEditPage: View {
-    @StateObject private var eventsListViewModel: EventsListViewModel
+    @ObservedObject private var eventsListViewModel: EventsListViewModel
     @State private var initialStateLoaded = false
 
     @State private var eventId: String? = nil
@@ -32,15 +32,15 @@ struct WorkoutEditPage: View {
         entityId: String,
         entityName: String,
         includedEventFields: [EventField],
-        resetInterval: ResetInterval,
+        resetInterval _: ResetInterval,
+        eventsListViewModel: EventsListViewModel,
         onSave: @escaping () -> Void = {}
     ) {
         self.entityId = entityId
         self.entityName = entityName
         self.includedEventFields = Set(includedEventFields)
+        self.eventsListViewModel = eventsListViewModel
         self.onSave = onSave
-
-        _eventsListViewModel = StateObject(wrappedValue: EventsListViewModel(entityId: entityId, resetInterval: resetInterval))
     }
 
     var body: some View {
@@ -216,6 +216,7 @@ struct WorkoutEditPage: View {
         entityId: "",
         entityName: "Test name",
         includedEventFields: [.distance, .durationSeconds],
-        resetInterval: .daily
+        resetInterval: .daily,
+        eventsListViewModel: EventsListViewModel(entityId: "", resetInterval: .daily)
     )
 }

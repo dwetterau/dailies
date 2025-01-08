@@ -12,11 +12,12 @@ class HomePageModel: ObservableObject {
     public private(set) var entityListModel: EntityListModel
     @Published
     public private(set) var learningCategoryPageModel: CategoryPageModel
-    
+
     init() {
+        print("Home page model init() called")
         // TODO: Reset these when the day changes?
         let entityListModel = EntityListModel()
         self.entityListModel = entityListModel
-        self.learningCategoryPageModel = CategoryPageModel(.learning, entityListModel: entityListModel)
+        learningCategoryPageModel = CategoryPageModel(.learning, entityListModel: entityListModel)
     }
 }

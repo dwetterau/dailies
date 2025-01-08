@@ -13,7 +13,7 @@ struct TidyingPage: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                ForEach(entityListModel.getEntities(forCategory: .tidying), id: \.id) { entityViewModel in
+                ForEach(entityListModel.entities.getEntities(forCategory: .tidying), id: \.id) { entityViewModel in
                     switch entityViewModel.type {
                     case .genericCompletion:
                         EntityCompletionButton(entityViewModel)

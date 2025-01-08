@@ -132,17 +132,13 @@ class EntityViewModel: ObservableObject {
 
     @Published
     public private(set) var isDone: Bool
-    
-    @Published
+
     private var completionModelIfExists: EntityCompletionModel? = nil
+    private var eventsListViewModelIfExists: EventsListViewModel? = nil
 
     init(_ entity: Entity, isDone: Bool) {
         self.entity = entity
         self.isDone = isDone
-        
-        if (self.type == .genericCompletion) {
-            self.completionModelIfExists = EntityCompletionModel(self)
-        }
     }
 
     public var id: String {
@@ -176,19 +172,65 @@ class EntityViewModel: ObservableObject {
     public var resetInterval: ResetInterval {
         return entity.resetAfterInterval
     }
-    
+
     public var completionModel: EntityCompletionModel {
-        if let model = self.completionModelIfExists {
-            return model
-        } else {
+        if type != .genericCompletion {
             fatalError("attempted to access completionModel on non-completion entity")
+        }
+        if completionModelIfExists == nil {
+            completionModelIfExists = EntityCompletionModel(self)
+        }
+        return completionModelIfExists!
+    }
+
+    public var eventsListViewModel: EventsListViewModel {
+        if eventsListViewModelIfExists == nil {
+            eventsListViewModelIfExists = EventsListViewModel(
+                entityId: id,
+                resetInterval: resetInterval
+            )
+        }
+        return eventsListViewModelIfExists!
+    }
+}
+
+struct EntityViewModelList {
+    var entityViewModels: [EntityViewModel]
+
+    public func getEntity(forCategory category: EntityCategory, forType type: EntityType) -> EntityViewModel? {
+        entityViewModels.first(where: { entityViewModel in
+            entityViewModel.category == category && entityViewModel.type == type
+        })
+    }
+
+    public func getEntity(_ id: String?) -> EntityViewModel? {
+        if id == nil {
+            return nil
+        }
+        return entityViewModels.first(where: { entityViewModel in
+            entityViewModel.id == id
+        })
+    }
+
+    public func hasEntities(forCategory category: EntityCategory) -> Bool {
+        return !getEntities(forCategory: category).isEmpty
+    }
+
+    public func getEntities(forCategory category: EntityCategory) -> [EntityViewModel] {
+        entityViewModels.filter { entityViewModel in
+            entityViewModel.category == category
         }
     }
 }
 
 class EntityListModel: ObservableObject {
     @Published
-    public private(set) var entityViewModels: [EntityViewModel] = []
+    public private(set) var entities: EntityViewModelList = .init(entityViewModels: [])
+
+    var hasEntitiesByCategory: [EntityCategory: Bool] {
+        Dictionary(grouping: entities.entityViewModels, by: { $0.category })
+            .mapValues { !$0.isEmpty }
+    }
 
     @Published
     private var entitiesFromServer: Entities = .init(entities: [], entityIdToIsDone: [:], entityIdToCompletionRatio: [:])
@@ -228,9 +270,12 @@ class EntityListModel: ObservableObject {
         }
         $entitiesFromServer.sink { [weak self] newEntitiesFromServer in
             guard let self = self else { return }
-            self.entityViewModels = newEntitiesFromServer.entities.map {
-                entity in
-                EntityViewModel(entity, isDone: self.isEntityDoneToday(entityId: entity._id))
+            print("Updating view models \(newEntitiesFromServer.entities.count)")
+            DispatchQueue.main.async {
+                self.entities = EntityViewModelList(entityViewModels: newEntitiesFromServer.entities.map {
+                    entity in
+                    EntityViewModel(entity, isDone: self.isEntityDoneToday(entityId: entity._id))
+                })
             }
         }.store(in: &subscriptions)
     }
@@ -292,31 +337,6 @@ class EntityListModel: ObservableObject {
                 return 0
             }
             return maxOptionalCompletionPercentage
-        }
-    }
-
-    public func getEntity(forCategory category: EntityCategory, forType type: EntityType) -> EntityViewModel? {
-        entityViewModels.first(where: { entityViewModel in
-            entityViewModel.category == category && entityViewModel.type == type
-        })
-    }
-
-    public func getEntity(_ id: String?) -> EntityViewModel? {
-        if id == nil {
-            return nil
-        }
-        return entityViewModels.first(where: { entityViewModel in
-            entityViewModel.id == id
-        })
-    }
-
-    public func hasEntities(forCategory category: EntityCategory) -> Bool {
-        return !getEntities(forCategory: category).isEmpty
-    }
-
-    public func getEntities(forCategory category: EntityCategory) -> [EntityViewModel] {
-        entityViewModels.filter { entityViewModel in
-            entityViewModel.category == category
         }
     }
 }

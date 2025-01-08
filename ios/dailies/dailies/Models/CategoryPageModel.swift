@@ -34,16 +34,17 @@ class CategoryPageModel: ObservableObject {
             print("Loaded pages for category \(category) from disk: \(loadedPages)")
             entityTypeToIds = loadedPages
         } else {
-            entityTypeToIds = getEntityTypeToIds(from: entityListModel.entityViewModels)
+            entityTypeToIds = getEntityTypeToIds(from: entityListModel.entities.entityViewModels)
         }
 
-        entityListModel.$entityViewModels.sink { [weak self] newModels in
+        entityListModel.$entities.sink { [weak self] newModels in
             guard let self = self else { return }
             // Exit early if `self` is nil
-            let newEntityTypeToIds = self.getEntityTypeToIds(from: newModels)
+            let newEntityTypeToIds = self.getEntityTypeToIds(from: newModels.entityViewModels)
             if newEntityTypeToIds.isEmpty {
                 print("Received empty entities, ignoring them")
             } else {
+                print("Saving newEntityToTypeIds \(newEntityTypeToIds)")
                 self.entityTypeToIds = newEntityTypeToIds
                 saveToDisk(newEntityTypeToIds, filename: getCategoryPageModelFilename(category: category))
             }

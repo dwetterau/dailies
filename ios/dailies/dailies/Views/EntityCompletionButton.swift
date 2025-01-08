@@ -14,7 +14,7 @@ struct EntityCompletionButton: View {
     init(_ entity: EntityViewModel) {
         entityViewModel = entity
     }
-    
+
     var completionViewModel: EntityCompletionModel {
         entityViewModel.completionModel
     }
