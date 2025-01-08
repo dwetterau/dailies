@@ -227,11 +227,6 @@ class EntityListModel: ObservableObject {
     @Published
     public private(set) var entities: EntityViewModelList = .init(entityViewModels: [])
 
-    var hasEntitiesByCategory: [EntityCategory: Bool] {
-        Dictionary(grouping: entities.entityViewModels, by: { $0.category })
-            .mapValues { !$0.isEmpty }
-    }
-
     @Published
     private var entitiesFromServer: Entities = .init(entities: [], entityIdToIsDone: [:], entityIdToCompletionRatio: [:])
 
