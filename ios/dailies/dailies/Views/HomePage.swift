@@ -33,21 +33,20 @@ func getHomePageDestination(forCategory category: EntityCategory) -> HomePageDes
 }
 
 struct HomePage: View {
-    @StateObject
-    var entityListModel: EntityListModel
-    @StateObject
-    var learningCategoryPageModel: CategoryPageModel
-    @State var showSaveSuccessToast = false
-    @ObservedObject var authModel: AuthModel
+    @ObservedObject
+    var authModel: AuthModel
 
-    init(authModel: AuthModel) {
-        self.authModel = authModel
-        let entityListModel = EntityListModel()
-        _entityListModel = StateObject(wrappedValue: entityListModel)
-        _learningCategoryPageModel = StateObject(wrappedValue: CategoryPageModel(
-            .learning,
-            entityListModel: entityListModel
-        ))
+    @StateObject
+    var homePageModel = HomePageModel()
+    
+    @State var showSaveSuccessToast = false
+    
+    var entityListModel: EntityListModel {
+        self.homePageModel.entityListModel
+    }
+    
+    var learningCategoryPageModel: CategoryPageModel {
+        self.homePageModel.learningCategoryPageModel
     }
 
     var body: some View {
