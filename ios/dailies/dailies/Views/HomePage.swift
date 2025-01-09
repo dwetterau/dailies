@@ -41,6 +41,8 @@ struct HomePage: View {
 
     @State var showSaveSuccessToast = false
 
+    @Environment(\.scenePhase) private var scenePhase
+
     var body: some View {
         NavigationStack {
             VStack {
@@ -102,6 +104,11 @@ struct HomePage: View {
             }.toast(isPresenting: $showSaveSuccessToast) {
                 AlertToast(type: .complete(.green), title: "Saved!")
             }
+            .onChange(of: scenePhase) { _, newPhase in
+                if newPhase == .active {
+                    homePageModel.updateEntityListModelIfStale()
+                }
+            }
             .padding()
             .background(Color(.systemBackground)) // Default background
             .edgesIgnoringSafeArea(.all) // To allow the background to fill the screen
@@ -109,7 +116,7 @@ struct HomePage: View {
     }
 
     func hasEntitiesInCategory(_ category: EntityCategory) -> Bool {
-        homePageModel.entityListModel.entities.entityViewModels.contains(where: { $0.category == category })
+        homePageModel.entityListModel.hasEntities(forCategory: category)
     }
 }
 

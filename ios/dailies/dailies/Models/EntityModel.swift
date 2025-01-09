@@ -196,46 +196,24 @@ class EntityViewModel: ObservableObject {
 
 struct EntityViewModelList {
     var entityViewModels: [EntityViewModel]
-
-    public func getEntity(forCategory category: EntityCategory, forType type: EntityType) -> EntityViewModel? {
-        entityViewModels.first(where: { entityViewModel in
-            entityViewModel.category == category && entityViewModel.type == type
-        })
-    }
-
-    public func getEntity(_ id: String?) -> EntityViewModel? {
-        if id == nil {
-            return nil
-        }
-        return entityViewModels.first(where: { entityViewModel in
-            entityViewModel.id == id
-        })
-    }
-
-    public func hasEntities(forCategory category: EntityCategory) -> Bool {
-        return !getEntities(forCategory: category).isEmpty
-    }
-
-    public func getEntities(forCategory category: EntityCategory) -> [EntityViewModel] {
-        entityViewModels.filter { entityViewModel in
-            entityViewModel.category == category
-        }
-    }
 }
 
 class EntityListModel: ObservableObject {
     @Published
-    public private(set) var entities: EntityViewModelList = .init(entityViewModels: [])
+    public private(set) var entityViewModels: [EntityViewModel] = []
 
     @Published
     private var entitiesFromServer: Entities = .init(entities: [], entityIdToIsDone: [:], entityIdToCompletionRatio: [:])
 
+    public let dayStartTimestamp: Int
+
     // Used to stay subscribed to the sink to keep the entityViewModels up to date
     private var subscriptions = Set<AnyCancellable>()
 
-    init() {
-        print("EntityListModel init() called")
-        let now = Date()
+    init(dayStartTimestamp: Int) {
+        print("EntityListModel init() called for \(dayStartTimestamp)")
+        self.dayStartTimestamp = dayStartTimestamp
+        let now = getDateFromTimestamp(dayStartTimestamp)
         let dailyTimeRange = getDayTimeRangeForDate(now)
         let weeklyTimeRange = getWeekTimeRangeForDate(now)
         Task {
@@ -267,10 +245,10 @@ class EntityListModel: ObservableObject {
             guard let self = self else { return }
             print("Updating view models \(newEntitiesFromServer.entities.count)")
             DispatchQueue.main.async {
-                self.entities = EntityViewModelList(entityViewModels: newEntitiesFromServer.entities.map {
+                self.entityViewModels = newEntitiesFromServer.entities.map {
                     entity in
                     EntityViewModel(entity, isDone: self.isEntityDoneToday(entityId: entity._id))
-                })
+                }
             }
         }.store(in: &subscriptions)
     }
@@ -332,6 +310,31 @@ class EntityListModel: ObservableObject {
                 return 0
             }
             return maxOptionalCompletionPercentage
+        }
+    }
+
+    public func getEntity(forCategory category: EntityCategory, forType type: EntityType) -> EntityViewModel? {
+        entityViewModels.first(where: { entityViewModel in
+            entityViewModel.category == category && entityViewModel.type == type
+        })
+    }
+
+    public func getEntity(_ id: String?) -> EntityViewModel? {
+        if id == nil {
+            return nil
+        }
+        return entityViewModels.first(where: { entityViewModel in
+            entityViewModel.id == id
+        })
+    }
+
+    public func hasEntities(forCategory category: EntityCategory) -> Bool {
+        return !getEntities(forCategory: category).isEmpty
+    }
+
+    public func getEntities(forCategory category: EntityCategory) -> [EntityViewModel] {
+        entityViewModels.filter { entityViewModel in
+            entityViewModel.category == category
         }
     }
 }

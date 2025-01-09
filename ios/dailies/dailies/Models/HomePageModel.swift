@@ -11,23 +11,50 @@ import SwiftUI
 class HomePageModel: ObservableObject {
     @Published
     public private(set) var entityListModel: EntityListModel
+
     @Published
     public private(set) var learningCategoryPageModel: CategoryPageModel
 
-    private var subscriptions = Set<AnyCancellable>()
-    
+    private var entityListModelSubscription = Set<AnyCancellable>()
+    private var learningCategoryPageModelSubscription = Set<AnyCancellable>()
+
     init() {
-        print("Home page model init() called")
-        // TODO: Reset these when the day changes?
-        let entityListModel = EntityListModel()
+        let dayTimeRange = getDayTimeRangeForDate(Date())
+        let entityListModel = EntityListModel(dayStartTimestamp: Int(dayTimeRange.start))
         self.entityListModel = entityListModel
         learningCategoryPageModel = CategoryPageModel(.learning, entityListModel: entityListModel)
-        
-        // Manually observe changes
+
+        observeEntityListModel()
+
+        learningCategoryPageModel.objectWillChange.sink { [weak self] _ in
+            self?.objectWillChange.send()
+        }
+        .store(in: &learningCategoryPageModelSubscription)
+    }
+
+    private func observeEntityListModel() {
+        // Clear existing subscriptions for the old model
+        entityListModelSubscription.removeAll()
+
+        // Observe the current model
         entityListModel.objectWillChange
             .sink { [weak self] _ in
                 self?.objectWillChange.send()
             }
-            .store(in: &subscriptions)
+            .store(in: &entityListModelSubscription)
+    }
+
+    public func updateEntityListModelIfStale() {
+        let dayTimeRange = getDayTimeRangeForDate(Date())
+        let currentDayStartTimestamp = Int(dayTimeRange.start)
+        if currentDayStartTimestamp != entityListModel.dayStartTimestamp {
+            print("day start timestamp is stale, replacing EntityListModel")
+            updateEntityListModel(EntityListModel(dayStartTimestamp: currentDayStartTimestamp))
+        }
+    }
+
+    func updateEntityListModel(_ newModel: EntityListModel) {
+        entityListModel = newModel
+        observeEntityListModel() // Set up observation for the new model
     }
 }

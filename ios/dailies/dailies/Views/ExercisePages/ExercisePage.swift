@@ -15,7 +15,7 @@ struct ExercisePage: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                ForEach(entityListModel.entities.getEntities(forCategory: .exercise), id: \.id) { entityViewModel in
+                ForEach(entityListModel.getEntities(forCategory: .exercise), id: \.id) { entityViewModel in
                     switch entityViewModel.type {
                     case .workout:
                         NavigationLink(value: entityViewModel.id) {
@@ -36,7 +36,7 @@ struct ExercisePage: View {
         }
         .navigationTitle("Exercise")
         .navigationDestination(for: String.self) { entityId in
-            if let entityViewModel = entityListModel.entities.getEntity(entityId) {
+            if let entityViewModel = entityListModel.getEntity(entityId) {
                 if entityViewModel.includedEventFields != nil && entityViewModel.type == .workout {
                     WorkoutEditPage(
                         entityId: entityViewModel.id,

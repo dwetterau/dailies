@@ -15,7 +15,7 @@ struct LearningPage: View {
         ScrollView {
             VStack(spacing: 20) {
                 if let flashCardsEntityId = categoryPageModel.getEntityIdForType(.flashCards) {
-                    let buttonText = entityListModel.entities.getEntity(flashCardsEntityId)?.name ?? "Flash cards"
+                    let buttonText = entityListModel.getEntity(flashCardsEntityId)?.name ?? "Flash cards"
                     NavigationLink(value: "flashCards") {
                         BigButton(
                             buttonText: buttonText,
@@ -25,7 +25,7 @@ struct LearningPage: View {
                     }.buttonStyle(ScaleButtonStyle())
                 }
                 ForEach(categoryPageModel.getEntityIdsForType(.genericCompletion), id: \.self) { entityId in
-                    if let entityViewModel = entityListModel.entities.getEntity(entityId) {
+                    if let entityViewModel = entityListModel.getEntity(entityId) {
                         EntityCompletionButton(entityViewModel)
                     }
                 }
