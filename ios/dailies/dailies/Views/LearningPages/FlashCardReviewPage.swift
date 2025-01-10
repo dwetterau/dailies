@@ -25,7 +25,7 @@ struct FlashCardReviewPage: View {
     var body: some View {
         ZStack(alignment: .top) {
             VStack {
-                if let card = viewModel.getCurrentCard() {
+                if let card = viewModel.currentCard {
                     FlashCardView(card).padding(.top, 200)
                     Spacer()
                     VStack(spacing: 10) {
@@ -115,6 +115,15 @@ struct FlashCardReviewPage: View {
                 }) {
                     Text("Save")
                 }.disabled(viewModel.isSaving)
+            }
+            if viewModel.shouldShowPreviousCardButton() {
+                ToolbarItem(placement: .bottomBar) {
+                    Button(action: {
+                        viewModel.goToPreviousCard()
+                    }) {
+                        Text("Previous")
+                    }
+                }
             }
         }
         .toast(isPresenting: $showSaveSuccessToast) {

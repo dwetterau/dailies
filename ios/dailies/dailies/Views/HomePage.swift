@@ -106,7 +106,9 @@ struct HomePage: View {
             }
             .onChange(of: scenePhase) { _, newPhase in
                 if newPhase == .active {
-                    homePageModel.updateEntityListModelIfStale()
+                    Task {
+                        await homePageModel.updateEntityListModelIfStale()
+                    }
                 }
             }
             .padding()

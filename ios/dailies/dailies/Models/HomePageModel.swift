@@ -33,9 +33,6 @@ class HomePageModel: ObservableObject {
     }
 
     private func observeEntityListModel() {
-        // Clear existing subscriptions for the old model
-        entityListModelSubscription.removeAll()
-
         // Observe the current model
         entityListModel.objectWillChange
             .sink { [weak self] _ in
@@ -44,17 +41,16 @@ class HomePageModel: ObservableObject {
             .store(in: &entityListModelSubscription)
     }
 
-    public func updateEntityListModelIfStale() {
+    @MainActor
+    public func updateEntityListModelIfStale() async {
         let dayTimeRange = getDayTimeRangeForDate(Date())
         let currentDayStartTimestamp = Int(dayTimeRange.start)
         if currentDayStartTimestamp != entityListModel.dayStartTimestamp {
-            print("day start timestamp is stale, replacing EntityListModel")
-            updateEntityListModel(EntityListModel(dayStartTimestamp: currentDayStartTimestamp))
-        }
-    }
+            entityListModelSubscription.removeAll()
+            await entityListModel.cleanup()
 
-    func updateEntityListModel(_ newModel: EntityListModel) {
-        entityListModel = newModel
-        observeEntityListModel() // Set up observation for the new model
+            entityListModel = EntityListModel(dayStartTimestamp: currentDayStartTimestamp)
+            observeEntityListModel()
+        }
     }
 }

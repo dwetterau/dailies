@@ -62,6 +62,33 @@ struct ReviewStats: Decodable, Encodable {
         }
     }
 
+    func updateReview(oldIsCorrect: Bool, newIsCorrect: Bool) -> ReviewStats {
+        if !isInTimeRange(getTimeRangeForDate(Date(), resetInterval: resetInterval), timestamp) {
+            return ReviewStats(
+                numReviewed: 1,
+                numCorrect: newIsCorrect ? 1 : 0,
+                timestamp: getCurrentTimestamp(),
+                resetInterval: resetInterval
+            )
+        } else {
+            var numCorrectDelta = 0
+            if !oldIsCorrect && newIsCorrect {
+                numCorrectDelta = 1
+            } else if oldIsCorrect && !newIsCorrect && numCorrect > 0 {
+                numCorrectDelta = -1
+            }
+            if numCorrectDelta == 0 || numReviewed == 0 {
+                return self
+            }
+            return ReviewStats(
+                numReviewed: numReviewed,
+                numCorrect: numCorrect + numCorrectDelta,
+                timestamp: getCurrentTimestamp(),
+                resetInterval: resetInterval
+            )
+        }
+    }
+
     func getReviewStatusString() -> String? {
         if numReviewed == 0 {
             return nil
@@ -88,6 +115,9 @@ class FlashCardReviewModel: ObservableObject {
     // Used to stay subscribed to the query for cards
     private var subscriptions = Set<AnyCancellable>()
 
+    @Published
+    private var currentCardId: String?
+
     // Note: We don't use a full entityViewModel so that we can support offline
     init(_ entityId: String, resetInterval: ResetInterval) {
         self.entityId = entityId
@@ -108,6 +138,7 @@ class FlashCardReviewModel: ObservableObject {
         }
 
         Task {
+            print("Calling flashCards:listCards")
             client.subscribe(to: "flashCards:listCards", yielding: [FlashCard].self)
                 .handleEvents(receiveCompletion: logCompletionHandlers("flashCards:listCards"))
                 .replaceError(with: [])
@@ -140,6 +171,8 @@ class FlashCardReviewModel: ObservableObject {
                     return mergedFlashCards
                 }
                 .assign(to: &$flashCards)
+
+            print("Calling events:getCurrentEvent")
             client.subscribe(to: "events:getCurrentEvent", with: [
                 "entityId": entityId,
                 "timeRange": [
@@ -172,7 +205,16 @@ class FlashCardReviewModel: ObservableObject {
         // TODO: We could split out the status from the rest of the cards, and then we only have
         // to save the status frequently.
         $flashCards
-            .sink { newValue in
+            .sink { [weak self] newValue in
+                guard let self else { return }
+                // If we no longer have the currentCardId around, first clear the pointer.
+                if self.currentCardId != nil && !newValue.contains(where: { $0._id == self.currentCardId! }) {
+                    self.currentCardId = nil
+                }
+                // Try to initialize the pointer if it's unset
+                if self.currentCardId == nil {
+                    self.currentCardId = newValue.first(where: { $0.reviewStatus == nil })?._id
+                }
                 saveToDisk(newValue, filename: flashCardFileName)
             }
             .store(in: &subscriptions)
@@ -186,13 +228,11 @@ class FlashCardReviewModel: ObservableObject {
         }.store(in: &subscriptions)
     }
 
-    public func getCurrentCard() -> FlashCard? {
-        return flashCards.first(where: { card in card.reviewStatus == nil })
-    }
-
     public func setCurrentCardReviewStatus(_ status: String) {
+        var oldStatus: String? = nil
         flashCards = flashCards.map { card in
-            if card._id == self.getCurrentCard()?._id {
+            if card._id == self.currentCard?._id {
+                oldStatus = card.reviewStatus
                 return FlashCard(
                     _id: card._id,
                     ownerId: card.ownerId,
@@ -205,7 +245,22 @@ class FlashCardReviewModel: ObservableObject {
             }
             return card
         }
-        reviewStats = reviewStats.addReview(isCorrect: status != "Wrong")
+        // Update the current card index
+        if let currentCardIndex = currentCardIndex {
+            if currentCardIndex < flashCards.count - 1 {
+                currentCardId = flashCards[currentCardIndex + 1]._id
+            } else {
+                // We've run out of cards, set it to nil
+                currentCardId = nil
+            }
+        } else {
+            currentCardId = nil
+        }
+        if oldStatus != nil {
+            reviewStats = reviewStats.updateReview(oldIsCorrect: oldStatus != "Wrong", newIsCorrect: status != "Wrong")
+        } else {
+            reviewStats = reviewStats.addReview(isCorrect: status != "Wrong")
+        }
     }
 
     public func getCardCountStats() -> String {
@@ -221,6 +276,35 @@ class FlashCardReviewModel: ObservableObject {
 
     public func getReviewStatsString() -> String? {
         return reviewStats.getReviewStatusString()
+    }
+
+    var currentCard: FlashCard? {
+        if let currentCardIndex = currentCardIndex {
+            return flashCards[currentCardIndex]
+        }
+        return nil
+    }
+
+    var currentCardIndex: Int? {
+        if currentCardId == nil {
+            return nil
+        }
+        return flashCards.firstIndex(where: { flashCard in
+            flashCard._id == currentCardId
+        })
+    }
+
+    public func shouldShowPreviousCardButton() -> Bool {
+        let currentCardIndex = self.currentCardIndex
+        return currentCardIndex != nil && currentCardIndex! > 0
+    }
+
+    public func goToPreviousCard() {
+        if let currentCardIndex = currentCardIndex {
+            if currentCardIndex > 0 {
+                currentCardId = flashCards[currentCardIndex - 1]._id
+            }
+        }
     }
 
     public func saveReviewStatuses(completion: @escaping () -> Void) {

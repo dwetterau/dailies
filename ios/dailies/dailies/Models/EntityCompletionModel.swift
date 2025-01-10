@@ -53,6 +53,7 @@ class EntityCompletionModel: ObservableObject {
         }
 
         Task {
+            print("Calling events:getCurrentEvent")
             client.subscribe(to: "events:getCurrentEvent", with: [
                 "entityId": self.entityViewModel.id,
                 "timeRange": [

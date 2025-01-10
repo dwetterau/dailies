@@ -21,6 +21,7 @@ class EventsListViewModel: ObservableObject {
     init(entityId: String, resetInterval: ResetInterval) {
         self.resetInterval = resetInterval
         Task {
+            print("Calling events:list")
             client.subscribe(to: "events:list", with: ["entityId": entityId], yielding: [Event].self)
                 .handleEvents(receiveCompletion: logCompletionHandlers("events:list"))
                 .replaceError(with: [])

@@ -217,6 +217,7 @@ class EntityListModel: ObservableObject {
         let dailyTimeRange = getDayTimeRangeForDate(now)
         let weeklyTimeRange = getWeekTimeRangeForDate(now)
         Task {
+            print("Calling client entities:list")
             client.subscribe(
                 to: "entities:list",
                 with: [
@@ -239,7 +240,10 @@ class EntityListModel: ObservableObject {
             )
             .replaceError(with: Entities(entities: [], entityIdToIsDone: [:], entityIdToCompletionRatio: [:]))
             .receive(on: DispatchQueue.main)
-            .assign(to: &$entitiesFromServer)
+            .sink { [weak self] newEntitiesFromSerer in
+                self?.entitiesFromServer = newEntitiesFromSerer
+            }
+            .store(in: &subscriptions)
         }
         $entitiesFromServer.sink { [weak self] newEntitiesFromServer in
             guard let self = self else { return }
@@ -251,6 +255,14 @@ class EntityListModel: ObservableObject {
                 }
             }
         }.store(in: &subscriptions)
+    }
+
+    public func cleanup() async {
+        await withCheckedContinuation { continuation in
+            self.subscriptions.removeAll()
+            print("Cleaned up EntityListModel")
+            continuation.resume()
+        }
     }
 
     public func isEntityDoneToday(entityId: String) -> Bool {
