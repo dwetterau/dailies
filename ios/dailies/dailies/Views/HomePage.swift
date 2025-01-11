@@ -39,6 +39,9 @@ struct HomePage: View {
     @StateObject
     var homePageModel = HomePageModel()
 
+    @StateObject
+    var notificationModel = NotificationModel()
+
     @State var showSaveSuccessToast = false
 
     @Environment(\.scenePhase) private var scenePhase
@@ -78,15 +81,15 @@ struct HomePage: View {
                 .navigationDestination(for: HomePageDestination.self) { destination in
                     switch destination {
                     case .exerciseButton:
-                        ExercisePage(entityListModel: self.homePageModel.entityListModel)
+                        ExercisePage(entityListModel: self.homePageModel.entityListModel).environmentObject(notificationModel)
                     case .learningButton:
-                        LearningPage(entityListModel: self.homePageModel.entityListModel, categoryPageModel: self.homePageModel.learningCategoryPageModel)
+                        LearningPage(entityListModel: self.homePageModel.entityListModel, categoryPageModel: self.homePageModel.learningCategoryPageModel).environmentObject(notificationModel)
                     case .careButton:
-                        CarePage(entityListModel: self.homePageModel.entityListModel)
+                        CarePage(entityListModel: self.homePageModel.entityListModel).environmentObject(notificationModel)
                     case .tidyingButton:
-                        TidyingPage(entityListModel: self.homePageModel.entityListModel)
+                        TidyingPage(entityListModel: self.homePageModel.entityListModel).environmentObject(notificationModel)
                     case .thinkingButton:
-                        ThinkingPage(entityListModel: self.homePageModel.entityListModel)
+                        ThinkingPage(entityListModel: self.homePageModel.entityListModel).environmentObject(notificationModel)
                     case .newEntityButton:
                         EntityEditPage {
                             showSaveSuccessToast = true
@@ -103,17 +106,26 @@ struct HomePage: View {
                 }
             }.toast(isPresenting: $showSaveSuccessToast) {
                 AlertToast(type: .complete(.green), title: "Saved!")
-            }
-            .onChange(of: scenePhase) { _, newPhase in
-                if newPhase == .active {
-                    Task {
-                        await homePageModel.updateEntityListModelIfStale()
-                    }
-                }
+            }.toast(isPresenting: $notificationModel.shouldShowAllCompleteToast) {
+                notificationModel.allCompleteToast
             }
             .padding()
             .background(Color(.systemBackground)) // Default background
             .edgesIgnoringSafeArea(.all) // To allow the background to fill the screen
+        }
+        .onChange(of: homePageModel.entityListModel.entitiesFromServer) { _, _ in
+            if homePageModel.entityListModel.areAllCategoriesComplete {
+                // TODO: Cancel notification
+                // TODO: Don't show the toast if they were all complete on initial load
+                notificationModel.setShouldShowAllCompleteToast(true)
+            }
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                Task {
+                    await homePageModel.updateEntityListModelIfStale()
+                }
+            }
         }
     }
 

@@ -10,6 +10,7 @@ import SwiftUI
 
 struct ExercisePage: View {
     @ObservedObject var entityListModel: EntityListModel
+    @EnvironmentObject var notificationModel: NotificationModel
     @State var showSaveSuccessToast = false
 
     var body: some View {
@@ -55,6 +56,9 @@ struct ExercisePage: View {
             }
         }.toast(isPresenting: $showSaveSuccessToast) {
             AlertToast(type: .complete(.green), title: "Saved!")
+        }
+        .toast(isPresenting: $notificationModel.shouldShowAllCompleteToast) {
+            notificationModel.allCompleteToast
         }
     }
 }

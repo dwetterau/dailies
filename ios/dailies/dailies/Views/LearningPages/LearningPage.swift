@@ -5,11 +5,13 @@
 //  Created by David Wetterau on 12/25/24.
 //
 
+import AlertToast
 import SwiftUI
 
 struct LearningPage: View {
     @ObservedObject var entityListModel: EntityListModel
     @ObservedObject var categoryPageModel: CategoryPageModel
+    @EnvironmentObject var notificationModel: NotificationModel
 
     var body: some View {
         ScrollView {
@@ -31,17 +33,21 @@ struct LearningPage: View {
                 }
             }
             .padding(.top, 40)
-        }.navigationTitle("Learning")
-            .navigationDestination(for: String.self) { destination in
-                switch destination {
-                case "flashCards":
-                    if let flashCardsEntityId = categoryPageModel.getEntityIdForType(.flashCards) {
-                        FlashCardReviewPage(flashCardsEntityId)
-                    } else {
-                        Text("no flash card entity")
-                    }
-                default: Text("unknown destination")
+        }
+        .navigationTitle("Learning")
+        .navigationDestination(for: String.self) { destination in
+            switch destination {
+            case "flashCards":
+                if let flashCardsEntityId = categoryPageModel.getEntityIdForType(.flashCards) {
+                    FlashCardReviewPage(flashCardsEntityId)
+                } else {
+                    Text("no flash card entity")
                 }
+            default: Text("unknown destination")
             }
+        }
+        .toast(isPresenting: $notificationModel.shouldShowAllCompleteToast) {
+            notificationModel.allCompleteToast
+        }
     }
 }

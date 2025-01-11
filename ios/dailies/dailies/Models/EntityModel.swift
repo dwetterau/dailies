@@ -95,7 +95,7 @@ let emptyEntity = Entity(
     resetAfterInterval: .daily
 )
 
-struct Entities: Decodable {
+struct Entities: Decodable, Equatable {
     let entities: [Entity]
     let entityIdToIsDone: [String: Bool]
     let entityIdToCompletionRatio: [String: Float64]
@@ -203,7 +203,7 @@ class EntityListModel: ObservableObject {
     public private(set) var entityViewModels: [EntityViewModel] = []
 
     @Published
-    private var entitiesFromServer: Entities = .init(entities: [], entityIdToIsDone: [:], entityIdToCompletionRatio: [:])
+    public private(set) var entitiesFromServer: Entities = .init(entities: [], entityIdToIsDone: [:], entityIdToCompletionRatio: [:])
 
     public let dayStartTimestamp: Int
 
@@ -323,6 +323,15 @@ class EntityListModel: ObservableObject {
             }
             return maxOptionalCompletionPercentage
         }
+    }
+
+    public var areAllCategoriesComplete: Bool {
+        for category in EntityCategory.allCases {
+            if getCategoryCompletionRatio(for: category) < 1 {
+                return false
+            }
+        }
+        return true
     }
 
     public func getEntity(forCategory category: EntityCategory, forType type: EntityType) -> EntityViewModel? {

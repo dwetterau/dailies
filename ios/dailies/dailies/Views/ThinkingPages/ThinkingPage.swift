@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ThinkingPage: View {
     @ObservedObject var entityListModel: EntityListModel
+    @EnvironmentObject var notificationModel: NotificationModel
 
     var body: some View {
         ScrollView {
@@ -23,6 +24,10 @@ struct ThinkingPage: View {
                 }
             }
             .padding(.top, 40)
-        }.navigationTitle("Thinking")
+        }
+        .navigationTitle("Thinking")
+        .toast(isPresenting: $notificationModel.shouldShowAllCompleteToast) {
+            notificationModel.allCompleteToast
+        }
     }
 }
