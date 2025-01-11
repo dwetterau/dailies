@@ -27,7 +27,7 @@ struct FlashCardReviewPage: View {
             VStack {
                 if let card = viewModel.currentCard {
                     FlashCardView(card).padding(.top, 200)
-                    Spacer()
+                    Spacer().frame(idealHeight: 10, maxHeight: 10)
                     VStack(spacing: 10) {
                         HStack(spacing: 10) {
                             Button(action: {
@@ -43,6 +43,7 @@ struct FlashCardReviewPage: View {
                                     .padding(.leading, 30)
                                     .shadow(radius: 5)
                             }
+                            .buttonStyle(ScaleButtonStyle())
                             Button(action: {
                                 viewModel
                                     .setCurrentCardReviewStatus("Normal")
@@ -56,6 +57,7 @@ struct FlashCardReviewPage: View {
                                     .padding(.trailing, 30)
                                     .shadow(radius: 5)
                             }
+                            .buttonStyle(ScaleButtonStyle())
                         }
                         HStack(spacing: 10) {
                             Button(action: {
@@ -71,6 +73,7 @@ struct FlashCardReviewPage: View {
                                     .padding(.leading, 30)
                                     .shadow(radius: 5)
                             }
+                            .buttonStyle(ScaleButtonStyle())
                             Button(action: {
                                 viewModel
                                     .setCurrentCardReviewStatus("Wrong")
@@ -84,8 +87,10 @@ struct FlashCardReviewPage: View {
                                     .padding(.trailing, 30)
                                     .shadow(radius: 5)
                             }
+                            .buttonStyle(ScaleButtonStyle())
                         }
-                    }.padding(.bottom, 200)
+                    }
+                    .padding(.bottom, 200)
                 }
             }
             Text(viewModel.getCardCountStats())
