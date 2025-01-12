@@ -134,9 +134,11 @@ class EntityViewModel: ObservableObject {
     public private(set) var isDone: Bool
 
     private var completionModelIfExists: EntityCompletionModel? = nil
+    private var completionModelSubscription = Set<AnyCancellable>()
     private var eventsListViewModelIfExists: EventsListViewModel? = nil
 
     init(_ entity: Entity, isDone: Bool) {
+        print("In EntityViewModel init()", entity._id)
         self.entity = entity
         self.isDone = isDone
     }
@@ -178,7 +180,13 @@ class EntityViewModel: ObservableObject {
             fatalError("attempted to access completionModel on non-completion entity")
         }
         if completionModelIfExists == nil {
+            print("making new completion model for ", id)
             completionModelIfExists = EntityCompletionModel(self)
+
+            completionModelIfExists!.objectWillChange.sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &completionModelSubscription)
         }
         return completionModelIfExists!
     }
@@ -240,18 +248,24 @@ class EntityListModel: ObservableObject {
             )
             .replaceError(with: Entities(entities: [], entityIdToIsDone: [:], entityIdToCompletionRatio: [:]))
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] newEntitiesFromSerer in
-                self?.entitiesFromServer = newEntitiesFromSerer
+            .sink { [weak self] newEntitiesFromServer in
+                // TODO: Figure but why do we get spurious updates here
+                self?.entitiesFromServer = newEntitiesFromServer
             }
             .store(in: &subscriptions)
         }
         $entitiesFromServer.sink { [weak self] newEntitiesFromServer in
             guard let self = self else { return }
-            print("Updating view models \(newEntitiesFromServer.entities.count)")
-            DispatchQueue.main.async {
-                self.entityViewModels = newEntitiesFromServer.entities.map {
-                    entity in
-                    EntityViewModel(entity, isDone: self.isEntityDoneToday(entityId: entity._id))
+            print("Got new entities in sink \(newEntitiesFromServer.entities.count)")
+            if self.entitiesFromServer.entities == newEntitiesFromServer.entities {
+                print("Update didn't impact entity view models, skipping")
+            } else {
+                print("Update did impact entity view models, re-creating")
+                DispatchQueue.main.async {
+                    self.entityViewModels = newEntitiesFromServer.entities.map {
+                        entity in
+                        EntityViewModel(entity, isDone: self.isEntityDoneToday(entityId: entity._id))
+                    }
                 }
             }
         }.store(in: &subscriptions)

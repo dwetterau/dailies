@@ -15,29 +15,25 @@ struct EntityCompletionButton: View {
         entityViewModel = entity
     }
 
-    var completionViewModel: EntityCompletionModel {
-        entityViewModel.completionModel
-    }
-
     var body: some View {
         Button(action: {
-            completionViewModel.logCompletion()
+            entityViewModel.completionModel.logCompletion()
         }) {
             BigButton(
                 buttonText: "\(entityViewModel.name)",
                 buttonCompleteColor: entityViewModel.buttonColor,
-                completionRatio: completionViewModel.completionRatio
+                completionRatio: entityViewModel.completionModel.completionRatio
             )
         }
         .buttonStyle(ScaleButtonStyle())
-        .disabled(completionViewModel.isComplete || completionViewModel.isSaving)
+        .disabled(entityViewModel.completionModel.isComplete || entityViewModel.completionModel.isSaving)
         .onTapGesture(count: 3) {
             showResetConfirmationAlert = true
         }
         .alert("Reset completions?", isPresented: $showResetConfirmationAlert) {
             Button("Cancel", role: .cancel) {}
             Button("Reset", role: .destructive) {
-                completionViewModel.removeAllCompletions {}
+                entityViewModel.completionModel.removeAllCompletions {}
             }
         }
     }

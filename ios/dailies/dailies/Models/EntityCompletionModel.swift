@@ -53,7 +53,7 @@ class EntityCompletionModel: ObservableObject {
         }
 
         Task {
-            print("Calling events:getCurrentEvent")
+            print("Calling events:getCurrentEvent \(self.entityViewModel.id)")
             client.subscribe(to: "events:getCurrentEvent", with: [
                 "entityId": self.entityViewModel.id,
                 "timeRange": [
@@ -61,7 +61,9 @@ class EntityCompletionModel: ObservableObject {
                     "endTimestamp": timeRange.end,
                 ],
             ], yielding: Event?.self)
-                .handleEvents(receiveCompletion: logCompletionHandlers("EntityCompletionModel events:getCurrentEvent"))
+                .handleEvents(receiveOutput: { output in
+                    print("events.getCurrentEvent output:", output)
+                }, receiveCompletion: logCompletionHandlers("EntityCompletionModel events:getCurrentEvent"))
                 .replaceError(with: nil)
                 .receive(on: DispatchQueue.main)
                 .combineLatest($completionStats)
@@ -70,6 +72,7 @@ class EntityCompletionModel: ObservableObject {
                         if case let .genericCompletion(completionDetails) = eventDetails {
                             let remoteTimestamp = newCurrentEvent!.timestamp
                             if remoteTimestamp > currentCompletionStats.timestamp {
+                                print("new completion stats for", self.entityViewModel.id, currentCompletionStats, completionDetails.numCompletions)
                                 return CompletionStats(
                                     timestamp: remoteTimestamp,
                                     numCompletions: completionDetails.numCompletions
@@ -77,6 +80,7 @@ class EntityCompletionModel: ObservableObject {
                             }
                         }
                     }
+                    print("returning currentCompletionStats", self.entityViewModel.id, currentCompletionStats.numCompletions)
                     return currentCompletionStats
                 }
                 .assign(to: &$completionStats)
@@ -122,6 +126,7 @@ class EntityCompletionModel: ObservableObject {
             )
         }
         saveCompletionStats(newCompletionStats) {
+            print("Finished saving, setting completionStats directly")
             self.completionStats = newCompletionStats
         }
     }
@@ -155,6 +160,7 @@ class EntityCompletionModel: ObservableObject {
         )
         Task {
             do {
+                print("Calling events:upsertCurrentEvent")
                 try await client.mutation("events:upsertCurrentEvent", with: [
                     "entityId": entityViewModel.id,
                     "timeRange": [
