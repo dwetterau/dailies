@@ -189,3 +189,21 @@ export const update = mutation({
     await ctx.db.patch(id, {details});
   },
 })
+
+export const deleteEvent = mutation({
+  args: {
+    id: v.id("events"),
+  },
+  handler: async (ctx, {id}) => {
+    // Confirm that the user owns this event
+    const ownerId = await getUserIdFromContextAsync(ctx);
+    const events = await ctx.db.query("events").filter(q => q.and(
+      q.eq(q.field("ownerId"), ownerId),
+      q.eq(q.field("_id"), id),
+    )).collect();
+    if (!events.length) {
+      throw new ConvexError(`Event not found: ${id}`);
+    }
+    await ctx.db.delete(id);
+  }
+})

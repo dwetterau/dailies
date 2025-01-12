@@ -27,6 +27,7 @@ struct WorkoutEditPage: View {
     private let entityName: String
     private let includedEventFields: Set<EventField>
     private let onSave: () -> Void
+    private let onDelete: () -> Void
 
     init(
         entityId: String,
@@ -34,13 +35,15 @@ struct WorkoutEditPage: View {
         includedEventFields: [EventField],
         resetInterval _: ResetInterval,
         eventsListViewModel: EventsListViewModel,
-        onSave: @escaping () -> Void = {}
+        onSave: @escaping () -> Void = {},
+        onDelete: @escaping () -> Void = {}
     ) {
         self.entityId = entityId
         self.entityName = entityName
         self.includedEventFields = Set(includedEventFields)
         self.eventsListViewModel = eventsListViewModel
         self.onSave = onSave
+        self.onDelete = onDelete
     }
 
     var body: some View {
@@ -84,7 +87,15 @@ struct WorkoutEditPage: View {
         }
         .navigationTitle("New workout")
         .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
+            if eventId != nil {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(action: handleDelete) {
+                        Text("Delete")
+                            .foregroundColor(.red)
+                    }
+                }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
                 Button(action: handleSubmit) {
                     Text("Save")
                         .fontWeight(.bold)
@@ -198,6 +209,30 @@ struct WorkoutEditPage: View {
                     ])
                 }
                 onSave()
+                dismiss()
+            } catch let ClientError.ConvexError(data) {
+                let errorMessage = try! JSONDecoder().decode(String.self, from: Data(data.utf8))
+                print(errorMessage)
+                return
+            } catch {
+                print("An unknown error occurred: \(error)")
+                return
+            }
+        }
+    }
+
+    private func handleDelete() {
+        if eventId == nil {
+            print("WARN: tried deletion of workout that doesn't exist")
+            return
+        }
+        Task {
+            do {
+                print("Calling events:delete", eventId!)
+                try await client.mutation("events:deleteEvent", with: [
+                    "id": eventId!,
+                ])
+                onDelete()
                 dismiss()
             } catch let ClientError.ConvexError(data) {
                 let errorMessage = try! JSONDecoder().decode(String.self, from: Data(data.utf8))

@@ -12,6 +12,7 @@ struct ExercisePage: View {
     @ObservedObject var entityListModel: EntityListModel
     @EnvironmentObject var notificationModel: NotificationModel
     @State var showSaveSuccessToast = false
+    @State var showDeleteSuccessToast = false
 
     var body: some View {
         ScrollView {
@@ -44,10 +45,14 @@ struct ExercisePage: View {
                         entityName: entityViewModel.name,
                         includedEventFields: entityViewModel.includedEventFields!,
                         resetInterval: entityViewModel.resetInterval,
-                        eventsListViewModel: entityViewModel.eventsListViewModel
-                    ) {
-                        showSaveSuccessToast = true
-                    }
+                        eventsListViewModel: entityViewModel.eventsListViewModel,
+                        onSave: {
+                            showSaveSuccessToast = true
+                        },
+                        onDelete: {
+                            showDeleteSuccessToast = true
+                        }
+                    )
                 } else {
                     Text("could not navigate to exercise entity")
                 }
@@ -56,6 +61,9 @@ struct ExercisePage: View {
             }
         }.toast(isPresenting: $showSaveSuccessToast) {
             AlertToast(type: .complete(.green), title: "Saved!")
+        }
+        .toast(isPresenting: $showDeleteSuccessToast) {
+            AlertToast(type: .complete(.red), title: "Deleted")
         }
         .toast(isPresenting: $notificationModel.shouldShowAllCompleteToast) {
             notificationModel.allCompleteToast

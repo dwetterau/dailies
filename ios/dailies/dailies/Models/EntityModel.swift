@@ -138,7 +138,6 @@ class EntityViewModel: ObservableObject {
     private var eventsListViewModelIfExists: EventsListViewModel? = nil
 
     init(_ entity: Entity, isDone: Bool) {
-        print("In EntityViewModel init()", entity._id)
         self.entity = entity
         self.isDone = isDone
     }
