@@ -248,6 +248,7 @@ class EntityListModel: ObservableObject {
             .replaceError(with: Entities(entities: [], entityIdToIsDone: [:], entityIdToCompletionRatio: [:]))
             .receive(on: DispatchQueue.main)
             .sink { [weak self] newEntitiesFromServer in
+                print("got new entitiesFromServer")
                 // TODO: Figure but why do we get spurious updates here
                 self?.entitiesFromServer = newEntitiesFromServer
             }
@@ -257,7 +258,7 @@ class EntityListModel: ObservableObject {
             guard let self = self else { return }
             print("Got new entities in sink \(newEntitiesFromServer.entities.count)")
             if self.entitiesFromServer.entities == newEntitiesFromServer.entities {
-                print("Update didn't impact entity view models, skipping")
+                print("Update didn't impact entity view models, skipping \(self.entityViewModels.count)")
             } else {
                 print("Update did impact entity view models, re-creating")
                 DispatchQueue.main.async {

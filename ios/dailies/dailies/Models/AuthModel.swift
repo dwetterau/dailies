@@ -8,6 +8,7 @@
 import Auth0
 import Combine
 import ConvexMobile
+import Sentry
 import SwiftUI
 
 func onSuccessfulLogin(source: String) {
@@ -35,6 +36,7 @@ class AuthModel: ObservableObject {
                     print("No credentials in store found.")
                 } else {
                     print("Other error: \(error)")
+                    SentrySDK.capture(error: error)
                 }
             }
         }
@@ -58,11 +60,8 @@ class AuthModel: ObservableObject {
 
             do {
                 try await client.mutation("users:store")
-            } catch let ClientError.ConvexError(data) {
-                let errorMessage = try! JSONDecoder().decode(String.self, from: Data(data.utf8))
-                print(errorMessage)
             } catch {
-                print("An unknown error occurred: \(error)")
+                handleMutationError(error)
             }
         }
     }

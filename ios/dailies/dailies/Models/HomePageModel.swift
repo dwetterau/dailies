@@ -36,6 +36,7 @@ class HomePageModel: ObservableObject {
         // Observe the current model
         entityListModel.objectWillChange
             .sink { [weak self] _ in
+                print("Got entityListModel update, propagating")
                 self?.objectWillChange.send()
             }
             .store(in: &entityListModelSubscription)
