@@ -8,6 +8,7 @@
 import Auth0
 import Combine
 import ConvexMobile
+import Observation
 import Sentry
 import SwiftUI
 
@@ -16,16 +17,21 @@ func onSuccessfulLogin(source: String) {
     setupReminderNotification()
 }
 
-class AuthModel: ObservableObject {
-    @Published var authState: AuthState<Credentials> = .loading
+@Observable class AuthModel {
+    var authState: AuthState<Credentials> = .loading
+    private var cancellables = Set<AnyCancellable>()
 
-    init() {
+    func start(afterAuthentication: @escaping () -> Void) {
         client.authState.replaceError(with: .unauthenticated)
             .handleEvents(receiveOutput: {
                 print("authState: receiveOutput", $0)
             }, receiveCompletion: logCompletionHandlers("authState"))
             .receive(on: DispatchQueue.main)
-            .assign(to: &$authState)
+            .sink { [weak self] newAuthState in
+                self?.authState = newAuthState
+                afterAuthentication()
+            }
+            .store(in: &cancellables)
         Task {
             let result = await client.loginFromCache()
             switch result {

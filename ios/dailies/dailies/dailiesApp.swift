@@ -15,7 +15,7 @@ let client = ConvexClientWithAuth(deploymentUrl: deploymentUrl, authProvider: Au
 @main
 struct dailiesApp: App {
     @Environment(\.scenePhase) private var scenePhase
-    @StateObject private var landingPageModel = LandingPageModel()
+    private var landingPageModel = LandingPageModel()
     
     init() {
         SentrySDK.start { options in
@@ -35,7 +35,7 @@ struct dailiesApp: App {
     var body: some Scene {
         WindowGroup {
             LandingPage()
-                .environmentObject(landingPageModel)
+                .environment(landingPageModel)
                 .onChange(of: scenePhase) { _, newPhase in
                     if newPhase == .active {
                         Task {

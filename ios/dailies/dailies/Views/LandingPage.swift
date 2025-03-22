@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct LandingPage: View {
-    @EnvironmentObject var landingPageModel: LandingPageModel
+    @Environment(LandingPageModel.self) private var landingPageModel
 
     var body: some View {
         Color.white.ignoresSafeArea().overlay {
@@ -24,8 +24,10 @@ struct LandingPage: View {
                         }
                     }.padding()
                 case .authenticated:
-                    NavigationStack {
-                        HomePage(authModel: landingPageModel.authModel, homePageModel: landingPageModel.homePageModel!)
+                    if let homePageModel = landingPageModel.homePageModel {
+                        NavigationStack {
+                            HomePage(authModel: landingPageModel.authModel, homePageModel: homePageModel)
+                        }
                     }
                 }
             }
@@ -34,6 +36,6 @@ struct LandingPage: View {
 }
 
 #Preview {
-    LandingPage().environmentObject(LandingPageModel())
+    LandingPage().environment(LandingPageModel())
     
 }

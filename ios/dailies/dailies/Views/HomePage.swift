@@ -33,7 +33,6 @@ func getHomePageDestination(forCategory category: EntityCategory) -> HomePageDes
 }
 
 struct HomePage: View {
-    @ObservedObject
     var authModel: AuthModel
 
     @ObservedObject

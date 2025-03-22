@@ -5,28 +5,26 @@
 //  Created by David Wetterau on 3/21/25.
 //
 import Combine
+import Observation
 import SwiftUI
 
-class LandingPageModel: ObservableObject {
-    @Published var homePageModel: HomePageModel?
-    @Published var authModel = AuthModel()
-    private var cancellables = Set<AnyCancellable>()
-
+@Observable class LandingPageModel {
+    var homePageModel: HomePageModel?
+    var authModel: AuthModel
+    
     init() {
-        authModel.$authState.sink { [weak self] authState in
-            if case .authenticated = authState {
-                self?.homePageModel = HomePageModel()
-            }
+        self.authModel = AuthModel()
+        self.authModel.start { [weak self] in
+            self?.initializeHomePageModel()
         }
-        .store(in: &cancellables)
-        
-        authModel.objectWillChange.sink { [weak self] _ in
-            self?.objectWillChange.send()
-        }.store(in: &cancellables)
-        
-        homePageModel?.objectWillChange.sink { [weak self] _ in
-            self?.objectWillChange.send()
-        }.store(in: &cancellables)
+    }
+    
+    func initializeHomePageModel() {
+        if case .authenticated = authModel.authState {
+            homePageModel = HomePageModel()
+        } else {
+            homePageModel = nil
+        }
     }
     
     public func updateHomePageModel() async {
