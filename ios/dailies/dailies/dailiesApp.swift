@@ -16,7 +16,7 @@ let client = ConvexClientWithAuth(deploymentUrl: deploymentUrl, authProvider: Au
 struct dailiesApp: App {
     @Environment(\.scenePhase) private var scenePhase
     private var landingPageModel = LandingPageModel()
-    
+
     init() {
         SentrySDK.start { options in
             options.dsn = "https://1b2690bc4059a0b5eae495374efb3ea1@o65903.ingest.us.sentry.io/4508639119867904"

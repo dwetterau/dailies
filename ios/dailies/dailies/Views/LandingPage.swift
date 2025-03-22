@@ -37,5 +37,4 @@ struct LandingPage: View {
 
 #Preview {
     LandingPage().environment(LandingPageModel())
-    
 }

@@ -11,14 +11,14 @@ import SwiftUI
 @Observable class LandingPageModel {
     var homePageModel: HomePageModel?
     var authModel: AuthModel
-    
+
     init() {
-        self.authModel = AuthModel()
-        self.authModel.start { [weak self] in
+        authModel = AuthModel()
+        authModel.start { [weak self] in
             self?.initializeHomePageModel()
         }
     }
-    
+
     func initializeHomePageModel() {
         if case .authenticated = authModel.authState {
             homePageModel = HomePageModel()
@@ -26,9 +26,9 @@ import SwiftUI
             homePageModel = nil
         }
     }
-    
+
     public func updateHomePageModel() async {
-        if let homePageModel = self.homePageModel {
+        if let homePageModel = homePageModel {
             await homePageModel.updateEntityListModelIfStale()
         }
     }

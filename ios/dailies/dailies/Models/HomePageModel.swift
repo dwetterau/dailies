@@ -22,11 +22,11 @@ class HomePageModel: ObservableObject {
         let dayTimeRange = getDayTimeRangeForDate(Date())
         let entityListModel = EntityListModel(dayStartTimestamp: Int(dayTimeRange.start))
         self.entityListModel = entityListModel
-        self.learningCategoryPageModel = CategoryPageModel(.learning, entityListModel: entityListModel)
+        learningCategoryPageModel = CategoryPageModel(.learning, entityListModel: entityListModel)
 
         observeEntityListModel()
 
-        self.learningCategoryPageModel.objectWillChange.sink { [weak self] _ in
+        learningCategoryPageModel.objectWillChange.sink { [weak self] _ in
             self?.objectWillChange.send()
         }
         .store(in: &learningCategoryPageModelSubscription)
