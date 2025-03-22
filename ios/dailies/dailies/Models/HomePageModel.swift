@@ -22,11 +22,11 @@ class HomePageModel: ObservableObject {
         let dayTimeRange = getDayTimeRangeForDate(Date())
         let entityListModel = EntityListModel(dayStartTimestamp: Int(dayTimeRange.start))
         self.entityListModel = entityListModel
-        learningCategoryPageModel = CategoryPageModel(.learning, entityListModel: entityListModel)
+        self.learningCategoryPageModel = CategoryPageModel(.learning, entityListModel: entityListModel)
 
         observeEntityListModel()
 
-        learningCategoryPageModel.objectWillChange.sink { [weak self] _ in
+        self.learningCategoryPageModel.objectWillChange.sink { [weak self] _ in
             self?.objectWillChange.send()
         }
         .store(in: &learningCategoryPageModelSubscription)
@@ -46,6 +46,7 @@ class HomePageModel: ObservableObject {
     public func updateEntityListModelIfStale() async {
         let dayTimeRange = getDayTimeRangeForDate(Date())
         let currentDayStartTimestamp = Int(dayTimeRange.start)
+        print("Checking to see if model is stale")
         if currentDayStartTimestamp != entityListModel.dayStartTimestamp {
             entityListModelSubscription.removeAll()
             await entityListModel.cleanup()

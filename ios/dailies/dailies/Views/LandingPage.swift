@@ -8,24 +8,24 @@
 import SwiftUI
 
 struct LandingPage: View {
-    @StateObject var authModel = AuthModel()
+    @EnvironmentObject var landingPageModel: LandingPageModel
 
     var body: some View {
         Color.white.ignoresSafeArea().overlay {
             Group {
-                switch authModel.authState {
+                switch landingPageModel.authModel.authState {
                 case .loading:
                     ProgressView()
                 case .unauthenticated:
                     VStack {
                         Text("Dailies").font(.largeTitle)
-                        Button(action: authModel.login) {
+                        Button(action: landingPageModel.authModel.login) {
                             Text("Login").font(.title)
                         }
                     }.padding()
                 case .authenticated:
                     NavigationStack {
-                        HomePage(authModel: authModel)
+                        HomePage(authModel: landingPageModel.authModel, homePageModel: landingPageModel.homePageModel!)
                     }
                 }
             }
@@ -34,5 +34,6 @@ struct LandingPage: View {
 }
 
 #Preview {
-    LandingPage()
+    LandingPage().environmentObject(LandingPageModel())
+    
 }
