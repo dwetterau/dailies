@@ -1,5 +1,5 @@
 import { useQuery } from "convex/react";
-// import {api} from "./convex/_generated/api"
+import {api} from "@convex/_generated/api"
 import { Button, Text, View } from "react-native";
 import { useAuth0 } from "react-native-auth0";
 
@@ -21,7 +21,6 @@ export default function Index() {
 }
 
 function EntityList() {
-  return <Text>Entities2</Text>
   const entities = useQuery(api.entities.list, {})
   return (
     <View
