@@ -3,7 +3,7 @@ import { defineTable} from "convex/server";
 import { query, mutation, internalAction, internalMutation } from "./_generated/server";
 import { getUserIdFromContextAsync } from "./users";
 import { api, internal } from "./_generated/api";
-import { getTokenIfExists, TokenType } from "./tokens";
+import { TokenType } from "./tokens";
 import { Id } from "./_generated/dataModel";
 import { chunk } from "../lib/utils";
 
@@ -188,7 +188,7 @@ export const startSyncCards = mutation({
     args: {},
     handler: async (ctx, {}) => {
         const ownerId = await getUserIdFromContextAsync(ctx)
-        const token = await getTokenIfExists(ctx, { tokenType: TokenType.AIRTABLE })
+        const token = await ctx.runQuery(api.tokens.getTokenIfExists, { tokenType: TokenType.AIRTABLE })
         if (!token) {
             throw new Error("no token found for sync")
         }
@@ -210,7 +210,7 @@ export const startSaveReviewStatus = mutation({
     },
     handler: async (ctx, args) => {
         const ownerId = await getUserIdFromContextAsync(ctx)
-        const token = await getTokenIfExists(ctx, { tokenType: TokenType.AIRTABLE })
+        const token = await ctx.runQuery(api.tokens.getTokenIfExists, { tokenType: TokenType.AIRTABLE })
         if (!token) {
             throw new Error("no token found for sync")
         }

@@ -22,12 +22,14 @@ func onSuccessfulLogin(source: String) {
     private var cancellables = Set<AnyCancellable>()
 
     func start(afterAuthentication: @escaping () -> Void) {
+        print("starting authentication")
         client.authState.replaceError(with: .unauthenticated)
             .handleEvents(receiveOutput: {
                 print("authState: receiveOutput", $0)
             }, receiveCompletion: logCompletionHandlers("authState"))
             .receive(on: DispatchQueue.main)
             .sink { [weak self] newAuthState in
+                print("Got auth state", newAuthState)
                 self?.authState = newAuthState
                 afterAuthentication()
             }
@@ -46,6 +48,20 @@ func onSuccessfulLogin(source: String) {
                 }
             }
         }
+    }
+
+    public func logTokenForDebugging() {
+        let breadcrumb = Breadcrumb(level: .info, category: "custom")
+        breadcrumb.message = "auth state"
+
+        if case let .authenticated(creds) = authState {
+            breadcrumb.data = ["token": authState, "idToken": creds.idToken, "refreshToken": creds.refreshToken ?? "none", "accessToken": creds.accessToken, "expiresIn": creds.expiresIn]
+
+        } else {
+            breadcrumb.data = ["token": authState]
+        }
+        SentrySDK.addBreadcrumb(breadcrumb)
+        SentrySDK.capture(error: NSError(domain: "FakeAuthError", code: 123, userInfo: [NSLocalizedDescriptionKey: "See breadcrumbs"]))
     }
 
     func logout() {
