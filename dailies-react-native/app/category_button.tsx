@@ -23,15 +23,15 @@ function getColorForCategory(category: EntityCategory): string {
   // TODO: Consider getting the RGB values from here instead: https://developer.apple.com/design/human-interface-guidelines/color#iOS-iPadOS-system-colors
   switch (category) {
     case EntityCategory.EXERCISE:
-      return "purple";
+      return "#af52de";
     case EntityCategory.LEARNING:
-      return "green";
+      return "#34c759";
     case EntityCategory.CARE:
-      return "blue";
+      return "#007aff";
     case EntityCategory.THINKING:
-      return "red";
+      return "#ff3b30";
     case EntityCategory.TIDYING:
-      return "orange";
+      return "#fc9500";
     default:
       throw new Error("Unknown category");
   }

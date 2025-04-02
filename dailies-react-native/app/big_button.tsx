@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   text: {
-    fontSize: 30,
+    fontSize: 25,
     color: "white",
     textAlign: "center",
     fontFamily: "System", // Rounded design equivalent
