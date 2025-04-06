@@ -1,9 +1,11 @@
 import { api } from "@convex/_generated/api";
+import { Doc } from "@convex/_generated/dataModel";
 import { EntityCategory } from "@convex/entities";
 import { useQuery } from "convex/react";
 import { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import CategoryButton from "./category_button";
+import { useRouter } from "expo-router";
 
 const styles = StyleSheet.create({
   container: {
@@ -30,7 +32,8 @@ const ORDERED_CATEGORIES: Array<EntityCategory> = [
   EntityCategory.THINKING,
 ];
 
-export default function EntityList() {
+export default function HomePage() {
+  const router = useRouter();
   const entities = useQuery(api.entities.list, {});
 
   const categoryToEntities = useMemo(() => {
@@ -54,6 +57,12 @@ export default function EntityList() {
           key={category}
           category={category}
           entities={categoryToEntities.get(category)!}
+          onPress={() => {
+            router.push({
+              pathname: "/category_page",
+              params: { category },
+            });
+          }}
         />
       ))}
     </View>

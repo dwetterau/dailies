@@ -11,12 +11,14 @@ interface BigButtonProps {
   buttonText: string;
   buttonCompleteColor: string; // Hex or RGB color
   completionRatio: number; // Number in [0, 1]
+  onPress: () => void;
 }
 
 const BigButton: React.FC<BigButtonProps> = ({
   buttonText,
   buttonCompleteColor,
   completionRatio,
+  onPress,
 }) => {
   const animatedCompletionRatio = useRef(new Animated.Value(0)).current;
 
@@ -29,7 +31,11 @@ const BigButton: React.FC<BigButtonProps> = ({
   }, [completionRatio]);
 
   return (
-    <TouchableOpacity activeOpacity={0.8} style={styles.container}>
+    <TouchableOpacity
+      activeOpacity={0.8}
+      style={styles.container}
+      onPress={onPress}
+    >
       <View style={styles.shadow}>
         {/* Background Container */}
         <View style={styles.background}>

@@ -1,12 +1,12 @@
 import { Button, View } from "react-native";
 import { useAuth0 } from "react-native-auth0";
-import EntityList from "./entity_list";
+import HomePage from "./home_page";
 
 export default function Index() {
   const { user, authorize } = useAuth0();
 
   if (user) {
-    return <EntityList />;
+    return <HomePage />;
   }
   return (
     <View>

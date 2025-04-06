@@ -2,7 +2,7 @@ import { EntityCategory } from "@convex/entities";
 import BigButton from "./big_button";
 import { Doc } from "@convex/_generated/dataModel";
 
-function getDisplayNameForCategory(category: EntityCategory): string {
+export function getDisplayNameForCategory(category: EntityCategory): string {
   switch (category) {
     case EntityCategory.EXERCISE:
       return "Exercise";
@@ -19,7 +19,7 @@ function getDisplayNameForCategory(category: EntityCategory): string {
   }
 }
 
-function getColorForCategory(category: EntityCategory): string {
+export function getColorForCategory(category: EntityCategory): string {
   // TODO: Consider getting the RGB values from here instead: https://developer.apple.com/design/human-interface-guidelines/color#iOS-iPadOS-system-colors
   switch (category) {
     case EntityCategory.EXERCISE:
@@ -40,15 +40,18 @@ function getColorForCategory(category: EntityCategory): string {
 export default function CategoryButton({
   category,
   entities,
+  onPress,
 }: {
   category: EntityCategory;
   entities: Array<Doc<"entities">>;
+  onPress: () => void;
 }) {
   return (
     <BigButton
       buttonText={getDisplayNameForCategory(category)}
       buttonCompleteColor={getColorForCategory(category)}
       completionRatio={0.8}
+      onPress={onPress}
     />
   );
 }

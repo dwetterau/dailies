@@ -2,8 +2,11 @@ import { ConvexProviderWithAuth, ConvexReactClient } from "convex/react";
 import { useAuth0, Auth0Provider } from "react-native-auth0";
 import Constants from "expo-constants";
 
-import { Stack } from "expo-router";
+import { Stack, useLocalSearchParams } from "expo-router";
 import { useCallback, useMemo } from "react";
+import { getDisplayNameForCategory } from "./category_button";
+import { EntityCategory } from "@convex/entities";
+import { RouteProp } from "@react-navigation/native";
 
 const { EXPO_PUBLIC_CONVEX_URL } = Constants.expoConfig?.extra ?? {};
 
@@ -48,7 +51,23 @@ export default function RootLayout() {
       clientId={"ltcnlDIWJ6GxDCWpdW1fsosaPSR4KwCZ"}
     >
       <ConvexProviderWithAuth client={convex} useAuth={useAuthFromAuth0}>
-        <Stack />
+        <Stack>
+          <Stack.Screen
+            name="index"
+            options={{ headerShown: false, title: "Home" }}
+          />
+          <Stack.Screen
+            name="category_page"
+            options={({ route }) => {
+              const params = route.params as { category?: EntityCategory };
+              return {
+                title: params.category
+                  ? getDisplayNameForCategory(params.category)
+                  : "Category",
+              };
+            }}
+          />
+        </Stack>
       </ConvexProviderWithAuth>
     </Auth0Provider>
   );
