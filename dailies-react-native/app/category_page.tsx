@@ -5,10 +5,7 @@ import { api } from "@convex/_generated/api";
 import { useQuery } from "convex/react";
 import { useMemo } from "react";
 import BigButton from "./big_button";
-import {
-  getColorForCategory,
-  getDisplayNameForCategory,
-} from "./category_button";
+import { getColorForCategory } from "@/model/entities/category_helpers";
 import { EntityCategory } from "@convex/entities";
 
 const styles = StyleSheet.create({
@@ -38,7 +35,9 @@ export default function CategoryPage() {
           key={entity._id}
           buttonText={entity.name}
           buttonCompleteColor={getColorForCategory(category)}
-          completionRatio={0.5}
+          completionRatio={
+            allEntities?.entityIdToCompletionRatio[entity._id] ?? 0
+          }
           onPress={() => {
             console.log("pushed", entity);
           }}

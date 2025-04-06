@@ -2,11 +2,10 @@ import { ConvexProviderWithAuth, ConvexReactClient } from "convex/react";
 import { useAuth0, Auth0Provider } from "react-native-auth0";
 import Constants from "expo-constants";
 
-import { Stack, useLocalSearchParams } from "expo-router";
+import { Stack } from "expo-router";
 import { useCallback, useMemo } from "react";
-import { getDisplayNameForCategory } from "./category_button";
+import { getDisplayNameForCategory } from "@/model/entities/category_helpers";
 import { EntityCategory } from "@convex/entities";
-import { RouteProp } from "@react-navigation/native";
 
 const { EXPO_PUBLIC_CONVEX_URL } = Constants.expoConfig?.extra ?? {};
 

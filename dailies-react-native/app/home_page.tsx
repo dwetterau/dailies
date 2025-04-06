@@ -4,8 +4,13 @@ import { EntityCategory } from "@convex/entities";
 import { useQuery } from "convex/react";
 import { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import CategoryButton from "./category_button";
 import { useRouter } from "expo-router";
+import {
+  getCategoryCompletionRatio,
+  getColorForCategory,
+  getDisplayNameForCategory,
+} from "@/model/entities/category_helpers";
+import BigButton from "./big_button";
 
 const styles = StyleSheet.create({
   container: {
@@ -53,10 +58,15 @@ export default function HomePage() {
       {ORDERED_CATEGORIES.filter((category) =>
         categoryToEntities.has(category)
       ).map((category) => (
-        <CategoryButton
+        <BigButton
           key={category}
-          category={category}
-          entities={categoryToEntities.get(category)!}
+          buttonText={getDisplayNameForCategory(category)}
+          buttonCompleteColor={getColorForCategory(category)}
+          completionRatio={getCategoryCompletionRatio(
+            entities?.entities ?? [],
+            entities?.entityIdToCompletionRatio ?? {},
+            category
+          )}
           onPress={() => {
             router.push({
               pathname: "/category_page",
