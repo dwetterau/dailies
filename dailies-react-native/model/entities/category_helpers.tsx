@@ -1,5 +1,4 @@
-import { Doc, Id } from "@convex/_generated/dataModel";
-import { EntityCategory } from "@convex/entities";
+import { Entity, EntityCategory, EntityId } from "@convex/entities";
 
 export function getDisplayNameForCategory(category: EntityCategory): string {
   switch (category) {
@@ -37,8 +36,8 @@ export function getColorForCategory(category: EntityCategory): string {
 }
 
 export function getCategoryCompletionRatio(
-  allEntities: Array<Doc<"entities">>,
-  entityIdToCompletionRatio: Record<Id<"entities">, number>,
+  allEntities: Array<Entity>,
+  entityIdToCompletionRatio: Record<EntityId, number>,
   category: EntityCategory
 ): number {
   let hasOptionalEntity = false;

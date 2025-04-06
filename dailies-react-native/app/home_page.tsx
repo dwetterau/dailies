@@ -1,6 +1,5 @@
 import { api } from "@convex/_generated/api";
-import { Doc } from "@convex/_generated/dataModel";
-import { EntityCategory } from "@convex/entities";
+import { Entity, EntityCategory } from "@convex/entities";
 import { useQuery } from "convex/react";
 import { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
@@ -11,6 +10,7 @@ import {
   getDisplayNameForCategory,
 } from "@/model/entities/category_helpers";
 import BigButton from "./big_button";
+import { useCurrentTimeRanges } from "@/model/time/timestamps";
 
 const styles = StyleSheet.create({
   container: {
@@ -39,10 +39,12 @@ const ORDERED_CATEGORIES: Array<EntityCategory> = [
 
 export default function HomePage() {
   const router = useRouter();
-  const entities = useQuery(api.entities.list, {});
+
+  const { timeRanges } = useCurrentTimeRanges();
+  const entities = useQuery(api.entities.list, { ...timeRanges });
 
   const categoryToEntities = useMemo(() => {
-    const categoryToEntities = new Map<string, Array<Doc<"entities">>>();
+    const categoryToEntities = new Map<string, Array<Entity>>();
     entities?.entities.forEach((entity) => {
       if (!categoryToEntities.has(entity.category)) {
         categoryToEntities.set(entity.category, []);
