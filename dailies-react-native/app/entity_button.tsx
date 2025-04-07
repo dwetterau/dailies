@@ -7,10 +7,10 @@ import { useMutation, useQuery } from "convex/react";
 import { EventType } from "@convex/events";
 import {
   getCurrentTimestamp,
-  getStartOfDayTimestamp,
   useCurrentTimeRanges,
 } from "@/model/time/timestamps";
 import { getTimeRangeForTimestamp } from "@/model/entities/entity_helpers";
+import { Alert } from "react-native";
 
 export default function EntityButton({
   entity,
@@ -58,12 +58,52 @@ export default function EntityButton({
     }
   }, [entity, timeRange]);
 
+  const handleTriplePress = useCallback(() => {
+    if (
+      !currentEvent ||
+      currentEvent.details.type !== EventType.GENERIC_COMPLETION
+    ) {
+      return;
+    }
+    const timestamp = getCurrentTimestamp();
+    Alert.alert(
+      "Reset completions?",
+      "Are you sure you want to reset today's completions?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Reset",
+          onPress: () => {
+            upsertEvent({
+              entityId: entity._id,
+              timeRange,
+              timestamp,
+              details: {
+                type: EventType.GENERIC_COMPLETION,
+                payload: {
+                  numCompletions: 0,
+                  numRequiredCompletions: entity.numRequiredCompletions ?? 1,
+                },
+              },
+            });
+          },
+          style: "destructive", // makes the button red on iOS
+        },
+      ],
+      { cancelable: true }
+    );
+  }, [currentEvent]);
+
   return (
     <BigButton
       buttonText={entity.name}
       buttonCompleteColor={getColorForCategory(entity.category)}
       completionRatio={completionRatio}
       onPress={handlePress}
+      onTriplePress={handleTriplePress}
     />
   );
 }

@@ -11,6 +11,7 @@ import {
 } from "@/model/entities/category_helpers";
 import BigButton from "./big_button";
 import { useCurrentTimeRanges } from "@/model/time/timestamps";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 const styles = StyleSheet.create({
   container: {
@@ -55,28 +56,30 @@ export default function HomePage() {
   }, [entities]);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Dailies 2</Text>
-      {ORDERED_CATEGORIES.filter((category) =>
-        categoryToEntities.has(category)
-      ).map((category) => (
-        <BigButton
-          key={category}
-          buttonText={getDisplayNameForCategory(category)}
-          buttonCompleteColor={getColorForCategory(category)}
-          completionRatio={getCategoryCompletionRatio(
-            entities?.entities ?? [],
-            entities?.entityIdToCompletionRatio ?? {},
-            category
-          )}
-          onPress={() => {
-            router.push({
-              pathname: "/category_page",
-              params: { category },
-            });
-          }}
-        />
-      ))}
-    </View>
+    <GestureHandlerRootView>
+      <View style={styles.container}>
+        <Text style={styles.title}>Dailies 2</Text>
+        {ORDERED_CATEGORIES.filter((category) =>
+          categoryToEntities.has(category)
+        ).map((category) => (
+          <BigButton
+            key={category}
+            buttonText={getDisplayNameForCategory(category)}
+            buttonCompleteColor={getColorForCategory(category)}
+            completionRatio={getCategoryCompletionRatio(
+              entities?.entities ?? [],
+              entities?.entityIdToCompletionRatio ?? {},
+              category
+            )}
+            onPress={() => {
+              router.push({
+                pathname: "/category_page",
+                params: { category },
+              });
+            }}
+          />
+        ))}
+      </View>
+    </GestureHandlerRootView>
   );
 }

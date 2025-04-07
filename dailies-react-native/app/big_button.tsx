@@ -1,17 +1,18 @@
-import React, { useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
+import { Animated, Text, View, StyleSheet } from "react-native";
 import {
-  Animated,
-  Text,
-  TouchableOpacity,
-  View,
-  StyleSheet,
-} from "react-native";
+  TapGestureHandler,
+  State,
+  HandlerStateChangeEvent,
+  TapGestureHandlerEventPayload,
+} from "react-native-gesture-handler";
 
 interface BigButtonProps {
   buttonText: string;
   buttonCompleteColor: string; // Hex or RGB color
   completionRatio: number; // Number in [0, 1]
   onPress: () => void;
+  onTriplePress?: () => void;
 }
 
 const BigButton: React.FC<BigButtonProps> = ({
@@ -19,7 +20,9 @@ const BigButton: React.FC<BigButtonProps> = ({
   buttonCompleteColor,
   completionRatio,
   onPress,
+  onTriplePress,
 }) => {
+  const tripleTapRef = React.useRef();
   const animatedCompletionRatio = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -30,36 +33,64 @@ const BigButton: React.FC<BigButtonProps> = ({
     }).start();
   }, [completionRatio]);
 
-  return (
-    <TouchableOpacity
-      activeOpacity={0.8}
-      style={styles.container}
-      onPress={onPress}
-    >
-      <View style={styles.shadow}>
-        {/* Background Container */}
-        <View style={styles.background}>
-          {/* Animated Progress Bar */}
-          <Animated.View
-            style={[
-              styles.progressBar,
-              {
-                backgroundColor: buttonCompleteColor,
-                width: animatedCompletionRatio.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0, 300], // Fixed width instead of percentage
-                }),
-              },
-            ]}
-          />
-        </View>
+  const handleTriplePress = useCallback(
+    (event: HandlerStateChangeEvent<TapGestureHandlerEventPayload>) => {
+      if (!onTriplePress) return;
+      if (event.nativeEvent.state === State.ACTIVE) {
+        onTriplePress();
+      }
+    },
+    [onTriplePress]
+  );
 
-        {/* Button Text */}
-        <View style={styles.textContainer}>
-          <Text style={styles.text}>{buttonText}</Text>
+  const handleSinglePress = useCallback(
+    (event: HandlerStateChangeEvent<TapGestureHandlerEventPayload>) => {
+      if (event.nativeEvent.state === State.ACTIVE) {
+        onPress();
+      }
+    },
+    [onPress]
+  );
+
+  return (
+    <TapGestureHandler
+      ref={tripleTapRef}
+      numberOfTaps={3}
+      maxDelayMs={150}
+      onHandlerStateChange={handleTriplePress}
+    >
+      <TapGestureHandler
+        numberOfTaps={1}
+        waitFor={tripleTapRef}
+        onHandlerStateChange={handleSinglePress}
+      >
+        <View style={styles.container}>
+          <View style={styles.shadow}>
+            {/* Background Container */}
+            <View style={styles.background}>
+              {/* Animated Progress Bar */}
+              <Animated.View
+                style={[
+                  styles.progressBar,
+                  {
+                    backgroundColor: buttonCompleteColor,
+                    width: animatedCompletionRatio.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, 300], // Fixed width instead of percentage
+                    }),
+                  },
+                ]}
+              />
+            </View>
+
+            {/* Button Text */}
+            <View style={styles.textContainer}>
+              <Text style={styles.text}>{buttonText}</Text>
+            </View>
+          </View>
         </View>
-      </View>
-    </TouchableOpacity>
+      </TapGestureHandler>
+    </TapGestureHandler>
   );
 };
 

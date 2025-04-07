@@ -7,6 +7,7 @@ import { useMemo } from "react";
 import { EntityCategory } from "@convex/entities";
 import EntityButton from "./entity_button";
 import { useCurrentTimeRanges } from "@/model/time/timestamps";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 const styles = StyleSheet.create({
   container: {
@@ -31,16 +32,18 @@ export default function CategoryPage() {
   );
 
   return (
-    <View style={styles.container}>
-      {entities?.map((entity) => (
-        <EntityButton
-          key={entity._id}
-          entity={entity}
-          completionRatio={
-            allEntities?.entityIdToCompletionRatio[entity._id] ?? 0
-          }
-        />
-      ))}
-    </View>
+    <GestureHandlerRootView>
+      <View style={styles.container}>
+        {entities?.map((entity) => (
+          <EntityButton
+            key={entity._id}
+            entity={entity}
+            completionRatio={
+              allEntities?.entityIdToCompletionRatio[entity._id] ?? 0
+            }
+          />
+        ))}
+      </View>
+    </GestureHandlerRootView>
   );
 }
