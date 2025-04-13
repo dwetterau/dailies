@@ -26,6 +26,11 @@ export enum EntityType {
   FLASH_CARDS = "flashCards",
 }
 
+export enum ResetAfterInterval {
+  DAILY = "daily",
+  WEEKLY = "weekly",
+}
+
 const entityTypesSchema = v.union(
   ...Object.values(EntityType).map((type) => v.literal(type))
 );
@@ -39,7 +44,9 @@ export const ENTITIES_SCHEMA = defineTable({
   numRequiredCompletions: v.optional(v.number()),
   // Used for some entity types to specify which fields are required on events for the entity.
   includedEventFields: v.optional(v.array(v.string())),
-  resetAfterInterval: v.union(v.literal("daily"), v.literal("weekly")),
+  resetAfterInterval: v.union(
+    ...Object.values(ResetAfterInterval).map(v.literal)
+  ),
 });
 
 export const list = query({
@@ -159,7 +166,9 @@ const COMMON_ENTITY_CREATE_ARGS = {
   type: entityTypesSchema,
   category: entityCategoriesSchema,
   isRequired: v.boolean(),
-  resetAfterInterval: v.union(v.literal("daily"), v.literal("weekly")),
+  resetAfterInterval: v.union(
+    ...Object.values(ResetAfterInterval).map(v.literal)
+  ),
   numRequiredCompletions: v.optional(v.number()),
   includedEventFields: v.optional(v.array(v.string())),
 };

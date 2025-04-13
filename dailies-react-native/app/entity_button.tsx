@@ -11,6 +11,7 @@ import {
 } from "@/model/time/timestamps";
 import { getTimeRangeForTimestamp } from "@/model/entities/entity_helpers";
 import { Alert } from "react-native";
+import { useRouter } from "expo-router";
 
 export default function EntityButton({
   entity,
@@ -19,6 +20,7 @@ export default function EntityButton({
   entity: Entity;
   completionRatio: number;
 }) {
+  const router = useRouter();
   const { currentTimestamp } = useCurrentTimeRanges();
   const timeRange = useMemo(
     () => getTimeRangeForTimestamp(entity.resetAfterInterval, currentTimestamp),
@@ -53,10 +55,15 @@ export default function EntityButton({
           },
         },
       });
+    } else if (entity.type === EntityType.FLASH_CARDS) {
+      router.push({
+        pathname: "/flash_card_page",
+        params: { entityId: entity._id },
+      });
     } else {
       console.log("unsupported entity type :(", entity.type);
     }
-  }, [entity, timeRange]);
+  }, [entity, router, timeRange]);
 
   const handleTriplePress = useCallback(() => {
     if (

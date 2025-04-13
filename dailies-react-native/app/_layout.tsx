@@ -66,6 +66,10 @@ export default function RootLayout() {
               };
             }}
           />
+          <Stack.Screen
+            name="flash_card_page"
+            options={{ title: "Flash Cards" }}
+          />
         </Stack>
       </ConvexProviderWithAuth>
     </Auth0Provider>
