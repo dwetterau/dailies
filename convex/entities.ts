@@ -152,15 +152,6 @@ export const get = query({
   },
 });
 
-function getEnumType(typeString: string): EntityType {
-  for (const option of Object.values(EntityType)) {
-    if (option === typeString) {
-      return option;
-    }
-  }
-  throw new Error(`Invalid type: ${typeString}`);
-}
-
 const COMMON_ENTITY_CREATE_ARGS = {
   name: v.string(),
   type: entityTypesSchema,
