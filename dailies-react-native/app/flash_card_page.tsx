@@ -14,6 +14,7 @@ import {
   useState,
 } from "react";
 import { TouchableOpacity, View, Text, PlatformColor } from "react-native";
+import FlashCardView from "./flash_card";
 
 type EventForUpsert = {
   entityId: EntityId;
@@ -115,15 +116,27 @@ export default function FlashCardPage() {
     });
   });
 
+  const currentCard = getFirstUnreviewedCard(flashCards ?? []);
   return (
     <View>
       <FlashCardStatsHeader
         flashCards={flashCards ?? []}
         currentEvent={currentEvent}
       />
-      <Text>{JSON.stringify(currentEvent)}</Text>
+      {currentCard && <FlashCardView card={currentCard} />}
     </View>
   );
+}
+
+function getFirstUnreviewedCard(
+  flashCards: Array<FlashCard>
+): FlashCard | null {
+  for (const card of flashCards) {
+    if (card.reviewStatus === null) {
+      return card;
+    }
+  }
+  return null;
 }
 
 function FlashCardStatsHeader({
