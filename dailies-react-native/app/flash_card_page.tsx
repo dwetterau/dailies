@@ -4,7 +4,7 @@ import { api } from "@convex/_generated/api";
 import { EntityId, ResetAfterInterval } from "@convex/entities";
 import { FlashCard, ReviewStatus } from "@convex/flashCards";
 import { Event, EventType } from "@convex/events";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { useLocalSearchParams, useNavigation } from "expo-router";
 import {
   useCallback,
@@ -18,6 +18,10 @@ import { TouchableOpacity, View, Text, PlatformColor } from "react-native";
 type EventForUpsert = {
   entityId: EntityId;
   timestamp: number;
+  timeRange: {
+    startTimestamp: number;
+    endTimestamp: number;
+  };
   details: {
     type: EventType.FLASH_CARDS;
     payload: {
@@ -46,6 +50,7 @@ export default function FlashCardPage() {
     entityId,
     // TODO: Make sure to update to the current timestamp if needed
     timestamp: 0,
+    timeRange,
     details: {
       type: EventType.FLASH_CARDS,
       payload: {
@@ -59,17 +64,37 @@ export default function FlashCardPage() {
     if (
       _currentEvent &&
       _currentEvent.details.type === EventType.FLASH_CARDS &&
+      _currentEvent.timestamp >= timeRange.startTimestamp &&
+      _currentEvent.timestamp <= timeRange.endTimestamp &&
       _currentEvent.timestamp > currentEvent.timestamp
     ) {
-      setCurrentEvent(_currentEvent as EventForUpsert);
+      setCurrentEvent({
+        ..._currentEvent,
+        timeRange,
+      } as EventForUpsert);
     }
-  }, [_currentEvent]);
+  }, [_currentEvent, timeRange]);
 
   const flashCards = useQuery(api.flashCards.listCards);
 
-  const handleLoad = useCallback(() => {}, []);
+  const saveFlashCards = useMutation(api.flashCards.startSaveReviewStatus);
+  const upsertEvent = useMutation(api.events.upsertCurrentEvent);
 
-  const handleSave = useCallback(() => {}, []);
+  const handleLoad = useCallback(async () => {
+    // TODO: Handle loading
+  }, []);
+
+  const handleSave = useCallback(async () => {
+    await saveFlashCards({
+      cards: (flashCards ?? [])
+        .filter((card) => card.reviewStatus !== null)
+        .map((card) => ({
+          id: card._id,
+          reviewStatus: card.reviewStatus!,
+        })),
+    });
+    await upsertEvent(currentEvent);
+  }, [flashCards, currentEvent, saveFlashCards, upsertEvent]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
