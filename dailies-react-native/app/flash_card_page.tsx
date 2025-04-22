@@ -15,6 +15,7 @@ import {
 } from "react";
 import { TouchableOpacity, View, Text, PlatformColor } from "react-native";
 import FlashCardView from "./flash_card";
+import FlashCardReviewButtons from "./flash_card_review_buttons";
 
 type EventForUpsert = {
   entityId: EntityId;
@@ -97,6 +98,17 @@ export default function FlashCardPage() {
     await upsertEvent(currentEvent);
   }, [flashCards, currentEvent, saveFlashCards, upsertEvent]);
 
+  const currentCard = getFirstUnreviewedCard(flashCards ?? []);
+  const handleSetCurrentCardReviewStatus = useCallback(
+    (status: ReviewStatus) => {
+      if (!currentCard) {
+        throw new Error("No current card");
+      }
+      console.log("Changing status of card to", status);
+    },
+    [currentCard]
+  );
+
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
@@ -116,14 +128,22 @@ export default function FlashCardPage() {
     });
   });
 
-  const currentCard = getFirstUnreviewedCard(flashCards ?? []);
   return (
     <View>
-      <FlashCardStatsHeader
-        flashCards={flashCards ?? []}
-        currentEvent={currentEvent}
-      />
-      {currentCard && <FlashCardView card={currentCard} />}
+      <View style={{ padding: 20 }}>
+        <FlashCardStatsHeader
+          flashCards={flashCards ?? []}
+          currentEvent={currentEvent}
+        />
+      </View>
+      {currentCard && (
+        <View style={{ paddingTop: 200, gap: 20 }}>
+          <FlashCardView card={currentCard} />
+          <FlashCardReviewButtons
+            setCurrentCardReviewStatus={handleSetCurrentCardReviewStatus}
+          />
+        </View>
+      )}
     </View>
   );
 }
@@ -146,8 +166,10 @@ function FlashCardStatsHeader({
   flashCards: Array<FlashCard>;
   currentEvent: EventForUpsert;
 }) {
-  const totalCards = flashCards.length;
   const { numReviewed, numCorrect } = currentEvent.details.payload;
+  const numToReview = flashCards.filter(
+    (card) => card.reviewStatus === null
+  ).length;
   const correctPercentage = new Intl.NumberFormat(undefined, {
     style: "percent",
     minimumFractionDigits: 2,
@@ -156,7 +178,7 @@ function FlashCardStatsHeader({
 
   return (
     <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-      <Text>{`${totalCards} loaded`}</Text>
+      <Text>{`${numToReview} to Review`}</Text>
       <Text>{`${numReviewed} reviewed - ${correctPercentage}`}</Text>
     </View>
   );

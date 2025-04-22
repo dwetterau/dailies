@@ -10,7 +10,7 @@ import { getUserIdFromContextAsync } from "./users";
 import { api, internal } from "./_generated/api";
 import { TokenType } from "./tokens";
 import { Doc, Id } from "./_generated/dataModel";
-import { chunk } from "../lib/utils";
+import { chunk } from "./utils";
 
 export type FlashCard = Doc<"flashCards">;
 export type FlashCardId = Id<"flashCards">;
