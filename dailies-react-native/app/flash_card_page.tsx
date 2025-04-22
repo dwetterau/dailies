@@ -1,5 +1,8 @@
 import { getTimeRangeForTimestamp } from "@/model/entities/entity_helpers";
-import { useCurrentTimeRanges } from "@/model/time/timestamps";
+import {
+  getIsTimestampInTimeRange,
+  useCurrentTimeRanges,
+} from "@/model/time/timestamps";
 import { api } from "@convex/_generated/api";
 import { EntityId, ResetAfterInterval } from "@convex/entities";
 import { FlashCard, ReviewStatus } from "@convex/flashCards";
@@ -77,24 +80,46 @@ export default function FlashCardPage() {
     }
   }, [_currentEvent, timeRange]);
 
-  const flashCards = useQuery(api.flashCards.listCards);
+  const remoteFlashCards = useQuery(api.flashCards.listCards);
+  const [flashCards, setFlashCards] = useState<Array<FlashCard>>([]);
+
+  // When we load cards from the server, add in new ones to the end of our current list.
+  useEffect(() => {
+    const currentFlashCardIds = new Set(flashCards.map((card) => card._id));
+    const newCards: Array<FlashCard> = [];
+
+    for (const card of remoteFlashCards ?? []) {
+      if (!currentFlashCardIds.has(card._id)) {
+        newCards.push(card);
+      }
+    }
+    if (newCards.length > 0) {
+      setFlashCards((prevCards) => [...prevCards, ...newCards]);
+    }
+  }, [remoteFlashCards]);
 
   const saveFlashCards = useMutation(api.flashCards.startSaveReviewStatus);
+  const loadFlashCards = useMutation(api.flashCards.startSyncCards);
   const upsertEvent = useMutation(api.events.upsertCurrentEvent);
 
   const handleLoad = useCallback(async () => {
-    // TODO: Handle loading
+    await loadFlashCards({});
   }, []);
 
   const handleSave = useCallback(async () => {
-    await saveFlashCards({
-      cards: (flashCards ?? [])
-        .filter((card) => card.reviewStatus !== null)
-        .map((card) => ({
-          id: card._id,
-          reviewStatus: card.reviewStatus!,
-        })),
-    });
+    const flashCardsToSave = flashCards
+      .filter((card) => card.reviewStatus !== null)
+      .map((card) => ({
+        id: card._id,
+        reviewStatus: card.reviewStatus!,
+      }));
+    const flashCardsToKeep = flashCards.filter(
+      (card) => card.reviewStatus === null
+    );
+    // Proactively remove the cards from our local copy,
+    // since the server update will not know to remove them.
+    setFlashCards(flashCardsToKeep);
+    await saveFlashCards({ cards: flashCardsToSave });
     await upsertEvent(currentEvent);
   }, [flashCards, currentEvent, saveFlashCards, upsertEvent]);
 
@@ -104,9 +129,74 @@ export default function FlashCardPage() {
       if (!currentCard) {
         throw new Error("No current card");
       }
-      console.log("Changing status of card to", status);
+      setFlashCards((prevCards) => {
+        return prevCards.map((card) => {
+          if (card._id === currentCard._id) {
+            return {
+              ...card,
+              reviewStatus: status,
+            };
+          }
+          return card;
+        });
+      });
+      setCurrentEvent((prevEvent) => {
+        const oldStatus = currentCard.reviewStatus;
+        let numReviewedDelta = 0;
+        let numCorrectDelta = 0;
+        if (oldStatus === undefined) {
+          // This is a weird race condition - where we didn't update a card, so don't update the status.
+          return prevEvent;
+        } else if (oldStatus === null) {
+          numReviewedDelta = 1;
+          if (status !== ReviewStatus.WRONG) {
+            numCorrectDelta = 1;
+          }
+        } else {
+          // TODO: This is a re-review case - we also need to advance the index in this case.
+          const newIsCorrect = status !== ReviewStatus.WRONG;
+          const oldIsCorrect = oldStatus !== ReviewStatus.WRONG;
+          if (newIsCorrect && !oldIsCorrect) {
+            numCorrectDelta = 1;
+          } else if (!newIsCorrect && oldIsCorrect) {
+            numCorrectDelta = -1;
+          }
+        }
+
+        if (!getIsTimestampInTimeRange(prevEvent.timestamp, timeRange)) {
+          return {
+            entityId,
+            // TODO: Make sure to update to the current timestamp if needed
+            timestamp: 0,
+            timeRange,
+            details: {
+              type: EventType.FLASH_CARDS,
+              payload: {
+                numReviewed: numReviewedDelta,
+                numCorrect: Math.max(0, numCorrectDelta),
+              },
+            },
+          };
+        }
+        return {
+          entityId,
+          timestamp: prevEvent.timestamp,
+          timeRange,
+          details: {
+            type: EventType.FLASH_CARDS,
+            payload: {
+              numReviewed:
+                prevEvent.details.payload.numReviewed + numReviewedDelta,
+              numCorrect: Math.max(
+                0,
+                prevEvent.details.payload.numCorrect + numCorrectDelta
+              ),
+            },
+          },
+        };
+      });
     },
-    [currentCard]
+    [currentCard, flashCards, timeRange]
   );
 
   useLayoutEffect(() => {

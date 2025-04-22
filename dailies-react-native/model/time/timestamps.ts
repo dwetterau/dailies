@@ -7,6 +7,15 @@ export function getCurrentTimestamp(): number {
   return Math.floor(Date.now());
 }
 
+export function getIsTimestampInTimeRange(
+  timestamp: number,
+  timeRange: { startTimestamp: number; endTimestamp: number }
+): boolean {
+  return (
+    timestamp >= timeRange.startTimestamp && timestamp <= timeRange.endTimestamp
+  );
+}
+
 export function getStartOfDayTimestamp(currentTimestamp: number): number {
   const now = new Date(currentTimestamp);
   const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
