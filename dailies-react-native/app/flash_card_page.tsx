@@ -6,7 +6,7 @@ import {
 import { api } from "@convex/_generated/api";
 import { EntityId, ResetAfterInterval } from "@convex/entities";
 import { FlashCard, ReviewStatus } from "@convex/flashCards";
-import { Event, EventType } from "@convex/events";
+import { EventType } from "@convex/events";
 import { useMutation, useQuery } from "convex/react";
 import { useLocalSearchParams, useNavigation } from "expo-router";
 import {
@@ -44,7 +44,7 @@ export default function FlashCardPage() {
   const { currentTimestamp } = useCurrentTimeRanges();
   const timeRange = useMemo(
     () => getTimeRangeForTimestamp(ResetAfterInterval.DAILY, currentTimestamp),
-    [currentTimestamp]
+    [currentTimestamp],
   );
 
   const _currentEvent = useQuery(api.events.getCurrentEvent, {
@@ -78,24 +78,29 @@ export default function FlashCardPage() {
         timeRange,
       } as EventForUpsert);
     }
-  }, [_currentEvent, timeRange]);
+  }, [_currentEvent, currentEvent.timestamp, timeRange]);
 
   const remoteFlashCards = useQuery(api.flashCards.listCards);
   const [flashCards, setFlashCards] = useState<Array<FlashCard>>([]);
 
   // When we load cards from the server, add in new ones to the end of our current list.
   useEffect(() => {
-    const currentFlashCardIds = new Set(flashCards.map((card) => card._id));
-    const newCards: Array<FlashCard> = [];
+    setFlashCards((prevFlashCards) => {
+      const currentFlashCardIds = new Set(
+        prevFlashCards.map((card) => card._id),
+      );
+      const newCards: Array<FlashCard> = [];
 
-    for (const card of remoteFlashCards ?? []) {
-      if (!currentFlashCardIds.has(card._id)) {
-        newCards.push(card);
+      for (const card of remoteFlashCards ?? []) {
+        if (!currentFlashCardIds.has(card._id)) {
+          newCards.push(card);
+        }
       }
-    }
-    if (newCards.length > 0) {
-      setFlashCards((prevCards) => [...prevCards, ...newCards]);
-    }
+      if (newCards.length > 0) {
+        return [...prevFlashCards, ...newCards];
+      }
+      return prevFlashCards;
+    });
   }, [remoteFlashCards]);
 
   const saveFlashCards = useMutation(api.flashCards.startSaveReviewStatus);
@@ -104,7 +109,7 @@ export default function FlashCardPage() {
 
   const handleLoad = useCallback(async () => {
     await loadFlashCards({});
-  }, []);
+  }, [loadFlashCards]);
 
   const handleSave = useCallback(async () => {
     const flashCardsToSave = flashCards
@@ -114,7 +119,7 @@ export default function FlashCardPage() {
         reviewStatus: card.reviewStatus!,
       }));
     const flashCardsToKeep = flashCards.filter(
-      (card) => card.reviewStatus === null
+      (card) => card.reviewStatus === null,
     );
     // Proactively remove the cards from our local copy,
     // since the server update will not know to remove them.
@@ -189,16 +194,17 @@ export default function FlashCardPage() {
                 prevEvent.details.payload.numReviewed + numReviewedDelta,
               numCorrect: Math.max(
                 0,
-                prevEvent.details.payload.numCorrect + numCorrectDelta
+                prevEvent.details.payload.numCorrect + numCorrectDelta,
               ),
             },
           },
         };
       });
     },
-    [currentCard, flashCards, timeRange]
+    [entityId, currentCard, timeRange],
   );
 
+  // Setup the menu options
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
@@ -239,7 +245,7 @@ export default function FlashCardPage() {
 }
 
 function getFirstUnreviewedCard(
-  flashCards: Array<FlashCard>
+  flashCards: Array<FlashCard>,
 ): FlashCard | null {
   for (const card of flashCards) {
     if (card.reviewStatus === null) {
@@ -258,7 +264,7 @@ function FlashCardStatsHeader({
 }) {
   const { numReviewed, numCorrect } = currentEvent.details.payload;
   const numToReview = flashCards.filter(
-    (card) => card.reviewStatus === null
+    (card) => card.reviewStatus === null,
   ).length;
   const correctPercentage = new Intl.NumberFormat(undefined, {
     style: "percent",
