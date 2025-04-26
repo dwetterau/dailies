@@ -19,6 +19,12 @@ import {
 import { TouchableOpacity, View, Text, PlatformColor } from "react-native";
 import FlashCardView from "./flash_card";
 import FlashCardReviewButtons from "./flash_card_review_buttons";
+import {
+  getFlashCardsFromStorage,
+  getGenericObject,
+  saveFlashCardsToStorage,
+  saveGenericObject,
+} from "./storage";
 
 type EventForUpsert = {
   entityId: EntityId;
@@ -47,7 +53,7 @@ export default function FlashCardPage() {
     [currentTimestamp],
   );
 
-  const _currentEvent = useQuery(api.events.getCurrentEvent, {
+  const currentEventFromServer = useQuery(api.events.getCurrentEvent, {
     entityId: entityId,
     timeRange,
   });
@@ -66,42 +72,114 @@ export default function FlashCardPage() {
   });
 
   useEffect(() => {
-    if (
-      _currentEvent &&
-      _currentEvent.details.type === EventType.FLASH_CARDS &&
-      _currentEvent.timestamp >= timeRange.startTimestamp &&
-      _currentEvent.timestamp <= timeRange.endTimestamp &&
-      _currentEvent.timestamp > currentEvent.timestamp
-    ) {
-      setCurrentEvent({
-        ..._currentEvent,
-        timeRange,
-      } as EventForUpsert);
+    const localCurrentEvent =
+      getGenericObject<EventForUpsert>("flashCardEvent");
+    if (!localCurrentEvent) {
+      return;
     }
-  }, [_currentEvent, currentEvent.timestamp, timeRange]);
+    console.log("Loaded current event from storage", localCurrentEvent);
+    setCurrentEvent((prevCurrentEvent) => {
+      if (
+        localCurrentEvent.timestamp > prevCurrentEvent.timestamp &&
+        getIsTimestampInTimeRange(
+          localCurrentEvent.timestamp,
+          prevCurrentEvent.timeRange,
+        )
+      ) {
+        console.log("Local current event is in range, and newer. Using it.");
+        return localCurrentEvent;
+      }
+      // TODO: If we had an old event, that wasn't saved to the server, we might some day want to save it.
+      return prevCurrentEvent;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (
+      !currentEventFromServer ||
+      currentEventFromServer.details.type !== EventType.FLASH_CARDS
+    ) {
+      return;
+    }
+    setCurrentEvent((prevCurrentEvent) => {
+      if (
+        currentEventFromServer.timestamp > prevCurrentEvent.timestamp &&
+        getIsTimestampInTimeRange(
+          currentEventFromServer.timestamp,
+          prevCurrentEvent.timeRange,
+        )
+      ) {
+        console.log("Server current event is in range, and newer. Using it.");
+        return {
+          ...currentEventFromServer,
+          timeRange,
+        } as EventForUpsert;
+      }
+      return prevCurrentEvent;
+    });
+  }, [currentEventFromServer, timeRange]);
+
+  useEffect(() => {
+    if (currentEvent && currentEvent.timestamp > 0) {
+      console.log("Saving current event to storage", currentEvent);
+      saveGenericObject("flashCardEvent", currentEvent);
+    }
+  }, [currentEvent]);
 
   const remoteFlashCards = useQuery(api.flashCards.listCards);
-  const [flashCards, setFlashCards] = useState<Array<FlashCard>>([]);
+  const [flashCards, setFlashCards] = useState<Array<FlashCard> | null>(null);
 
-  // When we load cards from the server, add in new ones to the end of our current list.
+  // When we first load, grab the cards from storage if they exist.
   useEffect(() => {
-    setFlashCards((prevFlashCards) => {
-      const currentFlashCardIds = new Set(
-        prevFlashCards.map((card) => card._id),
+    const flashCardsFromStorage = getFlashCardsFromStorage();
+    if (flashCardsFromStorage.length > 0) {
+      console.log(
+        "Loaded flash cards from storage",
+        flashCardsFromStorage.length,
       );
-      const newCards: Array<FlashCard> = [];
-
-      for (const card of remoteFlashCards ?? []) {
-        if (!currentFlashCardIds.has(card._id)) {
-          newCards.push(card);
+      // If we already have some flash cards, such as those from the server, we don't want to overwrite them.
+      setFlashCards((prevFlashCards) => {
+        if (prevFlashCards?.length ?? 0 > 0) {
+          console.log("Ignoring flash cards from storage");
+          return prevFlashCards;
         }
-      }
-      if (newCards.length > 0) {
-        return [...prevFlashCards, ...newCards];
-      }
-      return prevFlashCards;
+        console.log("Setting flash cards from storage");
+        return flashCardsFromStorage;
+      });
+    }
+    // We only want to run this once when we first load the page.
+  }, []);
+
+  // When we load cards from the server, they become the default - but we want to copy over our statuses.
+  useEffect(() => {
+    console.log("Loaded flash cards from server", remoteFlashCards?.length);
+    if (!remoteFlashCards) {
+      return;
+    }
+    setFlashCards((prevFlashCards) => {
+      const currentFlashCardIdsToStatus = new Map(
+        (prevFlashCards ?? []).map((card) => [card._id, card.reviewStatus]),
+      );
+      return remoteFlashCards.map((card) => {
+        if (currentFlashCardIdsToStatus.has(card._id)) {
+          return {
+            ...card,
+            reviewStatus: currentFlashCardIdsToStatus.get(card._id)!,
+          };
+        }
+        return card;
+      });
     });
   }, [remoteFlashCards]);
+
+  // Whenever we change our flashCards, proactively save them to storage.
+  useEffect(() => {
+    if (!flashCards) {
+      return;
+    }
+    console.log("Saving flash cards to storage", flashCards.length);
+    saveFlashCardsToStorage(flashCards);
+  }, [flashCards]);
 
   const saveFlashCards = useMutation(api.flashCards.startSaveReviewStatus);
   const loadFlashCards = useMutation(api.flashCards.startSyncCards);
@@ -112,18 +190,16 @@ export default function FlashCardPage() {
   }, [loadFlashCards]);
 
   const handleSave = useCallback(async () => {
+    if (!flashCards) {
+      console.log("No flash cards to save");
+      return;
+    }
     const flashCardsToSave = flashCards
       .filter((card) => card.reviewStatus !== null)
       .map((card) => ({
         id: card._id,
         reviewStatus: card.reviewStatus!,
       }));
-    const flashCardsToKeep = flashCards.filter(
-      (card) => card.reviewStatus === null,
-    );
-    // Proactively remove the cards from our local copy,
-    // since the server update will not know to remove them.
-    setFlashCards(flashCardsToKeep);
     await saveFlashCards({ cards: flashCardsToSave });
     await upsertEvent(currentEvent);
   }, [flashCards, currentEvent, saveFlashCards, upsertEvent]);
@@ -135,6 +211,9 @@ export default function FlashCardPage() {
         throw new Error("No current card");
       }
       setFlashCards((prevCards) => {
+        if (!prevCards) {
+          throw new Error("No flash cards");
+        }
         return prevCards.map((card) => {
           if (card._id === currentCard._id) {
             return {
@@ -149,10 +228,7 @@ export default function FlashCardPage() {
         const oldStatus = currentCard.reviewStatus;
         let numReviewedDelta = 0;
         let numCorrectDelta = 0;
-        if (oldStatus === undefined) {
-          // This is a weird race condition - where we didn't update a card, so don't update the status.
-          return prevEvent;
-        } else if (oldStatus === null) {
+        if (oldStatus === null) {
           numReviewedDelta = 1;
           if (status !== ReviewStatus.WRONG) {
             numCorrectDelta = 1;
@@ -171,8 +247,7 @@ export default function FlashCardPage() {
         if (!getIsTimestampInTimeRange(prevEvent.timestamp, timeRange)) {
           return {
             entityId,
-            // TODO: Make sure to update to the current timestamp if needed
-            timestamp: 0,
+            timestamp: currentTimestamp,
             timeRange,
             details: {
               type: EventType.FLASH_CARDS,
@@ -201,10 +276,11 @@ export default function FlashCardPage() {
         };
       });
     },
-    [entityId, currentCard, timeRange],
+    [currentCard, currentTimestamp, entityId, timeRange],
   );
 
   // Setup the menu options
+  const hasFlashCards = !!flashCards;
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
@@ -214,7 +290,7 @@ export default function FlashCardPage() {
               Load
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={handleSave}>
+          <TouchableOpacity onPress={handleSave} disabled={!hasFlashCards}>
             <Text style={{ color: PlatformColor("systemBlue"), fontSize: 16 }}>
               Save
             </Text>
@@ -222,7 +298,7 @@ export default function FlashCardPage() {
         </View>
       ),
     });
-  });
+  }, [handleLoad, handleSave, hasFlashCards, navigation]);
 
   return (
     <View>

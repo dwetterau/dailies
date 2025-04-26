@@ -1,12 +1,6 @@
 import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import {
-  defineTable,
-  GenericDatabaseReader,
-  GenericDataModel,
-  GenericMutationCtx,
-  GenericQueryCtx,
-} from "convex/server";
+import { defineTable, GenericDatabaseReader } from "convex/server";
 import { getUserIdFromContextAsync } from "./users";
 import { DataModel, Doc, Id } from "./_generated/dataModel";
 
@@ -33,8 +27,8 @@ export const WORKOUT_DETAILS_SCHEMA = v.object({
           weight: v.optional(v.number()),
           repIndex: v.optional(v.number()),
           setIndex: v.optional(v.number()),
-        })
-      )
+        }),
+      ),
     ),
   }),
 });
@@ -58,7 +52,7 @@ export const GENERIC_COMPLETION_SCHEMA = v.object({
 const allEventDetails = v.union(
   WORKOUT_DETAILS_SCHEMA,
   FLASH_CARDS_SCHEMA,
-  GENERIC_COMPLETION_SCHEMA
+  GENERIC_COMPLETION_SCHEMA,
 );
 
 export const EVENTS_SCHEMA = defineTable({
@@ -66,7 +60,7 @@ export const EVENTS_SCHEMA = defineTable({
   entityId: v.id("entities"),
   timestamp: v.number(),
   details: allEventDetails,
-}).index("by_entity_id", ["entityId"]);
+}).index("by_entity_id", ["entityId", "timestamp"]);
 
 export const list = query({
   args: { entityId: v.id("entities") },
@@ -74,24 +68,11 @@ export const list = query({
     const ownerId = await getUserIdFromContextAsync(ctx);
     return await ctx.db
       .query("events")
-      .filter((q) =>
-        q.and(
-          q.eq(q.field("ownerId"), ownerId),
-          q.eq(q.field("entityId"), entityId)
-        )
-      )
+      .withIndex("by_entity_id", (q) => q.eq("entityId", entityId))
+      .filter((q) => q.and(q.eq(q.field("ownerId"), ownerId)))
       .collect();
   },
 });
-
-function getEnumType(typeString: string): EventType {
-  for (const option of Object.values(EventType)) {
-    if (option === typeString) {
-      return option;
-    }
-  }
-  throw new Error(`Invalid type: ${typeString}`);
-}
 
 export const create = mutation({
   args: {
@@ -127,14 +108,13 @@ export const getCurrentEventWithDb = async ({
   // Check if an event already exists for this day
   const existingEvents = await db
     .query("events")
-    .filter((q) =>
-      q.and(
-        q.eq(q.field("ownerId"), ownerId),
-        q.eq(q.field("entityId"), entityId),
-        q.gte(q.field("timestamp"), startTimestamp),
-        q.lt(q.field("timestamp"), endTimestamp)
-      )
+    .withIndex("by_entity_id", (q) =>
+      q
+        .eq("entityId", entityId)
+        .gte("timestamp", startTimestamp)
+        .lt("timestamp", endTimestamp),
     )
+    .filter((q) => q.eq(q.field("ownerId"), ownerId))
     .collect();
   return existingEvents[0] ?? null;
 };
@@ -205,7 +185,7 @@ export const update = mutation({
     const events = await ctx.db
       .query("events")
       .filter((q) =>
-        q.and(q.eq(q.field("ownerId"), ownerId), q.eq(q.field("_id"), id))
+        q.and(q.eq(q.field("ownerId"), ownerId), q.eq(q.field("_id"), id)),
       )
       .collect();
     if (!events.length) {
@@ -225,7 +205,7 @@ export const deleteEvent = mutation({
     const events = await ctx.db
       .query("events")
       .filter((q) =>
-        q.and(q.eq(q.field("ownerId"), ownerId), q.eq(q.field("_id"), id))
+        q.and(q.eq(q.field("ownerId"), ownerId), q.eq(q.field("_id"), id)),
       )
       .collect();
     if (!events.length) {
