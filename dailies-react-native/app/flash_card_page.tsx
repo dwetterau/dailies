@@ -5,7 +5,7 @@ import {
 } from "@/model/time/timestamps";
 import { api } from "@convex/_generated/api";
 import { EntityId, ResetAfterInterval } from "@convex/entities";
-import { FlashCard, ReviewStatus } from "@convex/flashCards";
+import { FlashCard, FlashCardId, ReviewStatus } from "@convex/flashCards";
 import { EventType } from "@convex/events";
 import { useMutation, useQuery } from "convex/react";
 import { useLocalSearchParams, useNavigation } from "expo-router";
@@ -128,6 +128,7 @@ export default function FlashCardPage() {
 
   const remoteFlashCards = useQuery(api.flashCards.listCards);
   const [flashCards, setFlashCards] = useState<Array<FlashCard> | null>(null);
+  const [currentCardId, setCurrentCardId] = useState<FlashCardId | null>(null);
 
   // When we first load, grab the cards from storage if they exist.
   useEffect(() => {
@@ -172,11 +173,22 @@ export default function FlashCardPage() {
     });
   }, [remoteFlashCards]);
 
-  // Whenever we change our flashCards, proactively save them to storage.
+  // Whenever we change our flashCards, make sure our prevIndex is initialized, and proactively save them to storage.
   useEffect(() => {
     if (!flashCards) {
       return;
     }
+    setCurrentCardId((prevId) => {
+      if (prevId !== null && !flashCards.some((card) => card._id === prevId)) {
+        console.log("Current card id is gone, resetting to null");
+        return null;
+      }
+      if (prevId === null) {
+        // Try to initialize the pointer
+        return getFirstUnreviewedCard(flashCards)?._id ?? null;
+      }
+      return prevId;
+    });
     console.log("Saving flash cards to storage", flashCards.length);
     saveFlashCardsToStorage(flashCards);
   }, [flashCards]);
@@ -216,10 +228,23 @@ export default function FlashCardPage() {
     setIsSaving(false);
   }, [currentEvent, flashCards, isSaving, saveFlashCards, upsertEvent]);
 
-  const currentCard = getFirstUnreviewedCard(flashCards ?? []);
+  const { currentCard, currentCardIndex } = useMemo(() => {
+    for (const [index, card] of (flashCards ?? []).entries()) {
+      if (card._id === currentCardId) {
+        return { currentCard: card, currentCardIndex: index };
+      }
+    }
+    return { currentCard: null, currentCardIndex: null };
+  }, [currentCardId, flashCards]);
+
   const handleSetCurrentCardReviewStatus = useCallback(
     (status: ReviewStatus) => {
-      if (!currentCard) {
+      if (
+        !flashCards ||
+        !currentCard ||
+        !currentCardId ||
+        currentCardIndex === null
+      ) {
         throw new Error("No current card");
       }
       setFlashCards((prevCards) => {
@@ -246,7 +271,6 @@ export default function FlashCardPage() {
             numCorrectDelta = 1;
           }
         } else {
-          // TODO: This is a re-review case - we also need to advance the index in this case.
           const newIsCorrect = status !== ReviewStatus.WRONG;
           const oldIsCorrect = oldStatus !== ReviewStatus.WRONG;
           if (newIsCorrect && !oldIsCorrect) {
@@ -287,9 +311,34 @@ export default function FlashCardPage() {
           },
         };
       });
+      if (currentCardIndex < flashCards.length - 1) {
+        setCurrentCardId(flashCards[currentCardIndex + 1]._id);
+      } else {
+        setCurrentCardId(null);
+      }
     },
-    [currentCard, currentTimestamp, entityId, timeRange],
+    [
+      currentCard,
+      currentCardId,
+      currentCardIndex,
+      currentTimestamp,
+      entityId,
+      flashCards,
+      timeRange,
+    ],
   );
+
+  const handleGoToPreviousCard = useCallback(() => {
+    if (
+      currentCardIndex === null ||
+      !flashCards ||
+      currentCardIndex <= 0 ||
+      currentCardIndex - 1 >= flashCards.length
+    ) {
+      return;
+    }
+    setCurrentCardId(flashCards[currentCardIndex - 1]._id);
+  }, [currentCardIndex, flashCards]);
 
   // Setup the menu options
   const hasFlashCards = !!flashCards;
@@ -339,6 +388,15 @@ export default function FlashCardPage() {
           <FlashCardReviewButtons
             setCurrentCardReviewStatus={handleSetCurrentCardReviewStatus}
           />
+        </View>
+      )}
+      {currentCardIndex !== null && currentCardIndex > 0 && (
+        <View style={{ paddingTop: 40, width: "100%", alignItems: "center" }}>
+          <TouchableOpacity onPress={handleGoToPreviousCard}>
+            <Text style={{ color: PlatformColor("systemBlue"), fontSize: 16 }}>
+              Previous
+            </Text>
+          </TouchableOpacity>
         </View>
       )}
     </View>

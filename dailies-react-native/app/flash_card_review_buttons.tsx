@@ -62,7 +62,6 @@ const HORIZONTAL_PADDING = 20;
 const styles = StyleSheet.create({
   container: {
     gap: 10,
-    paddingBottom: 200,
   },
   row: {
     flexDirection: "row",
