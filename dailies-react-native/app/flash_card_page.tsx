@@ -189,20 +189,32 @@ export default function FlashCardPage() {
     await loadFlashCards({});
   }, [loadFlashCards]);
 
+  const [isSaving, setIsSaving] = useState(false);
   const handleSave = useCallback(async () => {
-    if (!flashCards) {
-      console.log("No flash cards to save");
+    if (isSaving) {
+      console.log("Already saving flash cards");
       return;
     }
-    const flashCardsToSave = flashCards
+    const flashCardsToSave = (flashCards ?? [])
       .filter((card) => card.reviewStatus !== null)
       .map((card) => ({
         id: card._id,
         reviewStatus: card.reviewStatus!,
       }));
-    await saveFlashCards({ cards: flashCardsToSave });
-    await upsertEvent(currentEvent);
-  }, [flashCards, currentEvent, saveFlashCards, upsertEvent]);
+    if (!flashCardsToSave.length) {
+      console.log("No flash cards to save");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await saveFlashCards({ cards: flashCardsToSave });
+      await upsertEvent(currentEvent);
+    } catch (error) {
+      console.error("Error saving flash cards", error);
+    }
+    setIsSaving(false);
+  }, [currentEvent, flashCards, isSaving, saveFlashCards, upsertEvent]);
 
   const currentCard = getFirstUnreviewedCard(flashCards ?? []);
   const handleSetCurrentCardReviewStatus = useCallback(
@@ -283,22 +295,35 @@ export default function FlashCardPage() {
   const hasFlashCards = !!flashCards;
   useLayoutEffect(() => {
     navigation.setOptions({
-      headerRight: () => (
-        <View style={{ flexDirection: "row", gap: 30 }}>
-          <TouchableOpacity onPress={handleLoad}>
-            <Text style={{ color: PlatformColor("systemBlue"), fontSize: 16 }}>
-              Load
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleSave} disabled={!hasFlashCards}>
-            <Text style={{ color: PlatformColor("systemBlue"), fontSize: 16 }}>
-              Save
-            </Text>
-          </TouchableOpacity>
-        </View>
-      ),
+      headerRight: () => {
+        const isSaveEnabled = hasFlashCards && !isSaving;
+
+        return (
+          <View style={{ flexDirection: "row", gap: 30 }}>
+            <TouchableOpacity onPress={handleLoad}>
+              <Text
+                style={{ color: PlatformColor("systemBlue"), fontSize: 16 }}
+              >
+                Load
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleSave} disabled={!isSaveEnabled}>
+              <Text
+                style={{
+                  color: isSaveEnabled
+                    ? PlatformColor("systemBlue")
+                    : PlatformColor("systemGray"),
+                  fontSize: 16,
+                }}
+              >
+                Save
+              </Text>
+            </TouchableOpacity>
+          </View>
+        );
+      },
     });
-  }, [handleLoad, handleSave, hasFlashCards, navigation]);
+  }, [handleLoad, handleSave, hasFlashCards, isSaving, navigation]);
 
   return (
     <View>
