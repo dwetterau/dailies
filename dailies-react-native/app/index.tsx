@@ -1,6 +1,6 @@
-import { Button, View } from "react-native";
+import { Button, Text, View } from "react-native";
 import { useAuth0 } from "react-native-auth0";
-import HomePage from "./home_page";
+import HomePage, { HOME_PAGE_STYLES } from "./home_page";
 
 export default function Index() {
   const { user, authorize } = useAuth0();
@@ -9,7 +9,8 @@ export default function Index() {
     return <HomePage />;
   }
   return (
-    <View>
+    <View style={HOME_PAGE_STYLES.container}>
+      <Text style={HOME_PAGE_STYLES.title}>Dailies 2</Text>
       <Button
         onPress={async () => {
           try {

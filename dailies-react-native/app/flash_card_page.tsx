@@ -103,7 +103,7 @@ export default function FlashCardPage() {
     }
     setCurrentEvent((prevCurrentEvent) => {
       if (
-        currentEventFromServer.timestamp > prevCurrentEvent.timestamp &&
+        currentEventFromServer.timestamp >= prevCurrentEvent.timestamp &&
         getIsTimestampInTimeRange(
           currentEventFromServer.timestamp,
           prevCurrentEvent.timeRange,
@@ -342,6 +342,8 @@ function FlashCardStatsHeader({
   const numToReview = flashCards.filter(
     (card) => card.reviewStatus === null,
   ).length;
+  const numUnsaved = flashCards.length - numToReview;
+
   const correctPercentage = new Intl.NumberFormat(undefined, {
     style: "percent",
     minimumFractionDigits: 2,
@@ -350,7 +352,7 @@ function FlashCardStatsHeader({
 
   return (
     <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-      <Text>{`${numToReview} to Review`}</Text>
+      <Text>{`${numToReview} to Review - ${numUnsaved} unsaved`}</Text>
       <Text>{`${numReviewed} reviewed - ${correctPercentage}`}</Text>
     </View>
   );

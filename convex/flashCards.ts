@@ -33,7 +33,7 @@ export const FLASH_CARDS_SCHEMA = defineTable({
     v.literal(ReviewStatus.NORMAL),
     v.literal(ReviewStatus.DIFFICULT),
     v.literal(ReviewStatus.WRONG),
-    v.null()
+    v.null(),
   ),
 }).index("by_owner", ["ownerId"]);
 
@@ -101,9 +101,9 @@ export const saveCardReviewStatusToAirtable = internalAction({
           v.literal(ReviewStatus.EASY),
           v.literal(ReviewStatus.NORMAL),
           v.literal(ReviewStatus.DIFFICULT),
-          v.literal(ReviewStatus.WRONG)
+          v.literal(ReviewStatus.WRONG),
         ),
-      })
+      }),
     ),
   },
   handler: async (ctx, { cardsToSync, ownerId, token }) => {
@@ -211,8 +211,8 @@ export const clearReviewStatus = internalMutation({
       .filter((q) =>
         q.and(
           q.eq(q.field("ownerId"), ownerId),
-          q.neq(q.field("reviewStatus"), null)
-        )
+          q.neq(q.field("reviewStatus"), null),
+        ),
       )
       .collect();
 

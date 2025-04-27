@@ -1,8 +1,14 @@
 import { api } from "@convex/_generated/api";
 import { Entity, EntityCategory } from "@convex/entities";
 import { useQuery } from "convex/react";
-import { useMemo } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { useCallback, useMemo } from "react";
+import {
+  PlatformColor,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useRouter } from "expo-router";
 import {
   getCategoryCompletionRatio,
@@ -12,8 +18,9 @@ import {
 import BigButton from "./big_button";
 import { useCurrentTimeRanges } from "@/model/time/timestamps";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { useAuth0 } from "react-native-auth0";
 
-const styles = StyleSheet.create({
+export const HOME_PAGE_STYLES = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "flex-start",
@@ -39,6 +46,7 @@ const ORDERED_CATEGORIES: Array<EntityCategory> = [
 ];
 
 export default function HomePage() {
+  const { clearCredentials } = useAuth0();
   const router = useRouter();
 
   const { timeRanges } = useCurrentTimeRanges();
@@ -55,12 +63,16 @@ export default function HomePage() {
     return categoryToEntities;
   }, [entities]);
 
+  const handleLogout = useCallback(() => {
+    clearCredentials();
+  }, [clearCredentials]);
+
   return (
     <GestureHandlerRootView>
-      <View style={styles.container}>
-        <Text style={styles.title}>Dailies 2</Text>
+      <View style={HOME_PAGE_STYLES.container}>
+        <Text style={HOME_PAGE_STYLES.title}>Dailies 2</Text>
         {ORDERED_CATEGORIES.filter((category) =>
-          categoryToEntities.has(category)
+          categoryToEntities.has(category),
         ).map((category) => (
           <BigButton
             key={category}
@@ -69,7 +81,7 @@ export default function HomePage() {
             completionRatio={getCategoryCompletionRatio(
               entities?.entities ?? [],
               entities?.entityIdToCompletionRatio ?? {},
-              category
+              category,
             )}
             onPress={() => {
               router.push({
@@ -79,6 +91,11 @@ export default function HomePage() {
             }}
           />
         ))}
+        <TouchableOpacity onPress={handleLogout} style={{ marginTop: 20 }}>
+          <Text style={{ color: PlatformColor("systemBlue"), fontSize: 16 }}>
+            Logout
+          </Text>
+        </TouchableOpacity>
       </View>
     </GestureHandlerRootView>
   );
