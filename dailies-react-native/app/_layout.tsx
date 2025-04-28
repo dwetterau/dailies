@@ -25,7 +25,7 @@ function useAuthFromAuth0() {
           "openid email profile offline_access",
           undefined,
           {},
-          forceRefreshToken
+          forceRefreshToken,
         );
         const idToken = response?.idToken ?? null;
         return idToken;
@@ -34,12 +34,12 @@ function useAuthFromAuth0() {
         return null;
       }
     },
-    [getCredentials]
+    [getCredentials],
   );
 
   return useMemo(
     () => ({ isLoading, isAuthenticated, fetchAccessToken }),
-    [isLoading, isAuthenticated, fetchAccessToken]
+    [isLoading, isAuthenticated, fetchAccessToken],
   );
 }
 
@@ -69,6 +69,11 @@ export default function RootLayout() {
           <Stack.Screen
             name="flash_card_page"
             options={{ title: "Flash Cards" }}
+          />
+          <Stack.Screen
+            name="workout_edit_page"
+            // TODO: If we have a workout already, we should instead say that we're editing it?
+            options={{ title: "New Workout" }}
           />
         </Stack>
       </ConvexProviderWithAuth>

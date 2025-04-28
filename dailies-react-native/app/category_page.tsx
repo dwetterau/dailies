@@ -28,7 +28,7 @@ export default function CategoryPage() {
   const entities = useMemo(
     () =>
       allEntities?.entities.filter((entity) => entity.category === category),
-    [allEntities, category]
+    [allEntities, category],
   );
 
   return (

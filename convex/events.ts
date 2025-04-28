@@ -13,6 +13,11 @@ export enum EventType {
   GENERIC_COMPLETION = "genericCompletion",
 }
 
+export type WorkoutEventDetails = Extract<
+  Doc<"events">["details"],
+  { type: EventType.WORKOUT }
+>;
+
 export const WORKOUT_DETAILS_SCHEMA = v.object({
   type: v.literal(EventType.WORKOUT),
   payload: v.object({

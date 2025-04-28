@@ -7,9 +7,21 @@ export function getCurrentTimestamp(): number {
   return Math.floor(Date.now());
 }
 
+export function getTimeRangeForResetInterval(
+  timeRanges: {
+    dailyTimeRange: { startTimestamp: number; endTimestamp: number };
+    weeklyTimeRange: { startTimestamp: number; endTimestamp: number };
+  },
+  resetAfterInterval: "daily" | "weekly",
+): { startTimestamp: number; endTimestamp: number } {
+  return resetAfterInterval === "daily"
+    ? timeRanges.dailyTimeRange
+    : timeRanges.weeklyTimeRange;
+}
+
 export function getIsTimestampInTimeRange(
   timestamp: number,
-  timeRange: { startTimestamp: number; endTimestamp: number }
+  timeRange: { startTimestamp: number; endTimestamp: number },
 ): boolean {
   return (
     timestamp >= timeRange.startTimestamp && timestamp <= timeRange.endTimestamp
@@ -31,7 +43,7 @@ export function getEndOfDayTimestamp(currentTimestamp: number): number {
     23,
     59,
     59,
-    999
+    999,
   );
   return endOfDay.getTime();
 }
@@ -43,7 +55,7 @@ export function getStartOfWeekTimestamp(currentTimestamp: number): number {
   const startOfWeek = new Date(
     now.getFullYear(),
     now.getMonth(),
-    now.getDate() - dayOfWeek
+    now.getDate() - dayOfWeek,
   );
   startOfWeek.setHours(0, 0, 0, 0);
   return startOfWeek.getTime();
@@ -61,7 +73,7 @@ export function getEndOfWeekTimestamp(currentTimestamp: number): number {
     23,
     59,
     59,
-    999
+    999,
   );
   return endOfWeek.getTime();
 }

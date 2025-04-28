@@ -1,5 +1,5 @@
 import { getColorForCategory } from "@/model/entities/category_helpers";
-import { Entity, EntityType } from "@convex/entities";
+import { Entity, EntityType, ResetAfterInterval } from "@convex/entities";
 import BigButton from "./big_button";
 import { useCallback, useMemo } from "react";
 import { api } from "@convex/_generated/api";
@@ -7,9 +7,9 @@ import { useMutation, useQuery } from "convex/react";
 import { EventType } from "@convex/events";
 import {
   getCurrentTimestamp,
+  getTimeRangeForResetInterval,
   useCurrentTimeRanges,
 } from "@/model/time/timestamps";
-import { getTimeRangeForTimestamp } from "@/model/entities/entity_helpers";
 import { Alert } from "react-native";
 import { useRouter } from "expo-router";
 
@@ -21,10 +21,10 @@ export default function EntityButton({
   completionRatio: number;
 }) {
   const router = useRouter();
-  const { currentTimestamp } = useCurrentTimeRanges();
-  const timeRange = useMemo(
-    () => getTimeRangeForTimestamp(entity.resetAfterInterval, currentTimestamp),
-    [currentTimestamp]
+  const { timeRanges, currentTimestamp } = useCurrentTimeRanges();
+  const timeRange = getTimeRangeForResetInterval(
+    timeRanges,
+    entity.resetAfterInterval,
   );
 
   const currentEvent = useQuery(api.events.getCurrentEvent, {
@@ -42,11 +42,10 @@ export default function EntityButton({
       ) {
         numCompletions = currentEvent.details.payload.numCompletions;
       }
-      const timestamp = getCurrentTimestamp();
       upsertEvent({
         entityId: entity._id,
         timeRange,
-        timestamp,
+        timestamp: currentTimestamp,
         details: {
           type: EventType.GENERIC_COMPLETION,
           payload: {
@@ -60,10 +59,17 @@ export default function EntityButton({
         pathname: "/flash_card_page",
         params: { entityId: entity._id },
       });
+    } else if (entity.type === EntityType.WORKOUT) {
+      router.push({
+        pathname: "/workout_edit_page",
+        params: {
+          entityId: entity._id,
+        },
+      });
     } else {
       console.log("unsupported entity type :(", entity.type);
     }
-  }, [entity, router, timeRange]);
+  }, [currentEvent, currentTimestamp, entity, router, timeRange, upsertEvent]);
 
   const handleTriplePress = useCallback(() => {
     if (
@@ -100,9 +106,15 @@ export default function EntityButton({
           style: "destructive", // makes the button red on iOS
         },
       ],
-      { cancelable: true }
+      { cancelable: true },
     );
-  }, [currentEvent]);
+  }, [
+    currentEvent,
+    entity._id,
+    entity.numRequiredCompletions,
+    timeRange,
+    upsertEvent,
+  ]);
 
   return (
     <BigButton
