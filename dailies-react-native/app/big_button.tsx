@@ -40,7 +40,7 @@ const BigButton: React.FC<BigButtonProps> = ({
         onTriplePress();
       }
     },
-    [onTriplePress]
+    [onTriplePress],
   );
 
   const handleSinglePress = useCallback(
@@ -49,22 +49,22 @@ const BigButton: React.FC<BigButtonProps> = ({
         onPress();
       }
     },
-    [onPress]
+    [onPress],
   );
 
   return (
-    <TapGestureHandler
-      ref={tripleTapRef}
-      numberOfTaps={3}
-      maxDelayMs={150}
-      onHandlerStateChange={handleTriplePress}
-    >
+    <View style={styles.container}>
       <TapGestureHandler
-        numberOfTaps={1}
-        waitFor={tripleTapRef}
-        onHandlerStateChange={handleSinglePress}
+        ref={tripleTapRef}
+        numberOfTaps={3}
+        maxDelayMs={150}
+        onHandlerStateChange={handleTriplePress}
       >
-        <View style={styles.container}>
+        <TapGestureHandler
+          numberOfTaps={1}
+          waitFor={tripleTapRef}
+          onHandlerStateChange={handleSinglePress}
+        >
           <View style={styles.shadow}>
             {/* Background Container */}
             <View style={styles.background}>
@@ -88,9 +88,9 @@ const BigButton: React.FC<BigButtonProps> = ({
               <Text style={styles.text}>{buttonText}</Text>
             </View>
           </View>
-        </View>
+        </TapGestureHandler>
       </TapGestureHandler>
-    </TapGestureHandler>
+    </View>
   );
 };
 

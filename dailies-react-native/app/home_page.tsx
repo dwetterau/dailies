@@ -17,7 +17,6 @@ import {
 } from "@/model/entities/category_helpers";
 import BigButton from "./big_button";
 import { useCurrentTimeRanges } from "@/model/time/timestamps";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useAuth0 } from "react-native-auth0";
 
 export const HOME_PAGE_STYLES = StyleSheet.create({
@@ -68,35 +67,33 @@ export default function HomePage() {
   }, [clearCredentials]);
 
   return (
-    <GestureHandlerRootView>
-      <View style={HOME_PAGE_STYLES.container}>
-        <Text style={HOME_PAGE_STYLES.title}>Dailies 2</Text>
-        {ORDERED_CATEGORIES.filter((category) =>
-          categoryToEntities.has(category),
-        ).map((category) => (
-          <BigButton
-            key={category}
-            buttonText={getDisplayNameForCategory(category)}
-            buttonCompleteColor={getColorForCategory(category)}
-            completionRatio={getCategoryCompletionRatio(
-              entities?.entities ?? [],
-              entities?.entityIdToCompletionRatio ?? {},
-              category,
-            )}
-            onPress={() => {
-              router.push({
-                pathname: "/category_page",
-                params: { category },
-              });
-            }}
-          />
-        ))}
-        <TouchableOpacity onPress={handleLogout} style={{ marginTop: 20 }}>
-          <Text style={{ color: PlatformColor("systemBlue"), fontSize: 16 }}>
-            Logout
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </GestureHandlerRootView>
+    <View style={HOME_PAGE_STYLES.container}>
+      <Text style={HOME_PAGE_STYLES.title}>Dailies 2</Text>
+      {ORDERED_CATEGORIES.filter((category) =>
+        categoryToEntities.has(category),
+      ).map((category) => (
+        <BigButton
+          key={category}
+          buttonText={getDisplayNameForCategory(category)}
+          buttonCompleteColor={getColorForCategory(category)}
+          completionRatio={getCategoryCompletionRatio(
+            entities?.entities ?? [],
+            entities?.entityIdToCompletionRatio ?? {},
+            category,
+          )}
+          onPress={() => {
+            router.push({
+              pathname: "/category_page",
+              params: { category },
+            });
+          }}
+        />
+      ))}
+      <TouchableOpacity onPress={handleLogout} style={{ marginTop: 20 }}>
+        <Text style={{ color: PlatformColor("systemBlue"), fontSize: 16 }}>
+          Logout
+        </Text>
+      </TouchableOpacity>
+    </View>
   );
 }
