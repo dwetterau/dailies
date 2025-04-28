@@ -62,10 +62,15 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 24,
     backgroundColor: "#fff",
-    justifyContent: "center",
+    gap: 30,
+  },
+  sectionLabel: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 8,
   },
   label: {
-    fontSize: 18,
+    fontSize: 14,
     marginBottom: 8,
   },
   input: {
@@ -84,7 +89,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   timeButtonOpen: {
-    padding: 12,
+    padding: 8,
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 8,
@@ -94,7 +99,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#eee",
   },
   timeButtonText: {
-    fontSize: 18,
+    fontSize: 16,
     color: "#333",
   },
   modalOverlay: {
@@ -136,6 +141,12 @@ function WorkoutEditPageInner({ entity }: { entity: Entity }) {
   if (currentEvent && currentEvent.details.type !== EventType.WORKOUT) {
     throw new Error("Current event is not a workout");
   }
+  if (mostRecentEvent && mostRecentEvent.details.type !== EventType.WORKOUT) {
+    throw new Error("Most recent event is not a workout");
+  }
+  const mostRecentEventPayload = mostRecentEvent?.details.payload as
+    | WorkoutEventDetails["payload"]
+    | undefined;
 
   const [weight, setWeight] = useState<string>("");
   const [numReps, setNumReps] = useState<string>("");
@@ -152,12 +163,20 @@ function WorkoutEditPageInner({ entity }: { entity: Entity }) {
     useState<boolean>(false);
   const [durationSeconds, setDurationSeconds] = useState<number | null>();
 
-  // Initialize all the fields when the current event updates (for initial load).
+  // Initialize all the fields when the current event updates (for initial load) - also set them
+  // to the most recent event if there is no current event.
   useEffect(() => {
-    if (!currentEvent || currentEvent.details.type !== EventType.WORKOUT) {
+    let payload;
+    if (currentEvent && currentEvent.details.type === EventType.WORKOUT) {
+      payload = currentEvent.details.payload;
+    } else if (
+      mostRecentEvent &&
+      mostRecentEvent.details.type === EventType.WORKOUT
+    ) {
+      payload = mostRecentEvent.details.payload;
+    } else {
       return;
     }
-    const { payload } = currentEvent.details;
     setWeight(payload.weight?.toString() ?? "");
     setNumReps(payload.numReps?.toString() ?? "");
     setNumSets(payload.numSets?.toString() ?? "");
@@ -169,16 +188,13 @@ function WorkoutEditPageInner({ entity }: { entity: Entity }) {
       payload.durationSeconds !== undefined
     ) {
       const numHours = Math.floor(payload.durationSeconds / 3600);
-      const numMinutes = Math.floor(
-        (payload.durationSeconds - numHours * 3600) / 60,
-      );
-      const numSeconds =
-        payload.durationSeconds - numHours * 3600 - numMinutes * 60;
+      const numMinutes = Math.floor((payload.durationSeconds % 3600) / 60);
+      const numSeconds = payload.durationSeconds % 60;
       setHours(numHours);
       setMinutes(numMinutes);
       setSeconds(numSeconds);
     }
-  }, [currentEvent]);
+  }, [currentEvent, mostRecentEvent]);
 
   // Update durationSeconds when any input changes.
   useEffect(() => {
@@ -292,175 +308,232 @@ function WorkoutEditPageInner({ entity }: { entity: Entity }) {
 
   return (
     <View style={styles.container}>
-      {isFieldRequired("weight") && (
-        <View>
-          <Text style={styles.label}>Weight</Text>
-          <TextInput
-            style={styles.input}
-            value={weight}
-            onChangeText={setWeight}
-            keyboardType={"decimal-pad"}
-            placeholder={"Enter weight (lbs)"}
-          />
-        </View>
-      )}
-      {isFieldRequired("numReps") && (
-        <View>
-          <Text style={styles.label}>Repetitions</Text>
-          <TextInput
-            style={styles.input}
-            value={numReps}
-            onChangeText={setNumReps}
-            keyboardType={"numeric"}
-            placeholder={"Number of reps"}
-          />
-        </View>
-      )}
-      {isFieldRequired("numSets") && (
-        <View>
-          <Text style={styles.label}>Sets</Text>
-          <TextInput
-            style={styles.input}
-            value={numSets}
-            onChangeText={setNumSets}
-            keyboardType={"numeric"}
-            placeholder={"Number of sets"}
-          />
-        </View>
-      )}
-      {isFieldRequired("distance") && (
-        <View>
-          <Text style={styles.label}>Distance</Text>
-          <TextInput
-            style={styles.input}
-            value={distance}
-            onChangeText={setDistance}
-            keyboardType={"decimal-pad"}
-            placeholder={"Distance (miles)"}
-          />
-        </View>
-      )}
-      {isFieldRequired("durationSeconds") && (
-        <View>
-          <Text style={styles.label}>Duration</Text>
-          <View style={styles.timeContainer}>
-            <Pressable
-              style={({ pressed }) => [
-                styles.timeButtonOpen,
-                pressed && styles.timeButtonPressed,
-              ]}
-              onPress={() => setIsShowingHoursPicker(true)}
-            >
-              <Text style={styles.timeButtonText}>{hours} hr</Text>
-            </Pressable>
-            <Modal
-              visible={isShowingHoursPicker}
-              animationType="slide"
-              transparent={true}
-            >
-              <View style={styles.modalOverlay}>
-                <View style={styles.modalContent}>
-                  <View style={styles.modalToolbar}>
-                    <Button
-                      title="Done"
-                      onPress={() => setIsShowingHoursPicker(false)}
-                    />
-                  </View>
-                  <Picker
-                    selectedValue={hours}
-                    itemStyle={styles.pickerItemStyle}
-                    onValueChange={setHours}
-                  >
-                    {Array.from({ length: 24 }, (_, hour) => (
-                      <Picker.Item
-                        label={`${hour} hours`}
-                        value={hour}
-                        key={`hour-${hour}`}
-                      />
-                    ))}
-                  </Picker>
-                </View>
-              </View>
-            </Modal>
-
-            <Pressable
-              style={({ pressed }) => [
-                styles.timeButtonOpen,
-                pressed && styles.timeButtonPressed,
-              ]}
-              onPress={() => setIsShowingMinutesPicker(true)}
-            >
-              <Text style={styles.timeButtonText}>{minutes} min</Text>
-            </Pressable>
-            <Modal
-              visible={isShowingMinutesPicker}
-              animationType="slide"
-              transparent={true}
-            >
-              <View style={styles.modalOverlay}>
-                <View style={styles.modalContent}>
-                  <View style={styles.modalToolbar}>
-                    <Button
-                      title="Done"
-                      onPress={() => setIsShowingMinutesPicker(false)}
-                    />
-                  </View>
-                  <Picker
-                    selectedValue={minutes}
-                    itemStyle={styles.pickerItemStyle}
-                    onValueChange={setMinutes}
-                  >
-                    {Array.from({ length: 60 }, (_, minute) => (
-                      <Picker.Item
-                        label={`${minute} minutes`}
-                        value={minute}
-                        key={`hour-${minute}`}
-                      />
-                    ))}
-                  </Picker>
-                </View>
-              </View>
-            </Modal>
-
-            <Pressable
-              style={({ pressed }) => [
-                styles.timeButtonOpen,
-                pressed && styles.timeButtonPressed,
-              ]}
-              onPress={() => setIsShowingSecondsPicker(true)}
-            >
-              <Text style={styles.timeButtonText}>{seconds} sec</Text>
-            </Pressable>
-            <Modal
-              visible={isShowingSecondsPicker}
-              animationType="slide"
-              transparent={true}
-            >
-              <View style={styles.modalOverlay}>
-                <View style={styles.modalContent}>
-                  <View style={styles.modalToolbar}>
-                    <Button
-                      title="Done"
-                      onPress={() => setIsShowingSecondsPicker(false)}
-                    />
-                  </View>
-                  <Picker
-                    selectedValue={seconds}
-                    itemStyle={styles.pickerItemStyle}
-                    onValueChange={setSeconds}
-                  >
-                    {Array.from({ length: 60 }, (_, second) => (
-                      <Picker.Item
-                        label={`${second} seconds`}
-                        value={second}
-                        key={`hour-${second}`}
-                      />
-                    ))}
-                  </Picker>
-                </View>
-              </View>
-            </Modal>
+      <View>
+        <Text style={styles.sectionLabel}>{entity.name}</Text>
+        {isFieldRequired("weight") && (
+          <View>
+            <Text style={styles.label}>Weight (lbs)</Text>
+            <TextInput
+              style={styles.input}
+              value={weight}
+              onChangeText={setWeight}
+              keyboardType={"decimal-pad"}
+              placeholder={"Enter weight (lbs)"}
+            />
           </View>
+        )}
+        {isFieldRequired("numReps") && (
+          <View>
+            <Text style={styles.label}>Repetitions</Text>
+            <TextInput
+              style={styles.input}
+              value={numReps}
+              onChangeText={setNumReps}
+              keyboardType={"numeric"}
+              placeholder={"Number of reps"}
+            />
+          </View>
+        )}
+        {isFieldRequired("numSets") && (
+          <View>
+            <Text style={styles.label}>Sets</Text>
+            <TextInput
+              style={styles.input}
+              value={numSets}
+              onChangeText={setNumSets}
+              keyboardType={"numeric"}
+              placeholder={"Number of sets"}
+            />
+          </View>
+        )}
+        {isFieldRequired("distance") && (
+          <View>
+            <Text style={styles.label}>Distance (mi)</Text>
+            <TextInput
+              style={styles.input}
+              value={distance}
+              onChangeText={setDistance}
+              keyboardType={"decimal-pad"}
+              placeholder={"Distance (miles)"}
+            />
+          </View>
+        )}
+        {isFieldRequired("durationSeconds") && (
+          <View>
+            <Text style={styles.label}>Duration</Text>
+            <View style={styles.timeContainer}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.timeButtonOpen,
+                  pressed && styles.timeButtonPressed,
+                ]}
+                onPress={() => setIsShowingHoursPicker(true)}
+              >
+                <Text style={styles.timeButtonText}>{hours} hr</Text>
+              </Pressable>
+              <Modal
+                visible={isShowingHoursPicker}
+                animationType="slide"
+                transparent={true}
+              >
+                <View style={styles.modalOverlay}>
+                  <View style={styles.modalContent}>
+                    <View style={styles.modalToolbar}>
+                      <Button
+                        title="Done"
+                        onPress={() => setIsShowingHoursPicker(false)}
+                      />
+                    </View>
+                    <Picker
+                      selectedValue={hours}
+                      itemStyle={styles.pickerItemStyle}
+                      onValueChange={setHours}
+                    >
+                      {Array.from({ length: 24 }, (_, hour) => (
+                        <Picker.Item
+                          label={`${hour} hours`}
+                          value={hour}
+                          key={`hour-${hour}`}
+                        />
+                      ))}
+                    </Picker>
+                  </View>
+                </View>
+              </Modal>
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.timeButtonOpen,
+                  pressed && styles.timeButtonPressed,
+                ]}
+                onPress={() => setIsShowingMinutesPicker(true)}
+              >
+                <Text style={styles.timeButtonText}>{minutes} min</Text>
+              </Pressable>
+              <Modal
+                visible={isShowingMinutesPicker}
+                animationType="slide"
+                transparent={true}
+              >
+                <View style={styles.modalOverlay}>
+                  <View style={styles.modalContent}>
+                    <View style={styles.modalToolbar}>
+                      <Button
+                        title="Done"
+                        onPress={() => setIsShowingMinutesPicker(false)}
+                      />
+                    </View>
+                    <Picker
+                      selectedValue={minutes}
+                      itemStyle={styles.pickerItemStyle}
+                      onValueChange={setMinutes}
+                    >
+                      {Array.from({ length: 60 }, (_, minute) => (
+                        <Picker.Item
+                          label={`${minute} minutes`}
+                          value={minute}
+                          key={`hour-${minute}`}
+                        />
+                      ))}
+                    </Picker>
+                  </View>
+                </View>
+              </Modal>
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.timeButtonOpen,
+                  pressed && styles.timeButtonPressed,
+                ]}
+                onPress={() => setIsShowingSecondsPicker(true)}
+              >
+                <Text style={styles.timeButtonText}>{seconds} sec</Text>
+              </Pressable>
+              <Modal
+                visible={isShowingSecondsPicker}
+                animationType="slide"
+                transparent={true}
+              >
+                <View style={styles.modalOverlay}>
+                  <View style={styles.modalContent}>
+                    <View style={styles.modalToolbar}>
+                      <Button
+                        title="Done"
+                        onPress={() => setIsShowingSecondsPicker(false)}
+                      />
+                    </View>
+                    <Picker
+                      selectedValue={seconds}
+                      itemStyle={styles.pickerItemStyle}
+                      onValueChange={setSeconds}
+                    >
+                      {Array.from({ length: 60 }, (_, second) => (
+                        <Picker.Item
+                          label={`${second} seconds`}
+                          value={second}
+                          key={`hour-${second}`}
+                        />
+                      ))}
+                    </Picker>
+                  </View>
+                </View>
+              </Modal>
+            </View>
+          </View>
+        )}
+      </View>
+      {mostRecentEvent && mostRecentEventPayload && (
+        <View>
+          <Text style={styles.sectionLabel}>Previous</Text>
+          <Text style={styles.label}>Date</Text>
+          <Text style={styles.input}>
+            {new Date(mostRecentEvent.timestamp).toLocaleDateString(undefined, {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })}
+          </Text>
+          {mostRecentEventPayload.weight && (
+            <View>
+              <Text style={styles.label}>Weight</Text>
+              <Text style={styles.input}>
+                {mostRecentEventPayload.weight} lbs
+              </Text>
+            </View>
+          )}
+          {mostRecentEventPayload.numReps && (
+            <View>
+              <Text style={styles.label}>Repetitions</Text>
+              <Text style={styles.input}>{mostRecentEventPayload.numReps}</Text>
+            </View>
+          )}
+          {mostRecentEventPayload.numSets && (
+            <View>
+              <Text style={styles.label}>Sets</Text>
+              <Text style={styles.input}>{mostRecentEventPayload.numSets}</Text>
+            </View>
+          )}
+          {mostRecentEventPayload.distance && (
+            <View>
+              <Text style={styles.label}>Distance</Text>
+              <Text style={styles.input}>
+                {mostRecentEventPayload.distance} mi
+              </Text>
+            </View>
+          )}
+          {mostRecentEventPayload.durationSeconds && (
+            <View>
+              <Text style={styles.label}>Duration</Text>
+              <Text style={styles.input}>
+                {Math.floor(mostRecentEventPayload.durationSeconds / 3600)} hr{" "}
+                {Math.floor(
+                  (mostRecentEventPayload.durationSeconds % 3600) / 60,
+                )}{" "}
+                min {Math.floor(mostRecentEventPayload.durationSeconds % 60)}{" "}
+                sec
+              </Text>
+            </View>
+          )}
         </View>
       )}
     </View>
