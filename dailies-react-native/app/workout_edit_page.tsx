@@ -29,6 +29,7 @@ import {
   View,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
+import { useToast } from "react-native-toast-notifications";
 
 const useRecentEvents = (
   entity: Entity,
@@ -137,6 +138,7 @@ function WorkoutEditPage() {
 function WorkoutEditPageInner({ entity }: { entity: Entity }) {
   const navigation = useNavigation();
   const router = useRouter();
+  const toast = useToast();
 
   const { mostRecentEvent, currentEvent } = useRecentEvents(entity);
   if (currentEvent && currentEvent.details.type !== EventType.WORKOUT) {
@@ -272,6 +274,12 @@ function WorkoutEditPageInner({ entity }: { entity: Entity }) {
         details,
       });
     }
+    toast.show("Workout saved", {
+      type: "success",
+      placement: "top",
+      duration: 2000,
+      animationType: "slide-in",
+    });
     // After saving, navigate back to the previous page.
     router.back();
   }, [
@@ -286,6 +294,7 @@ function WorkoutEditPageInner({ entity }: { entity: Entity }) {
     entity._id,
     updateWorkout,
     router,
+    toast,
   ]);
 
   const handleDelete = useCallback(async () => {
@@ -294,8 +303,14 @@ function WorkoutEditPageInner({ entity }: { entity: Entity }) {
       return;
     }
     await deleteWorkout({ id: currentEvent._id });
+    toast.show("Workout deleted", {
+      type: "normal",
+      placement: "top",
+      duration: 2000,
+      animationType: "slide-in",
+    });
     router.back();
-  }, [currentEvent, deleteWorkout, router]);
+  }, [currentEvent, deleteWorkout, router, toast]);
 
   // TODO: if we want to change the date, we can use @react-native-community/datetimepicker
 

@@ -25,6 +25,7 @@ import {
   saveFlashCardsToStorage,
   saveGenericObject,
 } from "./storage";
+import { useToast } from "react-native-toast-notifications";
 
 type EventForUpsert = {
   entityId: EntityId;
@@ -44,6 +45,8 @@ type EventForUpsert = {
 
 export default function FlashCardPage() {
   const navigation = useNavigation();
+  const toast = useToast();
+
   const { entityId: _entityId } = useLocalSearchParams();
   const entityId = _entityId as EntityId;
 
@@ -129,6 +132,7 @@ export default function FlashCardPage() {
   const remoteFlashCards = useQuery(api.flashCards.listCards);
   const [flashCards, setFlashCards] = useState<Array<FlashCard> | null>(null);
   const [currentCardId, setCurrentCardId] = useState<FlashCardId | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   // When we first load, grab the cards from storage if they exist.
   useEffect(() => {
@@ -171,7 +175,16 @@ export default function FlashCardPage() {
         return card;
       });
     });
-  }, [remoteFlashCards]);
+    if (isLoading) {
+      toast.show("Loaded!", {
+        type: "success",
+        placement: "top",
+        duration: 2000,
+        animationType: "slide-in",
+      });
+      setIsLoading(false);
+    }
+  }, [isLoading, remoteFlashCards, toast]);
 
   // Whenever we change our flashCards, make sure our prevIndex is initialized, and proactively save them to storage.
   useEffect(() => {
@@ -198,8 +211,15 @@ export default function FlashCardPage() {
   const upsertEvent = useMutation(api.events.upsertCurrentEvent);
 
   const handleLoad = useCallback(async () => {
+    setIsLoading(true);
     await loadFlashCards({});
-  }, [loadFlashCards]);
+    toast.show("Loading...", {
+      type: "normal",
+      placement: "top",
+      duration: 2000,
+      animationType: "slide-in",
+    });
+  }, [loadFlashCards, toast]);
 
   const [isSaving, setIsSaving] = useState(false);
   const handleSave = useCallback(async () => {
@@ -225,8 +245,14 @@ export default function FlashCardPage() {
     } catch (error) {
       console.error("Error saving flash cards", error);
     }
+    toast.show("Saved!", {
+      type: "success",
+      placement: "top",
+      duration: 2000,
+      animationType: "slide-in",
+    });
     setIsSaving(false);
-  }, [currentEvent, flashCards, isSaving, saveFlashCards, upsertEvent]);
+  }, [currentEvent, flashCards, isSaving, saveFlashCards, upsertEvent, toast]);
 
   const { currentCard, currentCardIndex } = useMemo(() => {
     for (const [index, card] of (flashCards ?? []).entries()) {

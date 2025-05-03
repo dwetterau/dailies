@@ -7,6 +7,7 @@ import { useCallback, useMemo } from "react";
 import { getDisplayNameForCategory } from "@/model/entities/category_helpers";
 import { EntityCategory } from "@convex/entities";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { ToastProvider } from "react-native-toast-notifications";
 
 const { EXPO_PUBLIC_CONVEX_URL } = Constants.expoConfig?.extra ?? {};
 
@@ -52,32 +53,34 @@ export default function RootLayout() {
     >
       <ConvexProviderWithAuth client={convex} useAuth={useAuthFromAuth0}>
         <GestureHandlerRootView>
-          <Stack>
-            <Stack.Screen
-              name="index"
-              options={{ headerShown: false, title: "Home" }}
-            />
-            <Stack.Screen
-              name="category_page"
-              options={({ route }) => {
-                const params = route.params as { category?: EntityCategory };
-                return {
-                  title: params.category
-                    ? getDisplayNameForCategory(params.category)
-                    : "Category",
-                };
-              }}
-            />
-            <Stack.Screen
-              name="flash_card_page"
-              options={{ title: "Flash Cards" }}
-            />
-            <Stack.Screen
-              name="workout_edit_page"
-              // TODO: If we have a workout already, we should instead say that we're editing it?
-              options={{ title: "New Workout" }}
-            />
-          </Stack>
+          <ToastProvider>
+            <Stack>
+              <Stack.Screen
+                name="index"
+                options={{ headerShown: false, title: "Home" }}
+              />
+              <Stack.Screen
+                name="category_page"
+                options={({ route }) => {
+                  const params = route.params as { category?: EntityCategory };
+                  return {
+                    title: params.category
+                      ? getDisplayNameForCategory(params.category)
+                      : "Category",
+                  };
+                }}
+              />
+              <Stack.Screen
+                name="flash_card_page"
+                options={{ title: "Flash Cards" }}
+              />
+              <Stack.Screen
+                name="workout_edit_page"
+                // TODO: If we have a workout already, we should instead say that we're editing it?
+                options={{ title: "New Workout" }}
+              />
+            </Stack>
+          </ToastProvider>
         </GestureHandlerRootView>
       </ConvexProviderWithAuth>
     </Auth0Provider>
