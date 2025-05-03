@@ -1,7 +1,7 @@
 import { getColorForCategory } from "@/model/entities/category_helpers";
-import { Entity, EntityType, ResetAfterInterval } from "@convex/entities";
+import { Entity, EntityType } from "@convex/entities";
 import BigButton from "./big_button";
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
 import { api } from "@convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
 import { EventType } from "@convex/events";

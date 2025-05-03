@@ -8,7 +8,7 @@ import { api } from "@convex/_generated/api";
 import { Entity, EntityId } from "@convex/entities";
 import { Event, EventType, WorkoutEventDetails } from "@convex/events";
 import { useMutation, useQuery } from "convex/react";
-import { useLocalSearchParams, useNavigation } from "expo-router";
+import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import {
   useCallback,
   useEffect,
@@ -136,6 +136,7 @@ function WorkoutEditPage() {
 
 function WorkoutEditPageInner({ entity }: { entity: Entity }) {
   const navigation = useNavigation();
+  const router = useRouter();
 
   const { mostRecentEvent, currentEvent } = useRecentEvents(entity);
   if (currentEvent && currentEvent.details.type !== EventType.WORKOUT) {
@@ -242,7 +243,8 @@ function WorkoutEditPageInner({ entity }: { entity: Entity }) {
 
   const saveNewWorkout = useMutation(api.events.create);
   const updateWorkout = useMutation(api.events.update);
-  const handleSave = useCallback(() => {
+  const deleteWorkout = useMutation(api.events.deleteEvent);
+  const handleSave = useCallback(async () => {
     if (!isSaveEnabled) {
       console.error("Tried to save when it was not enabled");
       return;
@@ -259,17 +261,19 @@ function WorkoutEditPageInner({ entity }: { entity: Entity }) {
     };
 
     if (!currentEvent) {
-      saveNewWorkout({
+      await saveNewWorkout({
         entityId: entity._id,
         timestamp: getCurrentTimestamp(),
         details,
       });
     } else {
-      updateWorkout({
+      await updateWorkout({
         id: currentEvent._id,
         details,
       });
     }
+    // After saving, navigate back to the previous page.
+    router.back();
   }, [
     isSaveEnabled,
     weight,
@@ -281,7 +285,17 @@ function WorkoutEditPageInner({ entity }: { entity: Entity }) {
     saveNewWorkout,
     entity._id,
     updateWorkout,
+    router,
   ]);
+
+  const handleDelete = useCallback(async () => {
+    if (!currentEvent) {
+      console.error("Tried to delete when there was no current event");
+      return;
+    }
+    await deleteWorkout({ id: currentEvent._id });
+    router.back();
+  }, [currentEvent, deleteWorkout, router]);
 
   // TODO: if we want to change the date, we can use @react-native-community/datetimepicker
 
@@ -289,22 +303,33 @@ function WorkoutEditPageInner({ entity }: { entity: Entity }) {
     navigation.setOptions({
       headerRight: () => {
         return (
-          <TouchableOpacity onPress={handleSave} disabled={!isSaveEnabled}>
-            <Text
-              style={{
-                color: isSaveEnabled
-                  ? PlatformColor("systemBlue")
-                  : PlatformColor("systemGray"),
-                fontSize: 16,
-              }}
-            >
-              Save
-            </Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: "row", gap: 30 }}>
+            {currentEvent && (
+              <TouchableOpacity onPress={handleDelete}>
+                <Text
+                  style={{ color: PlatformColor("systemRed"), fontSize: 16 }}
+                >
+                  Delete
+                </Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity onPress={handleSave} disabled={!isSaveEnabled}>
+              <Text
+                style={{
+                  color: isSaveEnabled
+                    ? PlatformColor("systemBlue")
+                    : PlatformColor("systemGray"),
+                  fontSize: 16,
+                }}
+              >
+                Save
+              </Text>
+            </TouchableOpacity>
+          </View>
         );
       },
     });
-  }, [handleSave, isSaveEnabled, navigation]);
+  }, [currentEvent, handleDelete, handleSave, isSaveEnabled, navigation]);
 
   return (
     <View style={styles.container}>
