@@ -18,14 +18,13 @@ import {
 import BigButton from "./big_button";
 import { useCurrentTimeRanges } from "@/model/time/timestamps";
 import { useAuth0 } from "react-native-auth0";
-import { head } from "lodash";
 
 export const HOME_PAGE_STYLES = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "flex-start",
     alignItems: "center",
-    paddingTop: 100, // Spacing from the top
+    paddingTop: 70, // Spacing from the top
     gap: 20,
   },
   title: {

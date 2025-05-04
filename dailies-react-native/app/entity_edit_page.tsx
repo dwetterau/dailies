@@ -4,7 +4,7 @@ import {
   EntityType,
   ResetAfterInterval,
 } from "@convex/entities";
-import { Picker } from "@react-native-picker/picker";
+import { Menu, Button } from "react-native-paper";
 import { useMutation } from "convex/react";
 import { useNavigation, useRouter } from "expo-router";
 import { useCallback, useLayoutEffect, useState } from "react";
@@ -12,10 +12,10 @@ import {
   View,
   Text,
   TextInput,
-  Button,
   TouchableOpacity,
   ScrollView,
   StyleSheet,
+  Button as RNButton,
   PlatformColor,
 } from "react-native";
 import { useToast } from "react-native-toast-notifications";
@@ -62,7 +62,7 @@ export default function EntityEditScreen() {
     if (!name.trim()) {
       return true;
     }
-    if (requiresCompletions && !numRequiredCompletionsString) {
+    if (requiresCompletions && !requiredCompletionsString) {
       return true;
     }
     if (requiresEventFields && includedEventFields.length === 0) {
@@ -83,6 +83,7 @@ export default function EntityEditScreen() {
     includedEventFields.length,
     name,
     requiresCompletions,
+    requiredCompletionsString,
     requiresEventFields,
     type,
   ]);
@@ -138,9 +139,12 @@ export default function EntityEditScreen() {
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <View style={styles.saveButton}>
-          <Button title="Save" onPress={handleSave} disabled={isInvalid()} />
-        </View>
+        <RNButton
+          title="Save"
+          onPress={handleSave}
+          disabled={isInvalid()}
+          color={isInvalid() ? PlatformColor("systemGray") : undefined}
+        />
       ),
     });
   }, [handleSave, isInvalid, navigation]);
@@ -236,20 +240,34 @@ function PickerMenu<T extends string>({
   options: Array<T>;
   onChange: (value: T) => void;
 }) {
+  const [visible, setVisible] = useState(false);
+
   return (
     <View style={styles.formRow}>
       <Text style={styles.label}>{label}</Text>
-      <View style={styles.pickerWrapper}>
-        <Picker
-          selectedValue={value}
-          onValueChange={onChange}
-          style={styles.picker}
-        >
-          {options.map((x) => (
-            <Picker.Item key={x} label={x} value={x} />
-          ))}
-        </Picker>
-      </View>
+      <Menu
+        visible={visible}
+        onDismiss={() => setVisible(false)}
+        anchor={
+          <TouchableOpacity
+            style={styles.menuAnchor}
+            onPress={() => setVisible(true)}
+          >
+            <Text style={styles.menuAnchorText}>{value}</Text>
+          </TouchableOpacity>
+        }
+      >
+        {options.map((option) => (
+          <Menu.Item
+            key={option}
+            onPress={() => {
+              onChange(option);
+              setVisible(false);
+            }}
+            title={`${option === value ? "✔ " : ""}${option}`}
+          />
+        ))}
+      </Menu>
     </View>
   );
 }
@@ -304,7 +322,16 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: "#eee",
   },
-  saveButton: {
-    marginTop: 30,
+  menuAnchor: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 4,
+    justifyContent: "center",
+  },
+  menuAnchorText: {
+    fontSize: 16,
   },
 });
