@@ -56,10 +56,6 @@ export default function RootLayout() {
           <ToastProvider>
             <Stack>
               <Stack.Screen
-                name="index"
-                options={{ headerShown: false, title: "Home" }}
-              />
-              <Stack.Screen
                 name="category_page"
                 options={({ route }) => {
                   const params = route.params as { category?: EntityCategory };

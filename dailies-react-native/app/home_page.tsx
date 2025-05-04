@@ -1,7 +1,7 @@
 import { api } from "@convex/_generated/api";
 import { Entity, EntityCategory } from "@convex/entities";
 import { useQuery } from "convex/react";
-import { useCallback, useMemo } from "react";
+import { useCallback, useLayoutEffect, useMemo } from "react";
 import {
   PlatformColor,
   StyleSheet,
@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useNavigation, useRouter } from "expo-router";
 import {
   getCategoryCompletionRatio,
   getColorForCategory,
@@ -18,6 +18,7 @@ import {
 import BigButton from "./big_button";
 import { useCurrentTimeRanges } from "@/model/time/timestamps";
 import { useAuth0 } from "react-native-auth0";
+import { head } from "lodash";
 
 export const HOME_PAGE_STYLES = StyleSheet.create({
   container: {
@@ -47,6 +48,7 @@ const ORDERED_CATEGORIES: Array<EntityCategory> = [
 export default function HomePage() {
   const { clearCredentials } = useAuth0();
   const router = useRouter();
+  const navigation = useNavigation();
 
   const { timeRanges } = useCurrentTimeRanges();
   const entities = useQuery(api.entities.list, { ...timeRanges });
@@ -65,6 +67,27 @@ export default function HomePage() {
   const handleLogout = useCallback(() => {
     clearCredentials();
   }, [clearCredentials]);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerTitle: "",
+      headerRight: () => {
+        return (
+          <TouchableOpacity
+            onPress={() => {
+              router.push({
+                pathname: "/entity_edit_page",
+              });
+            }}
+          >
+            <Text style={{ color: PlatformColor("systemBlue"), fontSize: 16 }}>
+              New
+            </Text>
+          </TouchableOpacity>
+        );
+      },
+    });
+  }, [navigation, router]);
 
   return (
     <View style={HOME_PAGE_STYLES.container}>

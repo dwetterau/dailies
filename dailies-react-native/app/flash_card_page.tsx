@@ -184,7 +184,10 @@ export default function FlashCardPage() {
       });
       setIsLoading(false);
     }
-  }, [isLoading, remoteFlashCards, toast]);
+    // We intentionally don't trigger this on isLoading, since we want to show the loading toast when we get the actual
+    // server update.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [remoteFlashCards, toast]);
 
   // Whenever we change our flashCards, make sure our prevIndex is initialized, and proactively save them to storage.
   useEffect(() => {
