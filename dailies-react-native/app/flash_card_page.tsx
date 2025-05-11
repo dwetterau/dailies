@@ -50,11 +50,10 @@ export default function FlashCardPage() {
   const { entityId: _entityId } = useLocalSearchParams();
   const entityId = _entityId as EntityId;
 
-  const { currentTimestamp } = useCurrentTimeRanges();
-  const timeRange = useMemo(
-    () => getTimeRangeForTimestamp(ResetAfterInterval.DAILY, currentTimestamp),
-    [currentTimestamp],
-  );
+  const {
+    currentTimestamp,
+    timeRanges: { dailyTimeRange: timeRange },
+  } = useCurrentTimeRanges();
 
   const currentEventFromServer = useQuery(api.events.getCurrentEvent, {
     entityId: entityId,
@@ -325,7 +324,7 @@ export default function FlashCardPage() {
         }
         return {
           entityId,
-          timestamp: prevEvent.timestamp,
+          timestamp: currentTimestamp,
           timeRange,
           details: {
             type: EventType.FLASH_CARDS,
