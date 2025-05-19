@@ -10,11 +10,10 @@ import { useCurrentTimeRanges } from "@/model/time/timestamps";
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     justifyContent: "flex-start",
     alignItems: "center",
-    paddingTop: 50, // Spacing from the top
     gap: 20,
+    paddingVertical: 50,
   },
 });
 
