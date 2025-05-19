@@ -69,10 +69,17 @@ export const getCurrentCards = internalAction({
   },
 });
 
+const queryLambdaForFSRSCardReviews = async (fsrsToken: string) => {
+// The token is an AWS lambda url - make a request to that endpoint with body set to a JSON.stringify of two params:  statuses and cards.
+// We need to map the cards into the dict format that the python library expects, included the statuses, which become numbers.
+// Then we need to take the responses and save them both to Airtable and to Convex (in the case of the ReviewLogs.) 
+}
+
 export const saveCardReviewStatusToAirtable = internalAction({
   args: {
     ownerId: v.id("users"),
     token: v.string(),
+    fsrsToken: v.string(),
     cardsToSync: v.array(
       v.object({
         id: v.id("flashCards"),
@@ -88,6 +95,17 @@ export const saveCardReviewStatusToAirtable = internalAction({
   },
   handler: async (ctx, { cardsToSync, ownerId, token }) => {
     // Get the cards from Airtable.
+    let cards = [];
+    try {
+      cards = await getCurrentCardsFromAirtable(token);
+    } catch (e) {
+      console.error("Error getting current cards from Airtable");
+      throw e;
+    }
+
+    try {
+
+    }
 
     const cardIdsToClear = new Array<Id<"flashCards">>();
     try {
@@ -250,6 +268,13 @@ export const startSaveReviewStatus = mutation({
       throw new Error("no token found for sync");
     }
 
+    const fsrsToken = await getTokenIfExists(ctx, {
+      tokenType: TokenType.FSRS_LAMBDA,
+    });
+    if (!fsrsToken) {
+      throw new Error("no token found for sync");
+    }
+
     const cardsWithoutReviewStatus = await ctx.db
       .query("flashCards")
       .filter((q) =>
@@ -284,6 +309,7 @@ export const startSaveReviewStatus = mutation({
         {
           ownerId,
           token: token.token,
+          fsrsToken: fsrsToken.token,
           cardsToSync,
         }
       );
