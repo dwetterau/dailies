@@ -8,6 +8,8 @@
 import Auth0
 import Combine
 import ConvexMobile
+import Observation
+import Sentry
 import SwiftUI
 
 func onSuccessfulLogin(source: String) {
@@ -15,16 +17,23 @@ func onSuccessfulLogin(source: String) {
     setupReminderNotification()
 }
 
-class AuthModel: ObservableObject {
-    @Published var authState: AuthState<Credentials> = .loading
+@Observable class AuthModel {
+    var authState: AuthState<Credentials> = .loading
+    private var cancellables = Set<AnyCancellable>()
 
-    init() {
+    func start(afterAuthentication: @escaping () -> Void) {
+        print("starting authentication")
         client.authState.replaceError(with: .unauthenticated)
             .handleEvents(receiveOutput: {
                 print("authState: receiveOutput", $0)
             }, receiveCompletion: logCompletionHandlers("authState"))
             .receive(on: DispatchQueue.main)
-            .assign(to: &$authState)
+            .sink { [weak self] newAuthState in
+                print("Got auth state", newAuthState)
+                self?.authState = newAuthState
+                afterAuthentication()
+            }
+            .store(in: &cancellables)
         Task {
             let result = await client.loginFromCache()
             switch result {
@@ -35,9 +44,24 @@ class AuthModel: ObservableObject {
                     print("No credentials in store found.")
                 } else {
                     print("Other error: \(error)")
+                    SentrySDK.capture(error: error)
                 }
             }
         }
+    }
+
+    public func logTokenForDebugging() {
+        let breadcrumb = Breadcrumb(level: .info, category: "custom")
+        breadcrumb.message = "auth state"
+
+        if case let .authenticated(creds) = authState {
+            breadcrumb.data = ["token": authState, "idToken": creds.idToken, "refreshToken": creds.refreshToken ?? "none", "accessToken": creds.accessToken, "expiresIn": creds.expiresIn]
+
+        } else {
+            breadcrumb.data = ["token": authState]
+        }
+        SentrySDK.addBreadcrumb(breadcrumb)
+        SentrySDK.capture(error: NSError(domain: "FakeAuthError", code: 123, userInfo: [NSLocalizedDescriptionKey: "See breadcrumbs"]))
     }
 
     func logout() {
@@ -58,11 +82,8 @@ class AuthModel: ObservableObject {
 
             do {
                 try await client.mutation("users:store")
-            } catch let ClientError.ConvexError(data) {
-                let errorMessage = try! JSONDecoder().decode(String.self, from: Data(data.utf8))
-                print(errorMessage)
             } catch {
-                print("An unknown error occurred: \(error)")
+                handleMutationError(error)
             }
         }
     }

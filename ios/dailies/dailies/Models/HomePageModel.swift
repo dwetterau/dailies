@@ -36,6 +36,7 @@ class HomePageModel: ObservableObject {
         // Observe the current model
         entityListModel.objectWillChange
             .sink { [weak self] _ in
+                print("Got entityListModel update, propagating")
                 self?.objectWillChange.send()
             }
             .store(in: &entityListModelSubscription)
@@ -45,6 +46,7 @@ class HomePageModel: ObservableObject {
     public func updateEntityListModelIfStale() async {
         let dayTimeRange = getDayTimeRangeForDate(Date())
         let currentDayStartTimestamp = Int(dayTimeRange.start)
+        print("Checking to see if model is stale")
         if currentDayStartTimestamp != entityListModel.dayStartTimestamp {
             entityListModelSubscription.removeAll()
             await entityListModel.cleanup()

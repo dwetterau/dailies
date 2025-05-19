@@ -33,6 +33,10 @@ struct WorkoutDetailsForm: View {
     @State private var seconds: Int = 0
     @State private var isInitialized: Bool = false
 
+    @State private var isShowingHoursPicker = false
+    @State private var isShowingMinutesPicker = false
+    @State private var isShowingSecondsPicker = false
+
     private func initializeHoursMinutesSeconds() {
         if isInitialized {
             return
@@ -99,46 +103,104 @@ struct WorkoutDetailsForm: View {
         HStack {
             Text(EventField.durationSeconds.displayName())
             Spacer()
-            Menu {
-                Picker("Hours", selection: $hours) {
-                    ForEach(0 ..< 24) { hour in
-                        Text("\(hour)").tag(hour)
-                    }
-                }
-            }
-            label: {
+
+            Button {
+                isShowingHoursPicker = true
+            } label: {
                 Text("\(hours)")
                     .frame(minWidth: 15)
                     .foregroundColor(.primary)
-            }.disabled(isDisabled)
-            Text("hr")
-
-            Menu {
-                Picker("Minutes", selection: $minutes) {
-                    ForEach(0 ..< 60) { minute in
-                        Text("\(minute)").tag(minute)
+                    .contentShape(Rectangle())
+            }
+            .disabled(isDisabled)
+            .buttonStyle(.borderless)
+            .sheet(isPresented: $isShowingHoursPicker) {
+                NavigationView {
+                    Picker("Hours", selection: $hours) {
+                        ForEach(0 ..< 24) { hour in
+                            Text("\(hour)").tag(hour)
+                        }
+                    }
+                    .pickerStyle(.wheel)
+                    .navigationTitle("Hours")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button("Done") {
+                                isShowingHoursPicker = false
+                            }
+                        }
                     }
                 }
+                .presentationDetents([.height(250)])
+            }
+            Text("hr").foregroundColor(.gray)
+
+            Button {
+                isShowingMinutesPicker = true
             } label: {
                 Text("\(minutes)")
                     .frame(minWidth: 15)
                     .foregroundColor(.primary)
-            }.disabled(isDisabled)
-
-            Text("min")
-
-            Menu {
-                Picker("Seconds", selection: $seconds) {
-                    ForEach(0 ..< 60) { second in
-                        Text("\(String(format: "%02d", second))").tag(second)
+                    .contentShape(Rectangle())
+            }
+            .disabled(isDisabled)
+            .buttonStyle(.borderless)
+            .sheet(isPresented: $isShowingMinutesPicker) {
+                NavigationView {
+                    Picker("Minutes", selection: $minutes) {
+                        ForEach(0 ..< 60) { minute in
+                            Text("\(minute)").tag(minute)
+                        }
+                    }
+                    .pickerStyle(.wheel)
+                    .navigationTitle("Minutes")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button("Done") {
+                                isShowingMinutesPicker = false
+                            }
+                        }
                     }
                 }
+                .presentationDetents([.height(250)])
+            }
+
+            Text("min").foregroundColor(.gray)
+
+            Button {
+                isShowingSecondsPicker = true
             } label: {
                 Text("\(String(format: "%02d", seconds))")
                     .frame(minWidth: 30)
                     .foregroundColor(.primary)
-            }.disabled(isDisabled)
-            Text("sec")
+                    .contentShape(Rectangle())
+            }
+            .disabled(isDisabled)
+            .buttonStyle(.borderless)
+            .sheet(isPresented: $isShowingSecondsPicker) {
+                NavigationView {
+                    Picker("Seconds", selection: $seconds) {
+                        ForEach(0 ..< 60) { second in
+                            Text("\(String(format: "%02d", second))").tag(second)
+                        }
+                    }
+                    .pickerStyle(.wheel)
+                    .navigationTitle("Seconds")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button("Done") {
+                                isShowingSecondsPicker = false
+                            }
+                        }
+                    }
+                }
+                .presentationDetents([.height(250)])
+            }
+
+            Text("sec").foregroundColor(.gray)
         }
         .onChange(of: hours) { updateDurationSeconds() }
         .onChange(of: minutes) { updateDurationSeconds() }

@@ -199,13 +199,8 @@ struct EntityEditPage: View {
                 }
                 onSave()
                 dismiss()
-            } catch let ClientError.ConvexError(data) {
-                let errorMessage = try! JSONDecoder().decode(String.self, from: Data(data.utf8))
-                print(errorMessage)
-                return
             } catch {
-                print("An unknown error occurred: \(error)")
-                return
+                handleMutationError(error)
             }
         }
     }

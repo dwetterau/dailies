@@ -1,14 +1,22 @@
 import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { defineTable, GenericDatabaseReader, GenericDataModel, GenericMutationCtx, GenericQueryCtx } from "convex/server";
+import { defineTable, GenericDatabaseReader } from "convex/server";
 import { getUserIdFromContextAsync } from "./users";
 import { DataModel, Doc, Id } from "./_generated/dataModel";
+
+export type Event = Doc<"events">;
+export type EventId = Id<"events">;
 
 export enum EventType {
   WORKOUT = "workout",
   FLASH_CARDS = "flashCards",
   GENERIC_COMPLETION = "genericCompletion",
 }
+
+export type WorkoutEventDetails = Extract<
+  Doc<"events">["details"],
+  { type: EventType.WORKOUT }
+>;
 
 export const WORKOUT_DETAILS_SCHEMA = v.object({
   type: v.literal(EventType.WORKOUT),
@@ -24,10 +32,10 @@ export const WORKOUT_DETAILS_SCHEMA = v.object({
           weight: v.optional(v.number()),
           repIndex: v.optional(v.number()),
           setIndex: v.optional(v.number()),
-        })
-      )
+        }),
+      ),
     ),
-  })
+  }),
 });
 
 export const FLASH_CARDS_SCHEMA = v.object({
@@ -35,20 +43,20 @@ export const FLASH_CARDS_SCHEMA = v.object({
   payload: v.object({
     numReviewed: v.number(),
     numCorrect: v.number(),
-  })
-})
+  }),
+});
 
 export const GENERIC_COMPLETION_SCHEMA = v.object({
   type: v.literal(EventType.GENERIC_COMPLETION),
   payload: v.object({
     numCompletions: v.number(),
     numRequiredCompletions: v.number(),
-  })
-})
+  }),
+});
 
 const allEventDetails = v.union(
-  WORKOUT_DETAILS_SCHEMA, 
-  FLASH_CARDS_SCHEMA, 
+  WORKOUT_DETAILS_SCHEMA,
+  FLASH_CARDS_SCHEMA,
   GENERIC_COMPLETION_SCHEMA,
 );
 
@@ -57,30 +65,19 @@ export const EVENTS_SCHEMA = defineTable({
   entityId: v.id("entities"),
   timestamp: v.number(),
   details: allEventDetails,
-}).index("by_entity_id", ["entityId"]);
+}).index("by_entity_id", ["entityId", "timestamp"]);
 
 export const list = query({
   args: { entityId: v.id("entities") },
   handler: async (ctx, { entityId }) => {
-    const ownerId = await getUserIdFromContextAsync(ctx)
+    const ownerId = await getUserIdFromContextAsync(ctx);
     return await ctx.db
       .query("events")
-      .filter((q) => q.and(
-        q.eq(q.field("ownerId"), ownerId),
-        q.eq(q.field("entityId"), entityId)
-      ))
+      .withIndex("by_entity_id", (q) => q.eq("entityId", entityId))
+      .filter((q) => q.and(q.eq(q.field("ownerId"), ownerId)))
       .collect();
   },
 });
-
-function getEnumType(typeString: string): EventType {
-  for (const option of Object.values(EventType)) {
-    if (option === typeString) {
-      return option;
-    }
-  }
-  throw new Error(`Invalid type: ${typeString}`);
-}
 
 export const create = mutation({
   args: {
@@ -88,8 +85,8 @@ export const create = mutation({
     details: allEventDetails,
     timestamp: v.number(),
   },
-  handler: async (ctx, { entityId, details, timestamp}) => {
-    const ownerId = await getUserIdFromContextAsync(ctx)
+  handler: async (ctx, { entityId, details, timestamp }) => {
+    const ownerId = await getUserIdFromContextAsync(ctx);
     await ctx.db.insert("events", {
       ownerId,
       entityId,
@@ -103,28 +100,29 @@ export const getCurrentEventWithDb = async ({
   db,
   ownerId,
   entityId,
-  timeRange: {startTimestamp, endTimestamp},
+  timeRange: { startTimestamp, endTimestamp },
 }: {
-  db: GenericDatabaseReader<DataModel>
-  ownerId: Id<"users">,
-  entityId: Id<"entities">,
+  db: GenericDatabaseReader<DataModel>;
+  ownerId: Id<"users">;
+  entityId: Id<"entities">;
   timeRange: {
-    startTimestamp: number, 
-    endTimestamp: number,
-  },
+    startTimestamp: number;
+    endTimestamp: number;
+  };
 }): Promise<Doc<"events"> | null> => {
-    // Check if an event already exists for this day
-    const existingEvents = await db
-      .query("events")
-      .filter((q) => q.and(
-        q.eq(q.field("ownerId"), ownerId),
-        q.eq(q.field("entityId"), entityId),
-        q.gte(q.field("timestamp"), startTimestamp),
-        q.lt(q.field("timestamp"), endTimestamp),
-      ))
-      .collect();
-    return existingEvents[0] ?? null;
-}
+  // Check if an event already exists for this day
+  const existingEvents = await db
+    .query("events")
+    .withIndex("by_entity_id", (q) =>
+      q
+        .eq("entityId", entityId)
+        .gte("timestamp", startTimestamp)
+        .lt("timestamp", endTimestamp),
+    )
+    .filter((q) => q.eq(q.field("ownerId"), ownerId))
+    .collect();
+  return existingEvents[0] ?? null;
+};
 
 export const getCurrentEvent = query({
   args: {
@@ -134,11 +132,16 @@ export const getCurrentEvent = query({
       endTimestamp: v.number(),
     }),
   },
-  handler: async (ctx, {entityId, timeRange}) => {
-    const ownerId = await getUserIdFromContextAsync(ctx)
-    return await getCurrentEventWithDb({db: ctx.db, ownerId, entityId, timeRange});
+  handler: async (ctx, { entityId, timeRange }) => {
+    const ownerId = await getUserIdFromContextAsync(ctx);
+    return await getCurrentEventWithDb({
+      db: ctx.db,
+      ownerId,
+      entityId,
+      timeRange,
+    });
   },
-})
+});
 
 export const upsertCurrentEvent = mutation({
   args: {
@@ -151,10 +154,15 @@ export const upsertCurrentEvent = mutation({
     details: allEventDetails,
   },
   handler: async (ctx, { entityId, details, timeRange, timestamp }) => {
-    const ownerId = await getUserIdFromContextAsync(ctx)
-    const existingEvent = await getCurrentEventWithDb({db: ctx.db, ownerId, timeRange, entityId});
+    const ownerId = await getUserIdFromContextAsync(ctx);
+    const existingEvent = await getCurrentEventWithDb({
+      db: ctx.db,
+      ownerId,
+      timeRange,
+      entityId,
+    });
     if (existingEvent) {
-      console.log("Patching current interval event to", details)
+      console.log("Patching current interval event to", details);
       await ctx.db.patch(existingEvent._id, {
         timestamp,
         details,
@@ -169,41 +177,45 @@ export const upsertCurrentEvent = mutation({
       });
     }
   },
-})
+});
 
 export const update = mutation({
   args: {
     id: v.id("events"),
     details: allEventDetails,
   },
-  handler: async (ctx, {id, details}) => {
+  handler: async (ctx, { id, details }) => {
     // Confirm that the user owns this event
     const ownerId = await getUserIdFromContextAsync(ctx);
-    const events = await ctx.db.query("events").filter(q => q.and(
-      q.eq(q.field("ownerId"), ownerId),
-      q.eq(q.field("_id"), id),
-    )).collect();
+    const events = await ctx.db
+      .query("events")
+      .filter((q) =>
+        q.and(q.eq(q.field("ownerId"), ownerId), q.eq(q.field("_id"), id)),
+      )
+      .collect();
     if (!events.length) {
       throw new ConvexError(`Event not found: ${id}`);
     }
-    await ctx.db.patch(id, {details});
+    await ctx.db.patch(id, { details });
   },
-})
+});
 
 export const deleteEvent = mutation({
   args: {
     id: v.id("events"),
   },
-  handler: async (ctx, {id}) => {
+  handler: async (ctx, { id }) => {
     // Confirm that the user owns this event
     const ownerId = await getUserIdFromContextAsync(ctx);
-    const events = await ctx.db.query("events").filter(q => q.and(
-      q.eq(q.field("ownerId"), ownerId),
-      q.eq(q.field("_id"), id),
-    )).collect();
+    const events = await ctx.db
+      .query("events")
+      .filter((q) =>
+        q.and(q.eq(q.field("ownerId"), ownerId), q.eq(q.field("_id"), id)),
+      )
+      .collect();
     if (!events.length) {
       throw new ConvexError(`Event not found: ${id}`);
     }
     await ctx.db.delete(id);
-  }
-})
+  },
+});

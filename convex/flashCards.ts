@@ -8,9 +8,12 @@ import {
 } from "./_generated/server";
 import { getUserIdFromContextAsync } from "./users";
 import { api, internal } from "./_generated/api";
-import { getTokenIfExists, TokenType } from "./tokens";
-import { Id } from "./_generated/dataModel";
-import { chunk } from "../lib/utils";
+import { TokenType } from "./tokens";
+import { Doc, Id } from "./_generated/dataModel";
+import { chunk } from "./utils";
+
+export type FlashCard = Doc<"flashCards">;
+export type FlashCardId = Id<"flashCards">;
 
 export enum ReviewStatus {
   EASY = "Easy",
@@ -39,23 +42,45 @@ const baseId = "appX45YUZ4S3xa1Tu";
 const tableId = "tblxuY0bU1EJNyDxX";
 
 const getCurrentCardsFromAirtable = async function (token: string) {
-  const params = new URLSearchParams({
-    view: "Next",
-    pageSize: "100",
-    maxRecords: "100",
-  }).toString();
-  const endpointUrl = `https://api.airtable.com/v0/${baseId}/${tableId}`;
-  const response = await fetch(`${endpointUrl}?${params}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  if (!response.ok) {
-    console.log(response);
-    throw new Error(`HTTP error! status: ${response.status}`);
+  let offset: string | undefined = undefined;
+  let done = false;
+  let allRecords = [];
+  const pageSize = 100;
+  while (!done) {
+    const params = new URLSearchParams({
+      view: "Next",
+      pageSize: `${pageSize}`,
+      ...(offset != undefined ? { offset: offset as string } : {}),
+    }).toString();
+    const endpointUrl = `https://api.airtable.com/v0/${baseId}/${tableId}`;
+    const response = await fetch(`${endpointUrl}?${params}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) {
+      console.log(response);
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    // See docs: https://airtable.com/developers/web/api/list-records#response
+    const data: {
+      records: Array<{
+        id: string;
+        fields: {};
+        createdTime: string;
+      }>;
+      offset?: string;
+    } = await response.json();
+    for (const record of data.records) {
+      allRecords.push(record);
+    }
+    if (data.records.length < pageSize) {
+      done = true;
+    } else {
+      offset = data.offset;
+    }
   }
-  const data = await response.json();
-  return data.records;
+  return allRecords;
 };
 
 export const getCurrentCards = internalAction({
@@ -70,10 +95,10 @@ export const getCurrentCards = internalAction({
 });
 
 const queryLambdaForFSRSCardReviews = async (fsrsToken: string) => {
-// The token is an AWS lambda url - make a request to that endpoint with body set to a JSON.stringify of two params:  statuses and cards.
-// We need to map the cards into the dict format that the python library expects, included the statuses, which become numbers.
-// Then we need to take the responses and save them both to Airtable and to Convex (in the case of the ReviewLogs.) 
-}
+  // The token is an AWS lambda url - make a request to that endpoint with body set to a JSON.stringify of two params:  statuses and cards.
+  // We need to map the cards into the dict format that the python library expects, included the statuses, which become numbers.
+  // Then we need to take the responses and save them both to Airtable and to Convex (in the case of the ReviewLogs.)
+};
 
 export const saveCardReviewStatusToAirtable = internalAction({
   args: {
@@ -93,7 +118,7 @@ export const saveCardReviewStatusToAirtable = internalAction({
       })
     ),
   },
-  handler: async (ctx, { cardsToSync, ownerId, token }) => {
+  handler: async (ctx, { cardsToSync, ownerId, token, fsrsToken }) => {
     // Get the cards from Airtable.
     let cards = [];
     try {
@@ -103,9 +128,7 @@ export const saveCardReviewStatusToAirtable = internalAction({
       throw e;
     }
 
-    try {
-
-    }
+    // TODO: Call the Lambda, get the review logs and new cards (with dates, steps, statuses, etc.)
 
     const cardIdsToClear = new Array<Id<"flashCards">>();
     try {
@@ -232,7 +255,7 @@ export const startSyncCards = mutation({
   args: {},
   handler: async (ctx, {}) => {
     const ownerId = await getUserIdFromContextAsync(ctx);
-    const token = await getTokenIfExists(ctx, {
+    const token = await ctx.runQuery(api.tokens.getTokenIfExists, {
       tokenType: TokenType.AIRTABLE,
     });
     if (!token) {
@@ -261,14 +284,14 @@ export const startSaveReviewStatus = mutation({
   },
   handler: async (ctx, args) => {
     const ownerId = await getUserIdFromContextAsync(ctx);
-    const token = await getTokenIfExists(ctx, {
+    const token = await ctx.runQuery(api.tokens.getTokenIfExists, {
       tokenType: TokenType.AIRTABLE,
     });
     if (!token) {
       throw new Error("no token found for sync");
     }
 
-    const fsrsToken = await getTokenIfExists(ctx, {
+    const fsrsToken = await ctx.runQuery(api.tokens.getTokenIfExists, {
       tokenType: TokenType.FSRS_LAMBDA,
     });
     if (!fsrsToken) {

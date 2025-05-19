@@ -335,11 +335,8 @@ class FlashCardReviewModel: ObservableObject {
                         )
                     ),
                 ])
-            } catch let ClientError.ConvexError(data) {
-                let errorMessage = try! JSONDecoder().decode(String.self, from: Data(data.utf8))
-                print(errorMessage)
             } catch {
-                print("An unknown error occurred: \(error)")
+                handleMutationError(error)
             }
 
             await MainActor.run {
@@ -355,12 +352,10 @@ class FlashCardReviewModel: ObservableObject {
             do {
                 try await client.mutation("flashCards:startSyncCards")
                 completion()
-            } catch let ClientError.ConvexError(data) {
-                let errorMessage = try! JSONDecoder().decode(String.self, from: Data(data.utf8))
-                print(errorMessage)
             } catch {
-                print("An unknown error occurred: \(error)")
+                handleMutationError(error)
             }
+
             await MainActor.run {
                 self.isLoading = false
             }

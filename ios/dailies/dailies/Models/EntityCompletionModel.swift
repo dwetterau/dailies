@@ -12,6 +12,7 @@ import SwiftUI
 struct CompletionStats: Codable {
     let timestamp: Int
     let numCompletions: Int
+    let isUnsaved: Bool
 }
 
 private func getCompletionStatsFilename(entityId: String) -> String {
@@ -27,7 +28,8 @@ class EntityCompletionModel: ObservableObject {
         // We don't want the initial value to be saved, since it might overwrite an older (but still current)
         // value.
         timestamp: 0,
-        numCompletions: 0
+        numCompletions: 0,
+        isUnsaved: true
     )
 
     @Published
@@ -69,10 +71,13 @@ class EntityCompletionModel: ObservableObject {
                     if let eventDetails = newCurrentEvent?.details {
                         if case let .genericCompletion(completionDetails) = eventDetails {
                             let remoteTimestamp = newCurrentEvent!.timestamp
-                            if remoteTimestamp > currentCompletionStats.timestamp {
+                            if remoteTimestamp > currentCompletionStats.timestamp ||
+                                (remoteTimestamp == currentCompletionStats.timestamp && currentCompletionStats.isUnsaved)
+                            {
                                 return CompletionStats(
                                     timestamp: remoteTimestamp,
-                                    numCompletions: completionDetails.numCompletions
+                                    numCompletions: completionDetails.numCompletions,
+                                    isUnsaved: false
                                 )
                             }
                         }
@@ -83,6 +88,11 @@ class EntityCompletionModel: ObservableObject {
         }
 
         $completionStats.sink { newValue in
+            // We want to save to disk only after we've saved to the server, since we don't
+            // have any concept of retries yet.
+            if newValue.isUnsaved {
+                return
+            }
             if isInTimeRange(
                 getTimeRangeForDate(Date(), resetInterval: entityViewModel.resetInterval),
                 newValue.timestamp
@@ -113,12 +123,14 @@ class EntityCompletionModel: ObservableObject {
             }
             newCompletionStats = CompletionStats(
                 timestamp: newTimestamp,
-                numCompletions: completionStats.numCompletions + 1
+                numCompletions: completionStats.numCompletions + 1,
+                isUnsaved: true
             )
         } else {
             newCompletionStats = CompletionStats(
                 timestamp: newTimestamp,
-                numCompletions: 1
+                numCompletions: 1,
+                isUnsaved: true
             )
         }
         saveCompletionStats(newCompletionStats) {}
@@ -129,7 +141,7 @@ class EntityCompletionModel: ObservableObject {
             // It's important to use a new timestamp, since we need this to be > than the previously stored
             // value to apply the update. This does mean you can reset the next day's events if you do so right
             // on a boundary.
-            CompletionStats(timestamp: getCurrentTimestamp(), numCompletions: 0),
+            CompletionStats(timestamp: getCurrentTimestamp(), numCompletions: 0, isUnsaved: true),
             completionCallback: completionCallback
         )
     }
@@ -146,6 +158,7 @@ class EntityCompletionModel: ObservableObject {
 
     private func saveCompletionStats(_ completionStats: CompletionStats, completionCallback: @escaping () -> Void) {
         isSaving = true
+        let prevCompletionStats = self.completionStats
 
         let timeRange = getTimeRangeForDate(
             getDateFromTimestamp(completionStats.timestamp),
@@ -168,14 +181,15 @@ class EntityCompletionModel: ObservableObject {
                         )
                     ),
                 ])
-            } catch let ClientError.ConvexError(data) {
-                let errorMessage = try! JSONDecoder().decode(String.self, from: Data(data.utf8))
-                print(errorMessage)
             } catch {
-                print("An unknown error occurred: \(error)")
+                handleMutationError(error)
+                // If we fail to save, reset the update so the user can try again.
+                // It could have gone through, in which case we'll still jump forward to the right place.
+                self.completionStats = prevCompletionStats
             }
 
             await MainActor.run {
+                self.completionStats = completionStats
                 self.isSaving = false
                 completionCallback()
             }

@@ -9,9 +9,12 @@
 /* Begin PBXBuildFile section */
 		4F0B15992D19F45D00735BD4 /* AlertToast in Frameworks */ = {isa = PBXBuildFile; productRef = 4F0B15982D19F45D00735BD4 /* AlertToast */; };
 		4F4BCF972D1A415A0000D545 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4F4BCF962D1A415A0000D545 /* Assets.xcassets */; };
+		4F69CA372D8DEB2F0045EB40 /* (null) in Frameworks */ = {isa = PBXBuildFile; };
+		4F69CA382D8DEB2F0045EB40 /* (null) in Frameworks */ = {isa = PBXBuildFile; };
 		4FF7BCC42D13CDE4008BCC71 /* .swiftformat in Resources */ = {isa = PBXBuildFile; fileRef = 4FF7BCC32D13CDE1008BCC71 /* .swiftformat */; };
 		4FFF0EAB2D0E143300806225 /* ConvexMobile in Frameworks */ = {isa = PBXBuildFile; productRef = 4FFF0EAA2D0E143300806225 /* ConvexMobile */; };
 		4FFF0EAE2D0E146500806225 /* ConvexAuth0 in Frameworks */ = {isa = PBXBuildFile; productRef = 4FFF0EAD2D0E146500806225 /* ConvexAuth0 */; };
+		8412F6BB9867498DA4448590 /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = 38BA83D72A17477FBB014186 /* Sentry */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -66,6 +69,7 @@
 				4F0B15992D19F45D00735BD4 /* AlertToast in Frameworks */,
 				4FFF0EAE2D0E146500806225 /* ConvexAuth0 in Frameworks */,
 				4FFF0EAB2D0E143300806225 /* ConvexMobile in Frameworks */,
+				8412F6BB9867498DA4448590 /* Sentry in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -73,6 +77,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4F69CA372D8DEB2F0045EB40 /* (null) in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -80,6 +85,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4F69CA382D8DEB2F0045EB40 /* (null) in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -127,6 +133,7 @@
 				4F44A7D82CFCCFDC00694873 /* Sources */,
 				4F44A7D92CFCCFDC00694873 /* Frameworks */,
 				4F44A7DA2CFCCFDC00694873 /* Resources */,
+				B0D1B109A95B427ABADD1B9B /* Upload Debug Symbols to Sentry */,
 			);
 			buildRules = (
 			);
@@ -140,6 +147,7 @@
 				4FFF0EAA2D0E143300806225 /* ConvexMobile */,
 				4FFF0EAD2D0E146500806225 /* ConvexAuth0 */,
 				4F0B15982D19F45D00735BD4 /* AlertToast */,
+				38BA83D72A17477FBB014186 /* Sentry */,
 			);
 			productName = dailies;
 			productReference = 4F44A7DC2CFCCFDC00694873 /* Dailies (dev).app */;
@@ -227,6 +235,7 @@
 				4FFF0EA92D0E143300806225 /* XCRemoteSwiftPackageReference "convex-swift" */,
 				4FFF0EAC2D0E146500806225 /* XCRemoteSwiftPackageReference "convex-swift-auth0" */,
 				4F0B15972D19F45D00735BD4 /* XCRemoteSwiftPackageReference "AlertToast" */,
+				EA5C25E4D0394886BCC1C643 /* XCRemoteSwiftPackageReference "sentry-cocoa" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 4F44A7DD2CFCCFDC00694873 /* Products */;
@@ -265,6 +274,24 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		B0D1B109A95B427ABADD1B9B /* Upload Debug Symbols to Sentry */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${TARGET_NAME}",
+			);
+			name = "Upload Debug Symbols to Sentry";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# This script is responsable to upload debug symbols and source context for Sentry.\nif which sentry-cli >/dev/null; then\nexport SENTRY_ORG=david-wetterau\nexport SENTRY_PROJECT=dailies-ios\nERROR=$(sentry-cli debug-files upload --include-sources \"$DWARF_DSYM_FOLDER_PATH\" 2>&1 >/dev/null)\nif [ ! $? -eq 0 ]; then\necho \"warning: sentry-cli - $ERROR\"\nfi\nelse\necho \"warning: sentry-cli not installed, download from https://github.com/getsentry/sentry-cli/releases\"\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		4F44A7D82CFCCFDC00694873 /* Sources */ = {
@@ -432,9 +459,11 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_ASSET_PATHS = "\"dailies/Preview Content\"";
 				DEVELOPMENT_TEAM = A528B8ZZF3;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -465,9 +494,11 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_ASSET_PATHS = "\"dailies/Preview Content\"";
 				DEVELOPMENT_TEAM = A528B8ZZF3;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -627,9 +658,22 @@
 				minimumVersion = 0.3.0;
 			};
 		};
+		EA5C25E4D0394886BCC1C643 /* XCRemoteSwiftPackageReference "sentry-cocoa" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/getsentry/sentry-cocoa/";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		38BA83D72A17477FBB014186 /* Sentry */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EA5C25E4D0394886BCC1C643 /* XCRemoteSwiftPackageReference "sentry-cocoa" */;
+			productName = Sentry;
+		};
 		4F0B15982D19F45D00735BD4 /* AlertToast */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 4F0B15972D19F45D00735BD4 /* XCRemoteSwiftPackageReference "AlertToast" */;

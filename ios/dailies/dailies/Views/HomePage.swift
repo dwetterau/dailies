@@ -33,18 +33,15 @@ func getHomePageDestination(forCategory category: EntityCategory) -> HomePageDes
 }
 
 struct HomePage: View {
-    @ObservedObject
     var authModel: AuthModel
 
-    @StateObject
-    var homePageModel = HomePageModel()
+    @ObservedObject
+    var homePageModel: HomePageModel
 
     @StateObject
     var notificationModel = NotificationModel()
 
     @State var showSaveSuccessToast = false
-
-    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         NavigationStack {
@@ -120,13 +117,6 @@ struct HomePage: View {
                 notificationModel.setShouldShowAllCompleteToast(true)
             }
         }
-        .onChange(of: scenePhase) { _, newPhase in
-            if newPhase == .active {
-                Task {
-                    await homePageModel.updateEntityListModelIfStale()
-                }
-            }
-        }
     }
 
     func hasEntitiesInCategory(_ category: EntityCategory) -> Bool {
@@ -135,5 +125,5 @@ struct HomePage: View {
 }
 
 #Preview {
-    HomePage(authModel: AuthModel())
+    HomePage(authModel: AuthModel(), homePageModel: HomePageModel())
 }
