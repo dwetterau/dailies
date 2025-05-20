@@ -6,7 +6,7 @@ import {
   internalAction,
   internalMutation,
 } from "./_generated/server";
-import { getUserIdFromContextAsync } from "./users";
+import { getUserIdFromContextAsync, store } from "./users";
 import { api, internal } from "./_generated/api";
 import { TokenType } from "./tokens";
 import { Doc, Id } from "./_generated/dataModel";
@@ -100,6 +100,38 @@ const queryLambdaForFSRSCardReviews = async (fsrsToken: string) => {
   // Then we need to take the responses and save them both to Airtable and to Convex (in the case of the ReviewLogs.)
 };
 
+const getNewReviewStatsAsync = async ({
+  currentAirtableCards,
+  cardsToSync,
+  fsrsToken,
+}: {
+  currentAirtableCards: Array<{
+    id: string;
+    fields: {};
+    createdTime: string;
+  }>;
+  cardsToSync: Array<{
+    id: Id<"flashCards">;
+    remoteId: string;
+    reviewStatus: ReviewStatus;
+  }>;
+  fsrsToken: string;
+}): Promise<{
+  newReviewStats: Map<string, {}>;
+  reviewLogsToSave: Array<{
+    cardId: Id<"flashCards">;
+    rating: ReviewStatus;
+    reviewTimestamp: number;
+    reviewDurationSeconds: number;
+  }>;
+}> => {
+  // TODO: Call the Lambda, get the review logs and new cards (with dates, steps, statuses, etc.)
+  return {
+    newReviewStats: new Map<string, {}>(),
+    reviewLogsToSave: [],
+  };
+};
+
 export const saveCardReviewStatusToAirtable = internalAction({
   args: {
     ownerId: v.id("users"),
@@ -128,7 +160,13 @@ export const saveCardReviewStatusToAirtable = internalAction({
       throw e;
     }
 
-    // TODO: Call the Lambda, get the review logs and new cards (with dates, steps, statuses, etc.)
+    const { newReviewStats, reviewLogsToSave } = await getNewReviewStatsAsync({
+      currentAirtableCards: cards,
+      cardsToSync,
+      fsrsToken,
+    });
+
+    // TODO: Use the newReviewStats to set other columns in Airtable too.
 
     const cardIdsToClear = new Array<Id<"flashCards">>();
     try {
@@ -163,6 +201,12 @@ export const saveCardReviewStatusToAirtable = internalAction({
       await ctx.scheduler.runAfter(0, internal.flashCards.clearReviewStatus, {
         ownerId,
         cardIdsToClear,
+      });
+    }
+    if (reviewLogsToSave.length > 0) {
+      await ctx.scheduler.runAfter(0, internal.reviewLogs.storeReviewLogs, {
+        ownerId,
+        logs: reviewLogs,
       });
     }
   },
