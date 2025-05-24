@@ -55,7 +55,7 @@ const AIRTABLE_FIELD_NAMES = [
 
   // @deprecated, replace with state
   "Review Status",
-];
+] as const;
 
 type FieldNames = (typeof AIRTABLE_FIELD_NAMES)[number];
 
@@ -80,7 +80,10 @@ const getCurrentCardsFromAirtable = async function (token: string) {
       },
     });
     if (!response.ok) {
-      console.log(response);
+      if (response.status === 422) {
+        const errorData = await response.json();
+        console.error("Error:", response.status, errorData);
+      }
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     // See docs: https://airtable.com/developers/web/api/list-records#response
@@ -117,16 +120,16 @@ export const getCurrentCards = internalAction({
     const records = await getCurrentCardsFromAirtable(args.token);
     await ctx.scheduler.runAfter(0, internal.flashCards.syncCurrentCards, {
       ownerId: args.ownerId,
-      records: records,
+      records: records.map((record) => {
+        return {
+          id: record.id,
+          createdTime: record.createdTime,
+          fields: Object.fromEntries(record.fields),
+        };
+      }),
     });
   },
 });
-
-const queryLambdaForFSRSCardReviews = async (fsrsToken: string) => {
-  // The token is an AWS lambda url - make a request to that endpoint with body set to a JSON.stringify of two params:  statuses and cards.
-  // We need to map the cards into the dict format that the python library expects, included the statuses, which become numbers.
-  // Then we need to take the responses and save them both to Airtable and to Convex (in the case of the ReviewLogs.)
-};
 
 const getStatusNumber = (status: ReviewStatus) => {
   switch (status) {
@@ -138,6 +141,21 @@ const getStatusNumber = (status: ReviewStatus) => {
       return 2;
     case ReviewStatus.WRONG:
       return 1;
+    default:
+      throw new Error("Unknown status");
+  }
+};
+
+const getReviewStatus = (status: number) => {
+  switch (status) {
+    case 4:
+      return ReviewStatus.EASY;
+    case 3:
+      return ReviewStatus.NORMAL;
+    case 2:
+      return ReviewStatus.DIFFICULT;
+    case 1:
+      return ReviewStatus.WRONG;
     default:
       throw new Error("Unknown status");
   }
@@ -160,12 +178,11 @@ const getNewReviewStatsAsync = async ({
   }>;
   fsrsToken: string;
 }): Promise<{
-  newReviewStats: Map<FieldNames, unknown>;
+  newReviewStats: Map<Id<"flashCards">, Map<FieldNames, unknown>>;
   reviewLogsToSave: Array<{
     cardId: Id<"flashCards">;
     rating: ReviewStatus;
     reviewTimestamp: number;
-    reviewDurationSeconds: number;
   }>;
 }> => {
   const airtableCardById = new Map(
@@ -209,19 +226,49 @@ const getNewReviewStatsAsync = async ({
       }),
     });
     const { cards, reviewLogs } = await lambdaResponse.json();
-    console.log("Lambda response", cards);
-    console.log("Lambda response2", reviewLogs);
+    const newReviewStats = new Map();
+    for (const updatedCard of cards) {
+      const card = cardsToSync[updatedCard.card_id];
+      newReviewStats.set(
+        card.id,
+        new Map<FieldNames, unknown>([
+          ["State", updatedCard.state],
+          ["Step", updatedCard.step],
+          ["Stability", updatedCard.stability],
+          ["Difficulty", updatedCard.difficulty],
+          ["Due", convertToAirtableDate(updatedCard.due)],
+          ["Last Reviewed", convertToAirtableDate(updatedCard.last_review)],
+        ])
+      );
+    }
+    const reviewLogsToSave = reviewLogs.map(
+      (log: { card_id: number; rating: number; review_datetime: string }) => ({
+        cardId: cardsToSync[log.card_id]!.id,
+        rating: getReviewStatus(log.rating),
+        // log.review_datetime is a string in ISO format, convert to unix seconds timestamp.
+        reviewTimestamp: Math.round(
+          new Date(log.review_datetime).getTime() / 1000
+        ),
+      })
+    );
+    return {
+      newReviewStats,
+      reviewLogsToSave,
+    };
   } catch (e) {
     console.error("Error calling FSRS Lambda", e);
     throw e;
   }
-
-  // TODO: get the review logs and new cards (with dates, steps, statuses, etc.)
-  return {
-    newReviewStats: new Map<string, {}>(),
-    reviewLogsToSave: [],
-  };
 };
+
+function convertToAirtableDate(input: string) {
+  // Remove microseconds (retain only milliseconds)
+  const cleaned = input.replace(/(\.\d{3})\d+/, "$1");
+  // Create a Date object
+  const date = new Date(cleaned);
+  // Convert to ISO string with milliseconds precision
+  return date.toISOString();
+}
 
 export const saveCardReviewStatusToAirtable = internalAction({
   args: {
@@ -257,28 +304,33 @@ export const saveCardReviewStatusToAirtable = internalAction({
       fsrsToken,
     });
 
-    // TODO: Use the newReviewStats to set other columns in Airtable too.
-
     const cardIdsToClear = new Array<Id<"flashCards">>();
     try {
       for (const batch of chunk(cardsToSync, 10)) {
         const endpointUrl = `https://api.airtable.com/v0/${baseId}/${tableId}`;
+        const body = JSON.stringify({
+          records: batch.map((card) => {
+            const newValues = newReviewStats.get(card.id)!;
+            const fields = Object.fromEntries(newValues);
+            return {
+              id: card.remoteId,
+              fields,
+            };
+          }),
+        });
         const response = await fetch(endpointUrl, {
           method: "PATCH",
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            records: batch.map((card) => ({
-              id: card.remoteId,
-              fields: {
-                "Review Status": card.reviewStatus,
-              },
-            })),
-          }),
+          body,
         });
         if (!response.ok) {
+          if (response.status === 422) {
+            const errorData = await response.json();
+            console.error("Error:", response.status, errorData);
+          }
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         for (const card of batch) {
@@ -287,6 +339,7 @@ export const saveCardReviewStatusToAirtable = internalAction({
       }
     } catch (e) {
       console.error("Error saving updates to Airtable", e);
+      throw e;
     }
     if (cardIdsToClear.length > 0) {
       await ctx.scheduler.runAfter(0, internal.flashCards.clearReviewStatus, {

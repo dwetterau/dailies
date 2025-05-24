@@ -8,7 +8,6 @@ export const REVIEW_LOGS_SCHEMA = defineTable({
   cardId: v.id("flashCards"),
   rating: v.union(...Object.values(ReviewStatus).map((t) => v.literal(t))),
   reviewTimestamp: v.number(), // unix timestamp in seconds
-  reviewDurationSeconds: v.number(), // in seconds
 });
 
 export const storeReviewLogs = internalMutation({
@@ -21,7 +20,6 @@ export const storeReviewLogs = internalMutation({
           ...Object.values(ReviewStatus).map((t) => v.literal(t))
         ),
         reviewTimestamp: v.number(),
-        reviewDurationSeconds: v.number(),
       })
     ),
   },
