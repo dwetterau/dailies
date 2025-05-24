@@ -41,6 +41,24 @@ export const FLASH_CARDS_SCHEMA = defineTable({
 const baseId = "appX45YUZ4S3xa1Tu";
 const tableId = "tblxuY0bU1EJNyDxX";
 
+const AIRTABLE_FIELD_NAMES = [
+  "Japanese",
+  "English",
+  "Hiragana",
+  "Notes",
+  "State",
+  "Step",
+  "Stability",
+  "Difficulty",
+  "Due",
+  "Last Reviewed",
+
+  // @deprecated, replace with state
+  "Review Status",
+];
+
+type FieldNames = (typeof AIRTABLE_FIELD_NAMES)[number];
+
 const getCurrentCardsFromAirtable = async function (token: string) {
   let offset: string | undefined = undefined;
   let done = false;
@@ -51,9 +69,12 @@ const getCurrentCardsFromAirtable = async function (token: string) {
       view: "Next",
       pageSize: `${pageSize}`,
       ...(offset != undefined ? { offset: offset as string } : {}),
-    }).toString();
+    });
+    for (const field of AIRTABLE_FIELD_NAMES) {
+      params.append("fields[]", field);
+    }
     const endpointUrl = `https://api.airtable.com/v0/${baseId}/${tableId}`;
-    const response = await fetch(`${endpointUrl}?${params}`, {
+    const response = await fetch(`${endpointUrl}?${params.toString()}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -66,13 +87,20 @@ const getCurrentCardsFromAirtable = async function (token: string) {
     const data: {
       records: Array<{
         id: string;
-        fields: {};
+        fields: { [k: string]: unknown };
         createdTime: string;
       }>;
       offset?: string;
     } = await response.json();
     for (const record of data.records) {
-      allRecords.push(record);
+      allRecords.push({
+        ...record,
+        fields: new Map(
+          AIRTABLE_FIELD_NAMES.filter(
+            (fieldName) => record.fields[fieldName] != undefined
+          ).map((field) => [field, record.fields[field]])
+        ),
+      });
     }
     if (data.records.length < pageSize) {
       done = true;
@@ -100,6 +128,21 @@ const queryLambdaForFSRSCardReviews = async (fsrsToken: string) => {
   // Then we need to take the responses and save them both to Airtable and to Convex (in the case of the ReviewLogs.)
 };
 
+const getStatusNumber = (status: ReviewStatus) => {
+  switch (status) {
+    case ReviewStatus.EASY:
+      return 4;
+    case ReviewStatus.NORMAL:
+      return 3;
+    case ReviewStatus.DIFFICULT:
+      return 2;
+    case ReviewStatus.WRONG:
+      return 1;
+    default:
+      throw new Error("Unknown status");
+  }
+};
+
 const getNewReviewStatsAsync = async ({
   currentAirtableCards,
   cardsToSync,
@@ -107,7 +150,7 @@ const getNewReviewStatsAsync = async ({
 }: {
   currentAirtableCards: Array<{
     id: string;
-    fields: {};
+    fields: Map<FieldNames, unknown>;
     createdTime: string;
   }>;
   cardsToSync: Array<{
@@ -117,7 +160,7 @@ const getNewReviewStatsAsync = async ({
   }>;
   fsrsToken: string;
 }): Promise<{
-  newReviewStats: Map<string, {}>;
+  newReviewStats: Map<FieldNames, unknown>;
   reviewLogsToSave: Array<{
     cardId: Id<"flashCards">;
     rating: ReviewStatus;
@@ -125,7 +168,55 @@ const getNewReviewStatsAsync = async ({
     reviewDurationSeconds: number;
   }>;
 }> => {
-  // TODO: Call the Lambda, get the review logs and new cards (with dates, steps, statuses, etc.)
+  const airtableCardById = new Map(
+    currentAirtableCards.map((card) => [card.id, card.fields])
+  );
+
+  try {
+    const lambdaResponse = await fetch(fsrsToken, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        statuses: cardsToSync.map((card) => getStatusNumber(card.reviewStatus)),
+        cards: cardsToSync.map((card, index) => {
+          const airtableCard = airtableCardById.get(card.remoteId);
+          if (!airtableCard) {
+            throw new Error(
+              `missing card in airtable - ${card.id} - ${card.remoteId}`
+            );
+          }
+          let lastReviewed = airtableCard.get("Last Reviewed") ?? null;
+          if (!airtableCard.get("State")) {
+            // Hide the last review time if it's from the old method
+            lastReviewed = null;
+          }
+          return {
+            card_id: index,
+            state: (airtableCard.get("State") as undefined | number) ?? 1,
+            step: (airtableCard.get("Step") as undefined | number) ?? 0,
+            stability:
+              (airtableCard.get("Stability") as undefined | number) ?? null,
+            difficulty:
+              (airtableCard.get("Difficulty") as undefined | number) ?? null,
+            due:
+              (airtableCard.get("Due") as undefined | string) ??
+              new Date().toISOString(),
+            last_review: lastReviewed,
+          };
+        }),
+      }),
+    });
+    const { cards, reviewLogs } = await lambdaResponse.json();
+    console.log("Lambda response", cards);
+    console.log("Lambda response2", reviewLogs);
+  } catch (e) {
+    console.error("Error calling FSRS Lambda", e);
+    throw e;
+  }
+
+  // TODO: get the review logs and new cards (with dates, steps, statuses, etc.)
   return {
     newReviewStats: new Map<string, {}>(),
     reviewLogsToSave: [],
@@ -206,7 +297,7 @@ export const saveCardReviewStatusToAirtable = internalAction({
     if (reviewLogsToSave.length > 0) {
       await ctx.scheduler.runAfter(0, internal.reviewLogs.storeReviewLogs, {
         ownerId,
-        logs: reviewLogs,
+        logs: reviewLogsToSave,
       });
     }
   },

@@ -15,12 +15,12 @@ def review_cards(cards: List[object], statuses: List[Rating]) -> Tuple[List[Card
         - List of ReviewLog objects for each review.
     """
     scheduler = Scheduler()
-    cards = []
+    new_cards = []
     review_logs = []
 
     for raw_card, status in zip(cards, statuses):
-        card, review_log = scheduler.review_card(Card.from_dict(raw_card), status)
-        cards.append(card)
+        card, review_log = scheduler.review_card(Card.from_dict(raw_card), Rating(status))
+        new_cards.append(card)
         review_logs.append(review_log)
 
-    return cards, review_logs
+    return new_cards, review_logs

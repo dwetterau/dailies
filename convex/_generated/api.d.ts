@@ -17,6 +17,7 @@ import type * as entities from "../entities.js";
 import type * as events from "../events.js";
 import type * as flashCards from "../flashCards.js";
 import type * as http from "../http.js";
+import type * as reviewLogs from "../reviewLogs.js";
 import type * as tokens from "../tokens.js";
 import type * as users from "../users.js";
 import type * as utils from "../utils.js";
@@ -34,6 +35,7 @@ declare const fullApi: ApiFromModules<{
   events: typeof events;
   flashCards: typeof flashCards;
   http: typeof http;
+  reviewLogs: typeof reviewLogs;
   tokens: typeof tokens;
   users: typeof users;
   utils: typeof utils;

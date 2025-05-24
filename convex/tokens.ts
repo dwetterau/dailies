@@ -5,7 +5,7 @@ import { getUserIdFromContextAsync } from "./users";
 
 export enum TokenType {
   AIRTABLE = "airtable",
-  FSRS_LAMBDA = "fsrs_lamda",
+  FSRS_LAMBDA = "fsrs_lambda",
 }
 
 export const TOKENS_SCHEMA = defineTable({
