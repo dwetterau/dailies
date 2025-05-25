@@ -60,6 +60,7 @@ const AIRTABLE_FIELD_NAMES = [
 type FieldNames = (typeof AIRTABLE_FIELD_NAMES)[number];
 
 const getCurrentCardsFromAirtable = async function (token: string) {
+  const nowTime = new Date().getTime();
   let offset: string | undefined = undefined;
   let done = false;
   let allRecords = [];
@@ -96,6 +97,15 @@ const getCurrentCardsFromAirtable = async function (token: string) {
       offset?: string;
     } = await response.json();
     for (const record of data.records) {
+      // The view includes a filter at day granularity for "Due" - so we filter here on the read side
+      // to ignore records that are not due yet within the current day.
+      const dueDateString = record.fields["Due"];
+      if (dueDateString) {
+        const dueDate = new Date(dueDateString as string);
+        if (dueDate.getTime() > nowTime) {
+          continue;
+        }
+      }
       allRecords.push({
         ...record,
         fields: new Map(
