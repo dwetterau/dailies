@@ -52,6 +52,7 @@ const AIRTABLE_FIELD_NAMES = [
   "Difficulty",
   "Due",
   "Last Reviewed",
+  "Random Padded",
 
   // @deprecated, replace with state
   "Review Status",
@@ -171,6 +172,13 @@ const getReviewStatus = (status: number) => {
   }
 };
 
+const getRandomPaddedNumber = (): string => {
+  // Generate a random number between 0 and 999,999,999
+  const randomNumber = Math.floor(Math.random() * 1e9);
+  // Convert to string and pad with leading zeros to ensure it's always 9 digits
+  return randomNumber.toString().padStart(9, "0");
+};
+
 const getNewReviewStatsAsync = async ({
   currentAirtableCards,
   cardsToSync,
@@ -248,6 +256,7 @@ const getNewReviewStatsAsync = async ({
           ["Difficulty", updatedCard.difficulty],
           ["Due", convertToAirtableDate(updatedCard.due)],
           ["Last Reviewed", convertToAirtableDate(updatedCard.last_review)],
+          ["Random Padded", getRandomPaddedNumber()],
         ])
       );
     }
