@@ -21,7 +21,7 @@ export default function EntityButton({
   completionRatio: number;
 }) {
   const router = useRouter();
-  const { timeRanges, currentTimestamp } = useCurrentTimeRanges();
+  const { timeRanges, getCurrentTimestampInTimeRange } = useCurrentTimeRanges();
   const timeRange = getTimeRangeForResetInterval(
     timeRanges,
     entity.resetAfterInterval,
@@ -34,6 +34,7 @@ export default function EntityButton({
   const upsertEvent = useMutation(api.events.upsertCurrentEvent);
 
   const handlePress = useCallback(() => {
+    const currentTimestamp = getCurrentTimestampInTimeRange();
     if (entity.type === EntityType.GENERIC_COMPLETION) {
       let numCompletions = 0;
       if (
@@ -69,7 +70,14 @@ export default function EntityButton({
     } else {
       console.log("unsupported entity type :(", entity.type);
     }
-  }, [currentEvent, currentTimestamp, entity, router, timeRange, upsertEvent]);
+  }, [
+    currentEvent,
+    entity,
+    getCurrentTimestampInTimeRange,
+    router,
+    timeRange,
+    upsertEvent,
+  ]);
 
   const handleTriplePress = useCallback(() => {
     if (

@@ -1,10 +1,10 @@
-import { getTimeRangeForTimestamp } from "@/model/entities/entity_helpers";
 import {
+  getCurrentTimestamp,
   getIsTimestampInTimeRange,
   useCurrentTimeRanges,
 } from "@/model/time/timestamps";
 import { api } from "@convex/_generated/api";
-import { EntityId, ResetAfterInterval } from "@convex/entities";
+import { EntityId } from "@convex/entities";
 import { FlashCard, FlashCardId, ReviewStatus } from "@convex/flashCards";
 import { EventType } from "@convex/events";
 import { useMutation, useQuery } from "convex/react";
@@ -51,8 +51,8 @@ export default function FlashCardPage() {
   const entityId = _entityId as EntityId;
 
   const {
-    currentTimestamp,
     timeRanges: { dailyTimeRange: timeRange },
+    getCurrentTimestampInTimeRange,
   } = useCurrentTimeRanges();
 
   const currentEventFromServer = useQuery(api.events.getCurrentEvent, {
@@ -85,7 +85,7 @@ export default function FlashCardPage() {
         localCurrentEvent.timestamp > prevCurrentEvent.timestamp &&
         getIsTimestampInTimeRange(
           localCurrentEvent.timestamp,
-          prevCurrentEvent.timeRange
+          prevCurrentEvent.timeRange,
         )
       ) {
         console.log("Local current event is in range, and newer. Using it.");
@@ -108,7 +108,7 @@ export default function FlashCardPage() {
         currentEventFromServer.timestamp >= prevCurrentEvent.timestamp &&
         getIsTimestampInTimeRange(
           currentEventFromServer.timestamp,
-          prevCurrentEvent.timeRange
+          prevCurrentEvent.timeRange,
         )
       ) {
         console.log("Server current event is in range, and newer. Using it.");
@@ -139,7 +139,7 @@ export default function FlashCardPage() {
     if (flashCardsFromStorage.length > 0) {
       console.log(
         "Loaded flash cards from storage",
-        flashCardsFromStorage.length
+        flashCardsFromStorage.length,
       );
       // If we already have some flash cards, such as those from the server, we don't want to overwrite them.
       setFlashCards((prevFlashCards) => {
@@ -162,7 +162,7 @@ export default function FlashCardPage() {
     }
     setFlashCards((prevFlashCards) => {
       const currentFlashCardIdsToStatus = new Map(
-        (prevFlashCards ?? []).map((card) => [card._id, card.reviewStatus])
+        (prevFlashCards ?? []).map((card) => [card._id, card.reviewStatus]),
       );
       return remoteFlashCards.map((card) => {
         if (currentFlashCardIdsToStatus.has(card._id)) {
@@ -313,6 +313,7 @@ export default function FlashCardPage() {
           }
         }
 
+        const currentTimestamp = getCurrentTimestampInTimeRange();
         if (!getIsTimestampInTimeRange(prevEvent.timestamp, timeRange)) {
           return {
             entityId,
@@ -338,7 +339,7 @@ export default function FlashCardPage() {
                 prevEvent.details.payload.numReviewed + numReviewedDelta,
               numCorrect: Math.max(
                 0,
-                prevEvent.details.payload.numCorrect + numCorrectDelta
+                prevEvent.details.payload.numCorrect + numCorrectDelta,
               ),
             },
           },
@@ -354,11 +355,11 @@ export default function FlashCardPage() {
       currentCard,
       currentCardId,
       currentCardIndex,
-      currentTimestamp,
       entityId,
       flashCards,
+      getCurrentTimestampInTimeRange,
       timeRange,
-    ]
+    ],
   );
 
   const handleGoToPreviousCard = useCallback(() => {
@@ -437,7 +438,7 @@ export default function FlashCardPage() {
 }
 
 function getFirstUnreviewedCard(
-  flashCards: Array<FlashCard>
+  flashCards: Array<FlashCard>,
 ): FlashCard | null {
   for (const card of flashCards) {
     if (card.reviewStatus === null) {
@@ -456,7 +457,7 @@ function FlashCardStatsHeader({
 }) {
   const { numReviewed, numCorrect } = currentEvent.details.payload;
   const numToReview = flashCards.filter(
-    (card) => card.reviewStatus === null
+    (card) => card.reviewStatus === null,
   ).length;
   const numUnsaved = flashCards.length - numToReview;
 

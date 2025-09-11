@@ -4,7 +4,7 @@ import {
   EntityType,
   ResetAfterInterval,
 } from "@convex/entities";
-import { Menu, Button } from "react-native-paper";
+import { Menu } from "react-native-paper";
 import { useMutation } from "convex/react";
 import { useNavigation, useRouter } from "expo-router";
 import { useCallback, useLayoutEffect, useState } from "react";

@@ -78,22 +78,39 @@ export function getEndOfWeekTimestamp(currentTimestamp: number): number {
   return endOfWeek.getTime();
 }
 
-export function useCurrentTimeRanges() {
+export function useCurrentTimeRanges(): {
+  timeRanges: {
+    dailyTimeRange: { startTimestamp: number; endTimestamp: number };
+    weeklyTimeRange: { startTimestamp: number; endTimestamp: number };
+  };
+  getCurrentTimestampInTimeRange: () => number;
+} {
   const currentTime = getCurrentTimestamp();
   const startTimestamp = getStartOfDayTimestamp(currentTime);
   return useMemo(() => {
+    const dailyTimeRange = {
+      startTimestamp: startTimestamp,
+      endTimestamp: getEndOfDayTimestamp(currentTime),
+    };
     return {
       timeRanges: {
-        dailyTimeRange: {
-          startTimestamp: startTimestamp,
-          endTimestamp: getEndOfDayTimestamp(currentTime),
-        },
+        dailyTimeRange,
         weeklyTimeRange: {
           startTimestamp: getStartOfWeekTimestamp(currentTime),
           endTimestamp: getEndOfWeekTimestamp(currentTime),
         },
       },
-      currentTimestamp: currentTime,
+      getCurrentTimestampInTimeRange: () => {
+        const candidateTimestamp = getCurrentTimestamp();
+        if (!getIsTimestampInTimeRange(candidateTimestamp, dailyTimeRange)) {
+          throw new Error(
+            "Race condition - current timestamp is not in time range",
+          );
+        }
+        return candidateTimestamp;
+      },
     };
+    // We only want to recompute this when the start of the day changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startTimestamp]);
 }
