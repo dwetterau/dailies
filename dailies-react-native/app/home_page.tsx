@@ -18,6 +18,7 @@ import {
 import BigButton from "./big_button";
 import { useCurrentTimeRanges } from "@/model/time/timestamps";
 import { useAuth0 } from "react-native-auth0";
+import LoadingScreen from "./loading_screen";
 
 export const HOME_PAGE_STYLES = StyleSheet.create({
   container: {
@@ -87,6 +88,11 @@ export default function HomePage() {
       },
     });
   }, [navigation, router]);
+
+  // Show loading screen while fetching entities
+  if (entities === undefined) {
+    return <LoadingScreen message="Loading activities..." />;
+  }
 
   return (
     <View style={HOME_PAGE_STYLES.container}>

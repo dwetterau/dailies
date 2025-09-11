@@ -1,3 +1,21 @@
+# Dailies 
+
+This is a react-native app that allows for updating the dailies information in Convex.
+
+## Dev:
+
+Run in development mode for debugging:
+```bash
+npx run ios
+```
+
+Export for use in xcode:
+```bash
+npx expo export --platform ios
+```
+
+Original readme is retained below:
+
 # Welcome to your Expo app 👋
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
