@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Dailies 2</string>
+	<string>Dailies (expo)</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -25,15 +25,16 @@
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
-			<key>CFBundleTypeRole</key>
-			<string>None</string>
-			<key>CFBundleURLName</key>
-			<string>auth0</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>myapp</string>
 				<string>com.anonymous.dailies-react-native</string>
-				<string>$(PRODUCT_BUNDLE_IDENTIFIER).auth0</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>exp+dailies-react-native</string>
 			</array>
 		</dict>
 	</array>
@@ -50,10 +51,18 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_expo._tcp</string>
+	</array>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Expo Dev Launcher uses the local network to discover and connect to development servers running on your computer.</string>
 	<key>NSUserActivityTypes</key>
 	<array>
 		<string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>
 	</array>
+	<key>RCTNewArchEnabled</key>
+	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>SplashScreen</string>
 	<key>UIRequiredDeviceCapabilities</key>
