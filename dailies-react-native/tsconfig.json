@@ -6,6 +6,9 @@
       "@convex/*": [
         "./convex/*"
       ],
+      "tasky-convex/*": [
+        "../../tasky/convex/*"
+      ],
       "@/*": [
         "./*"
       ] 

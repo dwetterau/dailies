@@ -9,6 +9,7 @@ import { EntityCategory } from "@convex/entities";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { ToastProvider } from "react-native-toast-notifications";
 import { Provider as PaperProvider } from "react-native-paper";
+import { TaskyAuthProvider } from "@/lib/tasky";
 
 const { EXPO_PUBLIC_CONVEX_URL } = Constants.expoConfig?.extra ?? {};
 
@@ -53,40 +54,42 @@ export default function RootLayout() {
       clientId={"ltcnlDIWJ6GxDCWpdW1fsosaPSR4KwCZ"}
     >
       <ConvexProviderWithAuth client={convex} useAuth={useAuthFromAuth0}>
-        <GestureHandlerRootView>
-          <PaperProvider>
-            <ToastProvider>
-              <Stack>
-                <Stack.Screen
-                  name="category_page"
-                  options={({ route }) => {
-                    const params = route.params as {
-                      category?: EntityCategory;
-                    };
-                    return {
-                      title: params.category
-                        ? getDisplayNameForCategory(params.category)
-                        : "Category",
-                    };
-                  }}
-                />
-                <Stack.Screen
-                  name="flash_card_page"
-                  options={{ title: "Flash Cards" }}
-                />
-                <Stack.Screen
-                  name="workout_edit_page"
-                  // TODO: If we have a workout already, we should instead say that we're editing it?
-                  options={{ title: "New Workout" }}
-                />
-                <Stack.Screen
-                  name="entity_edit_page"
-                  options={{ title: "New Entity" }}
-                />
-              </Stack>
-            </ToastProvider>
-          </PaperProvider>
-        </GestureHandlerRootView>
+        <TaskyAuthProvider>
+          <GestureHandlerRootView>
+            <PaperProvider>
+              <ToastProvider>
+                <Stack>
+                  <Stack.Screen
+                    name="category_page"
+                    options={({ route }) => {
+                      const params = route.params as {
+                        category?: EntityCategory;
+                      };
+                      return {
+                        title: params.category
+                          ? getDisplayNameForCategory(params.category)
+                          : "Category",
+                      };
+                    }}
+                  />
+                  <Stack.Screen
+                    name="flash_card_page"
+                    options={{ title: "Flash Cards" }}
+                  />
+                  <Stack.Screen
+                    name="workout_edit_page"
+                    // TODO: If we have a workout already, we should instead say that we're editing it?
+                    options={{ title: "New Workout" }}
+                  />
+                  <Stack.Screen
+                    name="entity_edit_page"
+                    options={{ title: "New Entity" }}
+                  />
+                </Stack>
+              </ToastProvider>
+            </PaperProvider>
+          </GestureHandlerRootView>
+        </TaskyAuthProvider>
       </ConvexProviderWithAuth>
     </Auth0Provider>
   );

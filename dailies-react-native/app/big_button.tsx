@@ -22,7 +22,7 @@ const BigButton: React.FC<BigButtonProps> = ({
   onPress,
   onTriplePress,
 }) => {
-  const tripleTapRef = React.useRef();
+  const tripleTapRef = useRef(null);
   const animatedCompletionRatio = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -31,7 +31,7 @@ const BigButton: React.FC<BigButtonProps> = ({
       duration: 500,
       useNativeDriver: false, // Required for width animations
     }).start();
-  }, [completionRatio]);
+  }, [animatedCompletionRatio, completionRatio]);
 
   const handleTriplePress = useCallback(
     (event: HandlerStateChangeEvent<TapGestureHandlerEventPayload>) => {

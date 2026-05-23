@@ -4,10 +4,10 @@ import { useQuery } from "convex/react";
 import { useCallback, useLayoutEffect, useMemo } from "react";
 import {
   PlatformColor,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
 } from "react-native";
 import { useNavigation, useRouter } from "expo-router";
 import {
@@ -19,13 +19,16 @@ import BigButton from "./big_button";
 import { useCurrentTimeRanges } from "@/model/time/timestamps";
 import { useAuth0 } from "react-native-auth0";
 import LoadingScreen from "./loading_screen";
+import UnifiedDashboard from "./unified_dashboard";
 
 export const HOME_PAGE_STYLES = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "flex-start",
+  },
+  content: {
     alignItems: "center",
-    paddingTop: 70, // Spacing from the top
+    paddingTop: 70,
+    paddingBottom: 40,
     gap: 20,
   },
   title: {
@@ -95,7 +98,10 @@ export default function HomePage() {
   }
 
   return (
-    <View style={HOME_PAGE_STYLES.container}>
+    <ScrollView
+      style={HOME_PAGE_STYLES.container}
+      contentContainerStyle={HOME_PAGE_STYLES.content}
+    >
       <Text style={HOME_PAGE_STYLES.title}>Dailies 2</Text>
       {ORDERED_CATEGORIES.filter((category) =>
         categoryToEntities.has(category),
@@ -122,6 +128,7 @@ export default function HomePage() {
           Logout
         </Text>
       </TouchableOpacity>
-    </View>
+      <UnifiedDashboard />
+    </ScrollView>
   );
 }

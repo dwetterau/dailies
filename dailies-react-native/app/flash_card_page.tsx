@@ -1,5 +1,4 @@
 import {
-  getCurrentTimestamp,
   getIsTimestampInTimeRange,
   useCurrentTimeRanges,
 } from "@/model/time/timestamps";
