@@ -7,6 +7,7 @@ import { useCallback, useMemo } from "react";
 import { getDisplayNameForCategory } from "@/model/entities/category_helpers";
 import { EntityCategory } from "@convex/entities";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ToastProvider } from "react-native-toast-notifications";
 import { Provider as PaperProvider } from "react-native-paper";
 import { TaskyAuthProvider } from "@/lib/tasky";
@@ -56,38 +57,57 @@ export default function RootLayout() {
       <ConvexProviderWithAuth client={convex} useAuth={useAuthFromAuth0}>
         <TaskyAuthProvider>
           <GestureHandlerRootView>
-            <PaperProvider>
-              <ToastProvider>
-                <Stack>
-                  <Stack.Screen
-                    name="category_page"
-                    options={({ route }) => {
-                      const params = route.params as {
-                        category?: EntityCategory;
-                      };
-                      return {
-                        title: params.category
-                          ? getDisplayNameForCategory(params.category)
-                          : "Category",
-                      };
-                    }}
-                  />
-                  <Stack.Screen
-                    name="flash_card_page"
-                    options={{ title: "Flash Cards" }}
-                  />
-                  <Stack.Screen
-                    name="workout_edit_page"
-                    // TODO: If we have a workout already, we should instead say that we're editing it?
-                    options={{ title: "New Workout" }}
-                  />
-                  <Stack.Screen
-                    name="entity_edit_page"
-                    options={{ title: "New Entity" }}
-                  />
-                </Stack>
-              </ToastProvider>
-            </PaperProvider>
+            <SafeAreaProvider>
+              <PaperProvider>
+                <ToastProvider>
+                  <Stack>
+                    <Stack.Screen name="index" options={{ title: "" }} />
+                    <Stack.Screen
+                      name="settings_page"
+                      options={{ title: "Settings" }}
+                    />
+                    <Stack.Screen
+                      name="dailies_page"
+                      options={{ title: "Dailies" }}
+                    />
+                    <Stack.Screen
+                      name="tasky_captures_page"
+                      options={{ title: "Tasky" }}
+                    />
+                    <Stack.Screen
+                      name="portfolio_page"
+                      options={{ title: "Portfolio" }}
+                    />
+                    <Stack.Screen
+                      name="category_page"
+                      options={({ route }) => {
+                        const params = route.params as {
+                          category?: EntityCategory;
+                        };
+                        return {
+                          title: params.category
+                            ? getDisplayNameForCategory(params.category)
+                            : "Category",
+                        };
+                      }}
+                    />
+                    <Stack.Screen
+                      name="flash_card_page"
+                      options={{ title: "Flash Cards" }}
+                    />
+                    <Stack.Screen
+                      name="workout_edit_page"
+                      // TODO: If we have a workout already, we should instead say that we're editing it?
+                      options={{ title: "New Workout" }}
+                    />
+                    <Stack.Screen
+                      name="entity_edit_page"
+                      options={{ title: "New Entity" }}
+                    />
+                  </Stack>
+                </ToastProvider>
+              </PaperProvider>
+            </SafeAreaProvider>
           </GestureHandlerRootView>
         </TaskyAuthProvider>
       </ConvexProviderWithAuth>

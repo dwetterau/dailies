@@ -1,0 +1,7 @@
+{
+  "BACKEND_ENV": "development",
+  "CONVEX_DEPLOYMENT": "dev:shiny-caiman-247",
+  "EXPO_PUBLIC_CONVEX_URL": "https://shiny-caiman-247.convex.cloud",
+  "EXPO_PUBLIC_TASKY_CONVEX_URL": "https://courteous-bat-217.convex.cloud",
+  "EXPO_PUBLIC_TASKY_CONVEX_SITE_URL": "https://courteous-bat-217.convex.site"
+}

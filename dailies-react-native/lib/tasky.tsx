@@ -14,6 +14,7 @@ import type {
 } from "convex/server";
 import { getFunctionName } from "convex/server";
 import Constants from "expo-constants";
+import * as ExpoWebBrowser from "expo-web-browser";
 import * as SecureStore from "expo-secure-store";
 import {
   createContext,
@@ -27,6 +28,12 @@ import {
 } from "react";
 import { Platform } from "react-native";
 
+const APP_SCHEME = "myapp";
+
+// Release builds must statically import this so Metro bundles it for
+// @better-auth/expo's dynamic import() during OAuth.
+void ExpoWebBrowser.openAuthSessionAsync;
+
 type TaskyExtraConfig = {
   EXPO_PUBLIC_TASKY_CONVEX_URL?: string;
   EXPO_PUBLIC_TASKY_CONVEX_SITE_URL?: string;
@@ -35,10 +42,11 @@ type TaskyExtraConfig = {
 const taskyExtra = (Constants.expoConfig?.extra ?? {}) as TaskyExtraConfig;
 const taskyConvexUrl = taskyExtra.EXPO_PUBLIC_TASKY_CONVEX_URL;
 const taskyConvexSiteUrl = taskyExtra.EXPO_PUBLIC_TASKY_CONVEX_SITE_URL;
-const appScheme = Array.isArray(Constants.expoConfig?.scheme)
+const configuredScheme = Array.isArray(Constants.expoConfig?.scheme)
   ? Constants.expoConfig?.scheme[0]
   : Constants.expoConfig?.scheme;
-const taskyNativeOrigin = appScheme ? `${appScheme}://` : undefined;
+const appScheme = configuredScheme ?? APP_SCHEME;
+const taskyNativeOrigin = `${appScheme}://`;
 
 const secureStore = {
   getItem: (key: string) => SecureStore.getItem(key),
@@ -78,7 +86,7 @@ export const taskyAuthClient = createAuthClient({
             storagePrefix: "tasky",
             storage: secureStore,
           }),
-          ...(taskyNativeOrigin ? [nativeOriginClient(taskyNativeOrigin)] : []),
+          nativeOriginClient(taskyNativeOrigin),
         ]),
   ],
 });
@@ -275,6 +283,24 @@ export function useTaskyAction<Action extends FunctionReference<"action">>(
       return await taskyConvex.action(actionReference, args);
     },
     [actionName, isAuthenticated, convexAuthenticated],
+  );
+}
+
+export function useTaskyMutation<
+  Mutation extends FunctionReference<"mutation">,
+>(mutationReference: Mutation) {
+  const { isAuthenticated, convexAuthenticated } = useTaskyAuth();
+  const mutationName = getFunctionName(mutationReference);
+  return useCallback(
+    async (
+      args: FunctionArgs<Mutation>,
+    ): Promise<FunctionReturnType<Mutation> | null> => {
+      if (!taskyConvex || !isAuthenticated || !convexAuthenticated) {
+        return null;
+      }
+      return await taskyConvex.mutation(mutationReference, args);
+    },
+    [mutationName, isAuthenticated, convexAuthenticated],
   );
 }
 

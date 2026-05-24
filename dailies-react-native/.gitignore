@@ -38,4 +38,6 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
+vendor/tasky-convex
+
 app-example

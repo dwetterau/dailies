@@ -4,9 +4,16 @@
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
+    "start:dev": "BACKEND_ENV=development expo start --dev-client --port 8081 -c",
+    "start:prod": "BACKEND_ENV=production expo start --dev-client --port 8082 -c",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo run:android",
     "ios": "expo run:ios",
+    "ios:dev": "BACKEND_ENV=development expo run:ios --port 8081",
+    "ios:prod": "BACKEND_ENV=production expo run:ios --port 8082",
+    "ios:release:prod": "BACKEND_ENV=production expo run:ios --configuration Release --device",
+    "link-tasky-convex": "node ./scripts/link-tasky-convex.js",
+    "postinstall": "node ./scripts/link-tasky-convex.js",
     "web": "expo start --web",
     "test": "jest --watchAll",
     "lint": "expo lint"

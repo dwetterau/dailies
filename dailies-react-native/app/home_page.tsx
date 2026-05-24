@@ -1,44 +1,38 @@
 import { api } from "@convex/_generated/api";
-import { Entity, EntityCategory } from "@convex/entities";
+import { EntityCategory } from "@convex/entities";
 import { useQuery } from "convex/react";
-import { useCallback, useLayoutEffect, useMemo } from "react";
+import type { FunctionReturnType } from "convex/server";
+import { useRouter } from "expo-router";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  PlatformColor,
+  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
+  View,
 } from "react-native";
-import { useNavigation, useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   getCategoryCompletionRatio,
   getColorForCategory,
   getDisplayNameForCategory,
 } from "@/model/entities/category_helpers";
-import BigButton from "./big_button";
 import { useCurrentTimeRanges } from "@/model/time/timestamps";
-import { useAuth0 } from "react-native-auth0";
-import LoadingScreen from "./loading_screen";
-import UnifiedDashboard from "./unified_dashboard";
-
-export const HOME_PAGE_STYLES = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    alignItems: "center",
-    paddingTop: 70,
-    paddingBottom: 40,
-    gap: 20,
-  },
-  title: {
-    fontSize: 40,
-    marginBottom: 40,
-    fontWeight: "bold",
-    color: "black",
-    fontFamily: "System", // Rounded design equivalent
-  },
-});
+import {
+  taskyApi,
+  useTaskyAction,
+  useTaskyAuth,
+  useTaskyQuery,
+} from "@/lib/tasky";
+import {
+  colors,
+  fontSize,
+  radius,
+  sharedStyles,
+  spacing,
+  tone,
+} from "@/lib/theme";
 
 const ORDERED_CATEGORIES: Array<EntityCategory> = [
   EntityCategory.LEARNING,
@@ -48,87 +42,545 @@ const ORDERED_CATEGORIES: Array<EntityCategory> = [
   EntityCategory.THINKING,
 ];
 
-export default function HomePage() {
-  const { clearCredentials } = useAuth0();
-  const router = useRouter();
-  const navigation = useNavigation();
+type PortfolioSnapshot = FunctionReturnType<
+  typeof taskyApi.portfolio.getSnapshot
+>;
+type Task = FunctionReturnType<typeof taskyApi.tasks.list>[number];
 
+function formatPercent(value: number): string {
+  return `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`;
+}
+
+function formatSignedCurrency(value: number): string {
+  const formatted = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(Math.abs(value));
+  return `${value >= 0 ? "+" : "-"}${formatted}`;
+}
+
+function CardChevron() {
+  return <Text style={styles.chevron}>{"›"}</Text>;
+}
+
+function CardHeader({
+  title,
+  accent,
+  subtitle,
+  trailing,
+}: {
+  title: string;
+  accent?: string;
+  subtitle?: string;
+  trailing?: React.ReactNode;
+}) {
+  return (
+    <View style={styles.cardHeader}>
+      <View style={styles.cardHeaderText}>
+        <View style={styles.cardTitleRow}>
+          {accent ? (
+            <View style={[styles.cardAccent, { backgroundColor: accent }]} />
+          ) : null}
+          <Text style={styles.cardTitle}>{title}</Text>
+        </View>
+        {subtitle ? <Text style={styles.cardSubtitle}>{subtitle}</Text> : null}
+      </View>
+      {trailing ?? <CardChevron />}
+    </View>
+  );
+}
+
+function DailiesCard() {
+  const router = useRouter();
   const { timeRanges } = useCurrentTimeRanges();
   const entities = useQuery(api.entities.list, { ...timeRanges });
 
-  const categoryToEntities = useMemo(() => {
-    const categoryToEntities = new Map<string, Array<Entity>>();
-    entities?.entities.forEach((entity) => {
-      if (!categoryToEntities.has(entity.category)) {
-        categoryToEntities.set(entity.category, []);
-      }
-      categoryToEntities.get(entity.category)!.push(entity);
-    });
-    return categoryToEntities;
+  const categoryProgress = useMemo(() => {
+    if (!entities) return null;
+    return ORDERED_CATEGORIES.filter((category) =>
+      entities.entities.some((entity) => entity.category === category),
+    ).map((category) => ({
+      category,
+      label: getDisplayNameForCategory(category),
+      color: getColorForCategory(category),
+      ratio: getCategoryCompletionRatio(
+        entities.entities,
+        entities.entityIdToCompletionRatio,
+        category,
+      ),
+    }));
   }, [entities]);
 
-  const handleLogout = useCallback(() => {
-    clearCredentials();
-  }, [clearCredentials]);
+  const completedCount = useMemo(
+    () => categoryProgress?.filter((entry) => entry.ratio >= 0.999).length ?? 0,
+    [categoryProgress],
+  );
+  const totalCount = categoryProgress?.length ?? 0;
 
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerTitle: "",
-      headerRight: () => {
-        return (
-          <TouchableOpacity
-            onPress={() => {
-              router.push({
-                pathname: "/entity_edit_page",
-              });
-            }}
-          >
-            <Text style={{ color: PlatformColor("systemBlue"), fontSize: 16 }}>
-              New
-            </Text>
-          </TouchableOpacity>
-        );
-      },
-    });
-  }, [navigation, router]);
+  return (
+    <TouchableOpacity
+      style={[sharedStyles.card, styles.heroCard]}
+      activeOpacity={0.85}
+      onPress={() => router.push("/dailies_page")}
+    >
+      <CardHeader
+        title="Today"
+        subtitle={
+          entities === undefined
+            ? "Loading…"
+            : totalCount === 0
+              ? "No tracked activities yet"
+              : `${completedCount} of ${totalCount} categories complete`
+        }
+      />
+      {entities === undefined ? (
+        <View style={sharedStyles.inlineLoading}>
+          <ActivityIndicator />
+        </View>
+      ) : (
+        <View style={styles.dailiesBars}>
+          {categoryProgress?.map((entry) => (
+            <View key={entry.category} style={styles.dailiesBarRow}>
+              <Text style={styles.dailiesBarLabel}>{entry.label}</Text>
+              <View style={styles.dailiesBarTrack}>
+                <View
+                  style={[
+                    styles.dailiesBarFill,
+                    {
+                      backgroundColor: entry.color,
+                      width: `${Math.min(100, Math.max(0, entry.ratio * 100))}%`,
+                    },
+                  ]}
+                />
+              </View>
+              <Text style={styles.dailiesBarValue}>
+                {Math.round(Math.min(1, Math.max(0, entry.ratio)) * 100)}%
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+}
 
-  // Show loading screen while fetching entities
-  if (entities === undefined) {
-    return <LoadingScreen message="Loading activities..." />;
+function TaskyCard() {
+  const router = useRouter();
+  const taskyAuth = useTaskyAuth();
+  const taskyEnabled =
+    taskyAuth.isAuthenticated && taskyAuth.convexAuthenticated;
+
+  const closedAfter = useMemo(() => Date.now() - 32 * 24 * 60 * 60 * 1000, []);
+  const captures = useTaskyQuery(
+    taskyApi.captures.list,
+    taskyEnabled ? { includeCompleted: false } : "skip",
+  );
+  const tasks = useTaskyQuery(
+    taskyApi.tasks.list,
+    taskyEnabled ? { closedAfter } : "skip",
+  );
+
+  const captureCount = captures.data?.length ?? 0;
+  const openTasks = useMemo<Task[]>(
+    () => (tasks.data ?? []).filter((task: Task) => task.status !== "closed"),
+    [tasks.data],
+  );
+  const urgentCount = useMemo(
+    () =>
+      openTasks.filter(
+        (task: Task) => task.priority === "urgent" || task.priority === "high",
+      ).length,
+    [openTasks],
+  );
+
+  if (!taskyAuth.isAuthenticated) {
+    return (
+      <TouchableOpacity
+        style={sharedStyles.card}
+        activeOpacity={0.85}
+        onPress={() => router.push("/settings_page")}
+      >
+        <CardHeader
+          title="Tasky"
+          subtitle="Connect to see your captures and tasks"
+          trailing={<Text style={styles.connectLink}>Connect</Text>}
+        />
+      </TouchableOpacity>
+    );
   }
 
   return (
-    <ScrollView
-      style={HOME_PAGE_STYLES.container}
-      contentContainerStyle={HOME_PAGE_STYLES.content}
+    <TouchableOpacity
+      style={sharedStyles.card}
+      activeOpacity={0.85}
+      onPress={() => router.push("/tasky_captures_page")}
     >
-      <Text style={HOME_PAGE_STYLES.title}>Dailies 2</Text>
-      {ORDERED_CATEGORIES.filter((category) =>
-        categoryToEntities.has(category),
-      ).map((category) => (
-        <BigButton
-          key={category}
-          buttonText={getDisplayNameForCategory(category)}
-          buttonCompleteColor={getColorForCategory(category)}
-          completionRatio={getCategoryCompletionRatio(
-            entities?.entities ?? [],
-            entities?.entityIdToCompletionRatio ?? {},
-            category,
-          )}
-          onPress={() => {
-            router.push({
-              pathname: "/category_page",
-              params: { category },
-            });
-          }}
-        />
-      ))}
-      <TouchableOpacity onPress={handleLogout} style={{ marginTop: 20 }}>
-        <Text style={{ color: PlatformColor("systemBlue"), fontSize: 16 }}>
-          Logout
-        </Text>
-      </TouchableOpacity>
-      <UnifiedDashboard />
-    </ScrollView>
+      <CardHeader
+        title="Tasky"
+        subtitle={
+          !taskyEnabled
+            ? "Refreshing session…"
+            : captureCount === 0 && openTasks.length === 0
+              ? "Inbox zero"
+              : `${captureCount} capture${captureCount === 1 ? "" : "s"} · ${openTasks.length} task${openTasks.length === 1 ? "" : "s"} open`
+        }
+      />
+      {!taskyEnabled ? (
+        <View style={sharedStyles.inlineLoading}>
+          <ActivityIndicator />
+        </View>
+      ) : (
+        <View style={styles.statsRow}>
+          <Stat
+            label="Captures"
+            value={captureCount}
+            tone={captureCount > 0 ? colors.systemBlue : colors.secondaryLabel}
+          />
+          <Stat
+            label="Open tasks"
+            value={openTasks.length}
+            tone={openTasks.length > 0 ? colors.label : colors.secondaryLabel}
+          />
+          <Stat
+            label="High/Urgent"
+            value={urgentCount}
+            tone={urgentCount > 0 ? colors.systemRed : colors.secondaryLabel}
+          />
+        </View>
+      )}
+    </TouchableOpacity>
   );
 }
+
+function PortfolioCard() {
+  const router = useRouter();
+  const taskyAuth = useTaskyAuth();
+  const taskyEnabled =
+    taskyAuth.isAuthenticated && taskyAuth.convexAuthenticated;
+  const getPortfolioSnapshot = useTaskyAction(taskyApi.portfolio.getSnapshot);
+  const [portfolio, setPortfolio] = useState<PortfolioSnapshot | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const refreshPortfolio = useCallback(async () => {
+    if (!taskyEnabled) return;
+    setIsLoading(true);
+    setError(null);
+    try {
+      const snapshot = await getPortfolioSnapshot({ includePriceStatus: true });
+      setPortfolio(snapshot);
+    } catch (refreshError) {
+      setError(
+        refreshError instanceof Error
+          ? refreshError.message
+          : "Failed to load portfolio",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, [getPortfolioSnapshot, taskyEnabled]);
+
+  useEffect(() => {
+    void refreshPortfolio();
+  }, [refreshPortfolio]);
+
+  if (!taskyAuth.isAuthenticated) {
+    return null;
+  }
+
+  const renderBody = () => {
+    if (!taskyEnabled || (isLoading && !portfolio)) {
+      return (
+        <View style={sharedStyles.inlineLoading}>
+          <ActivityIndicator />
+          <Text style={sharedStyles.muted}>Loading portfolio…</Text>
+        </View>
+      );
+    }
+    if (portfolio?.status === "ok") {
+      const { summary } = portfolio;
+      const dayHas = summary.dayReturn !== null;
+      return (
+        <View style={styles.portfolioBody}>
+          <View style={styles.statsRow}>
+            {dayHas ? (
+              <>
+                <Stat
+                  label="Today"
+                  value={formatSignedCurrency(summary.dayReturn!)}
+                  tone={tone(summary.dayReturn!)}
+                />
+                <Stat
+                  label="Today %"
+                  value={
+                    summary.dayReturnPercent !== null
+                      ? formatPercent(summary.dayReturnPercent)
+                      : "n/a"
+                  }
+                  tone={tone(summary.dayReturn!)}
+                />
+              </>
+            ) : (
+              <View style={styles.portfolioEmptyDay}>
+                <Text style={sharedStyles.muted}>No price data today</Text>
+              </View>
+            )}
+            <Stat
+              label="Overall"
+              value={formatPercent(summary.gainLossPercent)}
+              tone={tone(summary.gainLoss)}
+            />
+          </View>
+        </View>
+      );
+    }
+    if (portfolio?.status === "no_credentials") {
+      return (
+        <TouchableOpacity onPress={() => router.push("/settings_page")}>
+          <Text style={sharedStyles.muted}>
+            Add Airtable + Schwab credentials in Tasky settings to enable this
+            view.
+          </Text>
+        </TouchableOpacity>
+      );
+    }
+    return (
+      <Text style={sharedStyles.error}>
+        {portfolio?.message ?? error ?? "Portfolio data unavailable."}
+      </Text>
+    );
+  };
+
+  return (
+    <TouchableOpacity
+      style={sharedStyles.card}
+      activeOpacity={0.85}
+      onPress={() => router.push("/portfolio_page")}
+    >
+      <CardHeader title="Portfolio" />
+      {renderBody()}
+    </TouchableOpacity>
+  );
+}
+
+function Stat({
+  label,
+  value,
+  tone: valueColor,
+}: {
+  label: string;
+  value: string | number;
+  tone?: unknown;
+}) {
+  return (
+    <View style={styles.statItem}>
+      <Text
+        style={[
+          styles.statValue,
+          valueColor ? { color: valueColor as unknown as string } : undefined,
+        ]}
+      >
+        {value}
+      </Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </View>
+  );
+}
+
+function FloatingSettingsButton() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  return (
+    <TouchableOpacity
+      activeOpacity={0.8}
+      style={[
+        styles.floatingSettings,
+        {
+          left: spacing.xl,
+          bottom: insets.bottom + spacing.lg,
+        },
+      ]}
+      onPress={() => router.push("/settings_page")}
+      hitSlop={8}
+    >
+      <Text style={styles.floatingSettingsIcon}>{"\u2699"}</Text>
+    </TouchableOpacity>
+  );
+}
+
+export default function HomePage() {
+  const insets = useSafeAreaInsets();
+  return (
+    <View style={sharedStyles.screen}>
+      <ScrollView
+        style={sharedStyles.screen}
+        contentContainerStyle={[
+          sharedStyles.screenContent,
+          {
+            paddingTop: insets.top + spacing.md,
+            paddingBottom: insets.bottom + spacing.xxl + 56,
+          },
+        ]}
+      >
+        <DailiesCard />
+        <TaskyCard />
+        <PortfolioCard />
+      </ScrollView>
+      <FloatingSettingsButton />
+    </View>
+  );
+}
+
+// Kept for the entry/login screen so we don't break its import.
+export const HOME_PAGE_STYLES = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.systemGroupedBackground,
+  },
+  content: {
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xxl,
+    paddingBottom: spacing.xxl,
+    gap: spacing.lg,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  entryTitle: {
+    fontSize: fontSize.display,
+    fontWeight: "800",
+    color: colors.label,
+    marginBottom: spacing.md,
+  },
+});
+
+const styles = StyleSheet.create({
+  heroCard: {
+    paddingBottom: spacing.lg,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.md,
+  },
+  cardHeaderText: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  cardTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  cardAccent: {
+    width: 4,
+    height: 18,
+    borderRadius: radius.sm,
+  },
+  cardTitle: {
+    fontSize: fontSize.heading,
+    fontWeight: "800",
+    color: colors.label,
+  },
+  cardSubtitle: {
+    fontSize: fontSize.small,
+    color: colors.secondaryLabel,
+  },
+  chevron: {
+    fontSize: 26,
+    fontWeight: "300",
+    color: colors.tertiaryLabel,
+    marginLeft: spacing.sm,
+  },
+  connectLink: {
+    fontSize: fontSize.body,
+    fontWeight: "700",
+    color: colors.systemBlue,
+  },
+  dailiesBars: {
+    gap: spacing.sm,
+  },
+  dailiesBarRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+  },
+  dailiesBarLabel: {
+    width: 70,
+    fontSize: fontSize.small,
+    fontWeight: "600",
+    color: colors.label,
+  },
+  dailiesBarTrack: {
+    flex: 1,
+    height: 8,
+    borderRadius: radius.pill,
+    backgroundColor: colors.tertiarySystemGroupedBackground,
+    overflow: "hidden",
+  },
+  dailiesBarFill: {
+    height: "100%",
+    borderRadius: radius.pill,
+  },
+  dailiesBarValue: {
+    width: 44,
+    textAlign: "right",
+    fontSize: fontSize.caption,
+    fontVariant: ["tabular-nums"],
+    color: colors.secondaryLabel,
+  },
+  statsRow: {
+    flexDirection: "row",
+    gap: spacing.md,
+  },
+  statItem: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.tertiarySystemGroupedBackground,
+    borderRadius: radius.md,
+    gap: spacing.xs,
+  },
+  statValue: {
+    fontSize: fontSize.subhead,
+    fontWeight: "700",
+    color: colors.label,
+    fontVariant: ["tabular-nums"],
+  },
+  statLabel: {
+    fontSize: fontSize.micro,
+    color: colors.secondaryLabel,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  },
+  portfolioBody: {
+    gap: spacing.md,
+  },
+  portfolioEmptyDay: {
+    flex: 2,
+    justifyContent: "center",
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.tertiarySystemGroupedBackground,
+    borderRadius: radius.md,
+  },
+  floatingSettings: {
+    position: "absolute",
+    width: 44,
+    height: 44,
+    borderRadius: radius.pill,
+    backgroundColor: colors.secondarySystemGroupedBackground,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  floatingSettingsIcon: {
+    fontSize: 22,
+    color: colors.label,
+  },
+});
