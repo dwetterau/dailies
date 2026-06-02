@@ -103,17 +103,25 @@ function sortHoldings(
 type SortableColumn = {
   key: SortKey;
   label: string;
-  flex: number;
+  width: number;
   align?: "left" | "right";
 };
 
 const COLUMNS: SortableColumn[] = [
-  { key: "ticker", label: "Ticker", flex: 1.1, align: "left" },
-  { key: "value", label: "Value", flex: 1.3, align: "right" },
-  { key: "dayDollar", label: "Day $", flex: 1.2, align: "right" },
-  { key: "dayPercent", label: "Day %", flex: 1.0, align: "right" },
-  { key: "totalPercent", label: "Total %", flex: 1.0, align: "right" },
+  { key: "ticker", label: "Ticker", width: 92, align: "left" },
+  { key: "dayDollar", label: "Day $", width: 80, align: "right" },
+  { key: "dayPercent", label: "Day %", width: 76, align: "right" },
+  { key: "value", label: "Value", width: 88, align: "right" },
+  { key: "totalPercent", label: "Total %", width: 80, align: "right" },
 ];
+
+const COLUMN_WIDTHS = COLUMNS.reduce(
+  (acc, column) => {
+    acc[column.key] = column.width;
+    return acc;
+  },
+  {} as Record<SortKey, number>,
+);
 
 function SummaryStrip({
   summary,
@@ -258,94 +266,105 @@ function HoldingsTable({
   onSort: (key: SortKey) => void;
 }) {
   return (
-    <View style={styles.tableCard}>
-      <View style={[styles.tableRow, styles.tableHeader]}>
-        {COLUMNS.map((column) => {
-          const active = column.key === sortKey;
-          return (
-            <TouchableOpacity
-              key={column.key}
-              style={[styles.cell, { flex: column.flex }]}
-              onPress={() => onSort(column.key)}
-              hitSlop={4}
-            >
-              <Text
-                style={[
-                  styles.headerCellText,
-                  column.align === "right" && styles.cellRight,
-                  active && styles.headerCellActive,
-                ]}
-                numberOfLines={1}
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.tableScrollContent}
+    >
+      <View style={styles.tableCard}>
+        <View style={[styles.tableRow, styles.tableHeader]}>
+          {COLUMNS.map((column) => {
+            const active = column.key === sortKey;
+            return (
+              <TouchableOpacity
+                key={column.key}
+                style={[styles.cell, { width: column.width }]}
+                onPress={() => onSort(column.key)}
+                hitSlop={4}
               >
-                {column.label}
-                {active
-                  ? sortDirection === "asc"
-                    ? " \u25B2"
-                    : " \u25BC"
-                  : ""}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-      {holdings.map((holding, index) => (
-        <View key={holding.id}>
-          {index > 0 ? <View style={styles.tableDivider} /> : null}
-          <HoldingRow holding={holding} />
+                <Text
+                  style={[
+                    styles.headerCellText,
+                    column.align === "right" && styles.cellRight,
+                    active && styles.headerCellActive,
+                  ]}
+                  numberOfLines={1}
+                >
+                  {column.label}
+                  {active
+                    ? sortDirection === "asc"
+                      ? " \u25B2"
+                      : " \u25BC"
+                    : ""}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
-      ))}
-    </View>
+        {holdings.map((holding, index) => (
+          <View key={holding.id}>
+            {index > 0 ? <View style={styles.tableDivider} /> : null}
+            <HoldingRow holding={holding} />
+          </View>
+        ))}
+      </View>
+    </ScrollView>
   );
 }
 
 function HoldingRow({ holding }: { holding: Holding }) {
   return (
     <View style={styles.tableRow}>
-      <View style={[styles.cell, { flex: COLUMNS[0].flex }]}>
-        <Text style={styles.tickerText}>{holding.ticker}</Text>
+      <View style={[styles.cell, { width: COLUMN_WIDTHS.ticker }]}>
+        <Text style={styles.tickerText} numberOfLines={1}>
+          {holding.ticker}
+        </Text>
         {holding.companyName ? (
           <Text style={styles.companyText} numberOfLines={1}>
             {holding.companyName}
           </Text>
         ) : null}
       </View>
-      <View style={[styles.cell, { flex: COLUMNS[1].flex }]}>
-        <Text style={[styles.cellPrimary, styles.cellRight]}>
-          {formatCurrency(holding.currentValue)}
-        </Text>
-        <Text style={[styles.cellMeta, styles.cellRight]}>
-          {holding.shares.toLocaleString()} sh
-        </Text>
-      </View>
-      <View style={[styles.cell, { flex: COLUMNS[2].flex }]}>
+      <View style={[styles.cell, { width: COLUMN_WIDTHS.dayDollar }]}>
         <Text
           style={[
             styles.cellPrimary,
             styles.cellRight,
             { color: tone(holding.dayReturn ?? 0) as unknown as string },
           ]}
+          numberOfLines={1}
         >
           {formatOptionalSignedCurrency(holding.dayReturn)}
         </Text>
       </View>
-      <View style={[styles.cell, { flex: COLUMNS[3].flex }]}>
+      <View style={[styles.cell, { width: COLUMN_WIDTHS.dayPercent }]}>
         <Text
           style={[
             styles.cellPrimary,
             styles.cellRight,
             { color: tone(holding.dayReturnPercent ?? 0) as unknown as string },
           ]}
+          numberOfLines={1}
         >
           {formatOptionalPercent(holding.dayReturnPercent)}
         </Text>
       </View>
-      <View style={[styles.cell, { flex: COLUMNS[4].flex }]}>
+      <View style={[styles.cell, { width: COLUMN_WIDTHS.value }]}>
+        <Text style={[styles.cellPrimary, styles.cellRight]} numberOfLines={1}>
+          {formatCurrency(holding.currentValue)}
+        </Text>
+        <Text style={[styles.cellMeta, styles.cellRight]} numberOfLines={1}>
+          {holding.shares.toLocaleString()} sh
+        </Text>
+      </View>
+      <View style={[styles.cell, { width: COLUMN_WIDTHS.totalPercent }]}>
         <Text
           style={[
             styles.cellPrimary,
             styles.cellRight,
             { color: tone(holding.gainLossPercent) as unknown as string },
           ]}
+          numberOfLines={1}
         >
           {formatPercent(holding.gainLossPercent)}
         </Text>
@@ -810,8 +829,11 @@ const styles = StyleSheet.create({
     fontSize: fontSize.caption,
     color: colors.tertiaryLabel,
   },
+  tableScrollContent: {
+    flexGrow: 1,
+  },
   tableCard: {
-    borderRadius: radius.lg,
+    borderRadius: radius.xl,
     backgroundColor: colors.secondarySystemGroupedBackground,
     overflow: "hidden",
   },
