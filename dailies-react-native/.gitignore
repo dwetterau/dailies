@@ -39,5 +39,6 @@ yarn-error.*
 *.tsbuildinfo
 
 vendor/tasky-convex
+vendor/src
 
 app-example

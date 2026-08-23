@@ -5,7 +5,7 @@ import {
 } from "@convex-dev/better-auth/client/plugins";
 import { api as taskyApi } from "tasky-convex/_generated/api";
 import { createAuthClient } from "better-auth/react";
-import type { BetterAuthClientPlugin } from "better-auth";
+import type { BetterAuthClientPlugin } from "better-auth/client";
 import { ConvexReactClient } from "convex/react";
 import type {
   FunctionArgs,
@@ -53,7 +53,7 @@ const secureStore = {
   setItem: (key: string, value: string) => SecureStore.setItem(key, value),
 };
 
-const nativeOriginClient = (origin: string): BetterAuthClientPlugin => ({
+const nativeOriginClient = (origin: string) => ({
   id: "tasky-native-origin",
   fetchPlugins: [
     {
@@ -72,7 +72,7 @@ const nativeOriginClient = (origin: string): BetterAuthClientPlugin => ({
       },
     },
   ],
-});
+}) satisfies BetterAuthClientPlugin;
 
 export const taskyAuthClient = createAuthClient({
   baseURL: taskyConvexSiteUrl,

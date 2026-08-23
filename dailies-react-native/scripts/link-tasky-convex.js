@@ -5,6 +5,11 @@ const path = require("path");
 
 const projectRoot = path.resolve(__dirname, "..");
 const linkPath = path.resolve(projectRoot, "vendor/tasky-convex");
+const sourceLinkRoot = path.resolve(projectRoot, "vendor/src");
+const sourceLinkPath = path.resolve(
+  sourceLinkRoot,
+  "lib/githubPullRequestUrls.ts",
+);
 
 const sourceCandidates = [
   path.resolve(projectRoot, "../../tasky/convex"),
@@ -30,5 +35,22 @@ if (fs.existsSync(linkPath)) {
 
 const relativeTarget = path.relative(path.dirname(linkPath), sourceRoot);
 fs.symlinkSync(relativeTarget, linkPath, "dir");
+
+const taskySourcePath = path.resolve(
+  sourceRoot,
+  "../src/lib/githubPullRequestUrls.ts",
+);
+if (fs.existsSync(sourceLinkRoot)) {
+  fs.rmSync(sourceLinkRoot, { recursive: true, force: true });
+}
+if (fs.existsSync(taskySourcePath)) {
+  fs.mkdirSync(path.dirname(sourceLinkPath), { recursive: true });
+  const relativeSourceTarget = path.relative(
+    path.dirname(sourceLinkPath),
+    taskySourcePath,
+  );
+  fs.symlinkSync(relativeSourceTarget, sourceLinkPath, "file");
+  console.log(`Linked ${sourceLinkPath} -> ${relativeSourceTarget}`);
+}
 
 console.log(`Linked ${linkPath} -> ${relativeTarget}`);
