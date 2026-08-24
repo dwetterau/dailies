@@ -2,7 +2,7 @@ import { api } from "@convex/_generated/api";
 import { EntityCategory } from "@convex/entities";
 import { useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
-import { useRouter } from "expo-router";
+import { type Href, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -23,8 +23,16 @@ import {
   taskyApi,
   useTaskyAction,
   useTaskyAuth,
+  useTaskyMutation,
   useTaskyQuery,
 } from "@/lib/tasky";
+import { SignalRow } from "@/components/SignalRow";
+import {
+  createSignalIdempotencyKey,
+  SIGNAL_SOON_WINDOW_MS,
+  type SignalDashboardItem,
+  useSignalClock,
+} from "@/lib/signals";
 import {
   colors,
   fontSize,
@@ -87,6 +95,137 @@ function CardHeader({
         {subtitle ? <Text style={styles.cardSubtitle}>{subtitle}</Text> : null}
       </View>
       {trailing ?? <CardChevron />}
+    </View>
+  );
+}
+
+function SignalsCard() {
+  const router = useRouter();
+  const taskyAuth = useTaskyAuth();
+  const now = useSignalClock();
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const taskyEnabled =
+    taskyAuth.isAuthenticated && taskyAuth.convexAuthenticated;
+  const signals = useTaskyQuery(
+    taskyApi.signals.listDashboard,
+    taskyEnabled
+      ? {
+          now,
+          soonWindowMs: SIGNAL_SOON_WINDOW_MS,
+        }
+      : "skip",
+  );
+  const recordSignal = useTaskyMutation(taskyApi.signals.record);
+  const dueCount =
+    signals.data?.filter((signal) => signal.evaluation.attention === "due")
+      .length ?? 0;
+  const needsAttention = (signals.data ?? [])
+    .filter((signal) => signal.evaluation.attention !== "ok")
+    .slice(0, 3);
+
+  const openSignal = (signalId: string) => {
+    router.push({
+      pathname: "/signal_history_page",
+      params: { signalId },
+    } as unknown as Href);
+  };
+
+  const handleQuickAction = async (signal: SignalDashboardItem) => {
+    if (signal.model.kind === "inventory") {
+      openSignal(signal.id);
+      return;
+    }
+    setSavingId(signal.id);
+    setError(null);
+    try {
+      await recordSignal({
+        signalId: signal.id,
+        idempotencyKey: createSignalIdempotencyKey("home-activity"),
+        operation: { type: "activity.occurred" },
+        soonWindowMs: SIGNAL_SOON_WINDOW_MS,
+      });
+    } catch (recordError) {
+      setError(
+        recordError instanceof Error
+          ? recordError.message
+          : "Failed to record activity",
+      );
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  if (!taskyAuth.isAuthenticated) {
+    return (
+      <TouchableOpacity
+        style={[sharedStyles.card, styles.signalsCard]}
+        activeOpacity={0.85}
+        onPress={() => router.push("/settings_page")}
+      >
+        <CardHeader
+          title="Needs attention"
+          subtitle="Connect Tasky to add life signals"
+          trailing={<Text style={styles.connectLink}>Connect</Text>}
+        />
+      </TouchableOpacity>
+    );
+  }
+
+  return (
+    <View style={[sharedStyles.card, styles.signalsCard]}>
+      <TouchableOpacity
+        activeOpacity={0.7}
+        onPress={() => router.push("/signals_page" as Href)}
+      >
+        <CardHeader
+          title="Needs attention"
+          subtitle={
+            !taskyEnabled || signals.isLoading
+              ? "Loading signals…"
+              : dueCount > 0
+                ? `${dueCount} signal${dueCount === 1 ? "" : "s"} due`
+                : needsAttention.length > 0
+                  ? `${needsAttention.length} coming up`
+                  : "Everything is on track"
+          }
+        />
+      </TouchableOpacity>
+      {!taskyEnabled || signals.isLoading ? (
+        <View style={sharedStyles.inlineLoading}>
+          <ActivityIndicator />
+        </View>
+      ) : needsAttention.length === 0 ? (
+        <TouchableOpacity onPress={() => router.push("/signals_page" as Href)}>
+          <Text style={styles.allOnTrack}>
+            {signals.data?.length
+              ? "No signals need attention."
+              : "Add your first activity or inventory signal."}
+          </Text>
+        </TouchableOpacity>
+      ) : (
+        <View style={styles.signalList}>
+          {needsAttention.map((signal, index) => (
+            <View key={signal.id}>
+              {index > 0 ? <View style={styles.signalDivider} /> : null}
+              <SignalRow
+                signal={signal}
+                now={now}
+                compact
+                onPress={() => openSignal(signal.id)}
+                onQuickAction={() => void handleQuickAction(signal)}
+                quickActionLabel={
+                  signal.model.kind === "activity" ? "Done" : "Update"
+                }
+                isSaving={savingId === signal.id}
+              />
+            </View>
+          ))}
+        </View>
+      )}
+      {error || signals.error ? (
+        <Text style={sharedStyles.error}>{error ?? signals.error}</Text>
+      ) : null}
     </View>
   );
 }
@@ -423,6 +562,7 @@ export default function HomePage() {
           },
         ]}
       >
+        <SignalsCard />
         <DailiesCard />
         <TaskyCard />
         <PortfolioCard />
@@ -455,6 +595,23 @@ export const HOME_PAGE_STYLES = StyleSheet.create({
 });
 
 const styles = StyleSheet.create({
+  signalsCard: {
+    paddingBottom: spacing.sm,
+  },
+  signalList: {
+    overflow: "hidden",
+  },
+  signalDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginLeft: spacing.xl,
+    backgroundColor: colors.separator,
+  },
+  allOnTrack: {
+    paddingVertical: spacing.md,
+    color: colors.secondaryLabel,
+    fontSize: fontSize.small,
+    textAlign: "center",
+  },
   heroCard: {
     paddingBottom: spacing.lg,
   },

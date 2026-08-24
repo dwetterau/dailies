@@ -20,5 +20,10 @@
     "**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "vendor/tasky-convex/**/*.test.ts",
+    "vendor/tasky-convex/test.setup.ts"
   ]
 }

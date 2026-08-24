@@ -79,6 +79,24 @@ export default function RootLayout() {
                       options={{ title: "Portfolio" }}
                     />
                     <Stack.Screen
+                      name="signals_page"
+                      options={{ title: "Signals" }}
+                    />
+                    <Stack.Screen
+                      name="signal_edit_page"
+                      options={({ route }) => ({
+                        title: (
+                          route.params as { signalId?: string } | undefined
+                        )?.signalId
+                          ? "Edit Signal"
+                          : "New Signal",
+                      })}
+                    />
+                    <Stack.Screen
+                      name="signal_history_page"
+                      options={{ title: "Signal" }}
+                    />
+                    <Stack.Screen
                       name="category_page"
                       options={({ route }) => {
                         const params = route.params as {
