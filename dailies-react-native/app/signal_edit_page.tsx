@@ -13,7 +13,13 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SIGNAL_SOON_WINDOW_MS, useSignalClock } from "@/lib/signals";
+import { TaskyTagPicker } from "@/components/TaskyTagPicker";
+import {
+  getSignalPeriodBounds,
+  SIGNAL_SOON_WINDOW_MS,
+  useSignalClock,
+} from "@/lib/signals";
+import type { TaskyTagId } from "@/lib/taskyTags";
 import {
   taskyApi,
   useTaskyAuth,
@@ -22,10 +28,9 @@ import {
 } from "@/lib/tasky";
 import { colors, fontSize, radius, sharedStyles, spacing } from "@/lib/theme";
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-
 type SignalId = FunctionArgs<typeof taskyApi.signals.get>["signalId"];
 type SignalKind = "activity" | "inventory";
+type ActivityGoalMode = "tracking" | "daily" | "weekly";
 type InventoryComparison = "atOrBelow" | "atOrAbove";
 
 function NumberField({
@@ -109,6 +114,7 @@ export default function SignalEditPage() {
   const taskyEnabled =
     taskyAuth.isAuthenticated && taskyAuth.convexAuthenticated;
   const now = useSignalClock();
+  const periodBounds = getSignalPeriodBounds(now);
   const signal = useTaskyQuery(
     taskyApi.signals.get,
     taskyEnabled && signalId
@@ -116,9 +122,11 @@ export default function SignalEditPage() {
           signalId,
           now,
           soonWindowMs: SIGNAL_SOON_WINDOW_MS,
+          periodBounds,
         }
       : "skip",
   );
+  const tags = useTaskyQuery(taskyApi.tags.list, taskyEnabled ? {} : "skip");
   const createActivity = useTaskyMutation(taskyApi.signals.createActivity);
   const createInventory = useTaskyMutation(taskyApi.signals.createInventory);
   const updateActivity = useTaskyMutation(taskyApi.signals.updateActivity);
@@ -128,8 +136,10 @@ export default function SignalEditPage() {
   const initialized = useRef(false);
   const [kind, setKind] = useState<SignalKind>("activity");
   const [name, setName] = useState("");
-  const [category, setCategory] = useState("");
-  const [dueAfterDays, setDueAfterDays] = useState("");
+  const [tagIds, setTagIds] = useState<TaskyTagId[]>([]);
+  const [activityGoalMode, setActivityGoalMode] =
+    useState<ActivityGoalMode>("tracking");
+  const [targetCount, setTargetCount] = useState("1");
   const [unit, setUnit] = useState("");
   const [initialQuantity, setInitialQuantity] = useState("");
   const [thresholdValue, setThresholdValue] = useState("");
@@ -145,14 +155,16 @@ export default function SignalEditPage() {
     if (!signal.data || initialized.current) return;
     initialized.current = true;
     setName(signal.data.name);
-    setCategory(signal.data.category ?? "");
+    setTagIds(signal.data.tagIds);
     setKind(signal.data.model.kind);
     if (signal.data.model.kind === "activity") {
-      setDueAfterDays(
-        signal.data.model.dueAfterMs === undefined
-          ? ""
-          : String(signal.data.model.dueAfterMs / DAY_MS),
-      );
+      const target = signal.data.model.target;
+      if (target?.type === "period") {
+        setActivityGoalMode(target.period === "day" ? "daily" : "weekly");
+        setTargetCount(String(target.targetCount));
+      } else {
+        setActivityGoalMode("tracking");
+      }
       return;
     }
     setUnit(signal.data.model.unit);
@@ -166,7 +178,6 @@ export default function SignalEditPage() {
 
   const handleSave = async () => {
     const normalizedName = name.trim();
-    const normalizedCategory = category.trim();
     if (!normalizedName) {
       setError("Name is required");
       return;
@@ -176,28 +187,40 @@ export default function SignalEditPage() {
     setError(null);
     try {
       if (kind === "activity") {
-        const parsedDue =
-          dueAfterDays.trim() === "" ? undefined : Number(dueAfterDays);
-        if (
-          parsedDue !== undefined &&
-          (!Number.isFinite(parsedDue) || parsedDue <= 0)
-        ) {
-          throw new Error("Due-after days must be greater than zero");
+        let target:
+          | {
+              type: "period";
+              period: "day" | "week";
+              targetCount: number;
+            }
+          | undefined;
+        if (activityGoalMode === "daily" || activityGoalMode === "weekly") {
+          const parsedTargetCount = Number(targetCount);
+          if (!Number.isInteger(parsedTargetCount) || parsedTargetCount <= 0) {
+            throw new Error(
+              "Completion target must be a positive whole number",
+            );
+          }
+          target = {
+            type: "period",
+            period: activityGoalMode === "daily" ? "day" : "week",
+            targetCount: parsedTargetCount,
+          };
         }
         if (signalId) {
           await updateActivity({
             signalId,
             name: normalizedName,
-            category: normalizedCategory || null,
-            dueAfterMs: parsedDue === undefined ? null : parsedDue * DAY_MS,
+            tagIds,
+            target: target ?? null,
           });
           router.back();
           return;
         }
         const createdId = await createActivity({
           name: normalizedName,
-          category: normalizedCategory || undefined,
-          dueAfterMs: parsedDue === undefined ? undefined : parsedDue * DAY_MS,
+          tagIds,
+          target,
         });
         if (createdId) {
           router.replace({
@@ -248,7 +271,7 @@ export default function SignalEditPage() {
         await updateInventory({
           signalId,
           name: normalizedName,
-          category: normalizedCategory || null,
+          tagIds,
           unit: normalizedUnit,
           threshold: {
             value: parsedThreshold,
@@ -261,7 +284,7 @@ export default function SignalEditPage() {
       }
       const createdId = await createInventory({
         name: normalizedName,
-        category: normalizedCategory || undefined,
+        tagIds,
         unit: normalizedUnit,
         initialQuantity: parsedQuantity,
         threshold: {
@@ -372,31 +395,47 @@ export default function SignalEditPage() {
               placeholderTextColor={colors.tertiaryLabel}
             />
           </View>
-          <View style={styles.field}>
-            <Text style={styles.label}>Category</Text>
-            <TextInput
-              style={styles.input}
-              value={category}
-              onChangeText={setCategory}
-              placeholder="Exercise, Care, Car…"
-              placeholderTextColor={colors.tertiaryLabel}
-            />
-          </View>
+          <TaskyTagPicker
+            tags={tags.data ?? []}
+            selectedTagIds={tagIds}
+            onChange={setTagIds}
+            isLoading={tags.isLoading}
+          />
         </View>
 
         {kind === "activity" ? (
           <View style={styles.section}>
-            <Text style={sharedStyles.sectionTitle}>Attention</Text>
+            <Text style={sharedStyles.sectionTitle}>Goal</Text>
             <View style={styles.card}>
-              <NumberField
-                label="Due after days"
-                value={dueAfterDays}
-                onChangeText={setDueAfterDays}
-                placeholder="Optional"
+              <Segmented
+                value={activityGoalMode}
+                onChange={setActivityGoalMode}
+                options={[
+                  { value: "tracking", label: "Tracking only" },
+                  { value: "daily", label: "Daily" },
+                  { value: "weekly", label: "Weekly" },
+                ]}
               />
-              <Text style={styles.helpText}>
-                The timer restarts whenever you record the activity.
-              </Text>
+              {activityGoalMode === "daily" || activityGoalMode === "weekly" ? (
+                <>
+                  <NumberField
+                    label={`Completions per ${
+                      activityGoalMode === "daily" ? "day" : "week"
+                    }`}
+                    value={targetCount}
+                    onChangeText={setTargetCount}
+                    placeholder="1"
+                  />
+                  <Text style={styles.helpText}>
+                    Progress resets at the start of each local{" "}
+                    {activityGoalMode === "daily" ? "day" : "week"}.
+                  </Text>
+                </>
+              ) : (
+                <Text style={styles.helpText}>
+                  Records history without marking the activity due.
+                </Text>
+              )}
             </View>
           </View>
         ) : (
@@ -481,8 +520,10 @@ export default function SignalEditPage() {
           </>
         )}
 
-        {error || signal.error ? (
-          <Text style={sharedStyles.error}>{error ?? signal.error}</Text>
+        {error || signal.error || tags.error ? (
+          <Text style={sharedStyles.error}>
+            {error ?? signal.error ?? tags.error}
+          </Text>
         ) : null}
 
         <TouchableOpacity

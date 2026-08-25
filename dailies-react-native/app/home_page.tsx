@@ -29,6 +29,7 @@ import {
 import { SignalRow } from "@/components/SignalRow";
 import {
   createSignalIdempotencyKey,
+  getSignalPeriodBounds,
   SIGNAL_SOON_WINDOW_MS,
   type SignalDashboardItem,
   useSignalClock,
@@ -103,6 +104,7 @@ function SignalsCard() {
   const router = useRouter();
   const taskyAuth = useTaskyAuth();
   const now = useSignalClock();
+  const periodBounds = getSignalPeriodBounds(now);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const taskyEnabled =
@@ -113,6 +115,7 @@ function SignalsCard() {
       ? {
           now,
           soonWindowMs: SIGNAL_SOON_WINDOW_MS,
+          periodBounds,
         }
       : "skip",
   );
@@ -144,6 +147,7 @@ function SignalsCard() {
         idempotencyKey: createSignalIdempotencyKey("home-activity"),
         operation: { type: "activity.occurred" },
         soonWindowMs: SIGNAL_SOON_WINDOW_MS,
+        periodBounds,
       });
     } catch (recordError) {
       setError(

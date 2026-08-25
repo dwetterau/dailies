@@ -1,5 +1,5 @@
 import { type Href, useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -11,10 +11,12 @@ import {
 import { SignalRow } from "@/components/SignalRow";
 import {
   createSignalIdempotencyKey,
+  getSignalPeriodBounds,
   SIGNAL_SOON_WINDOW_MS,
   type SignalDashboardItem,
   useSignalClock,
 } from "@/lib/signals";
+import { sortTaskyTags, taskyTagPath, type TaskyTagId } from "@/lib/taskyTags";
 import {
   taskyApi,
   useTaskyAuth,
@@ -44,7 +46,9 @@ export default function SignalsPage() {
   const router = useRouter();
   const taskyAuth = useTaskyAuth();
   const now = useSignalClock();
+  const periodBounds = getSignalPeriodBounds(now);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [selectedTagId, setSelectedTagId] = useState<TaskyTagId | null>(null);
   const [error, setError] = useState<string | null>(null);
   const taskyEnabled =
     taskyAuth.isAuthenticated && taskyAuth.convexAuthenticated;
@@ -54,37 +58,45 @@ export default function SignalsPage() {
       ? {
           now,
           soonWindowMs: SIGNAL_SOON_WINDOW_MS,
+          periodBounds,
+          ...(selectedTagId === null ? {} : { tagId: selectedTagId }),
         }
       : "skip",
   );
+  const tags = useTaskyQuery(taskyApi.tags.list, taskyEnabled ? {} : "skip");
   const recordSignal = useTaskyMutation(taskyApi.signals.record);
+  const orderedTags = useMemo(
+    () => sortTaskyTags(tags.data ?? []),
+    [tags.data],
+  );
+  const tagsById = useMemo(
+    () =>
+      new Map((tags.data ?? []).map((tag) => [String(tag._id), tag] as const)),
+    [tags.data],
+  );
+  useEffect(() => {
+    if (
+      selectedTagId !== null &&
+      tags.data &&
+      !tags.data.some((tag) => tag._id === selectedTagId)
+    ) {
+      setSelectedTagId(null);
+    }
+  }, [selectedTagId, tags.data]);
 
   const grouped = useMemo(() => {
     const result: Array<{
       attention: SignalAttention;
-      categories: Array<{
-        category: string;
-        items: SignalDashboardItem[];
-      }>;
+      items: SignalDashboardItem[];
     }> = [];
     for (const attention of ATTENTION_ORDER) {
       const matching = (signals.data ?? []).filter(
         (signal) => signal.evaluation.attention === attention,
       );
       if (matching.length === 0) continue;
-      const byCategory = new Map<string, SignalDashboardItem[]>();
-      for (const signal of matching) {
-        const category = signal.category ?? "Other";
-        const items = byCategory.get(category) ?? [];
-        items.push(signal);
-        byCategory.set(category, items);
-      }
       result.push({
         attention,
-        categories: Array.from(byCategory, ([category, items]) => ({
-          category,
-          items,
-        })),
+        items: matching,
       });
     }
     return result;
@@ -107,6 +119,7 @@ export default function SignalsPage() {
         idempotencyKey: createSignalIdempotencyKey("mobile-activity"),
         operation: { type: "activity.occurred" },
         soonWindowMs: SIGNAL_SOON_WINDOW_MS,
+        periodBounds,
       });
     } catch (recordError) {
       setError(
@@ -159,6 +172,64 @@ export default function SignalsPage() {
         </TouchableOpacity>
       </View>
 
+      {orderedTags.length > 0 ? (
+        <View style={styles.filters}>
+          <Text style={sharedStyles.sectionTitle}>Filter by tag</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterRow}
+          >
+            <TouchableOpacity
+              style={[
+                styles.filterChip,
+                selectedTagId === null && styles.filterChipSelected,
+              ]}
+              onPress={() => setSelectedTagId(null)}
+            >
+              <Text
+                style={[
+                  styles.filterChipText,
+                  selectedTagId === null && styles.filterChipTextSelected,
+                ]}
+              >
+                All
+              </Text>
+            </TouchableOpacity>
+            {orderedTags.map((tag) => {
+              const selected = selectedTagId === tag._id;
+              return (
+                <TouchableOpacity
+                  key={tag._id}
+                  style={[
+                    styles.filterChip,
+                    selected && styles.filterChipSelected,
+                  ]}
+                  onPress={() => setSelectedTagId(tag._id)}
+                >
+                  <View
+                    style={[
+                      styles.filterDot,
+                      {
+                        backgroundColor: tag.color ?? colors.systemGray,
+                      },
+                    ]}
+                  />
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      selected && styles.filterChipTextSelected,
+                    ]}
+                  >
+                    {taskyTagPath(tag, tagsById)}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+      ) : null}
+
       {!taskyEnabled || signals.isLoading ? (
         <View style={sharedStyles.inlineLoading}>
           <ActivityIndicator />
@@ -184,37 +255,30 @@ export default function SignalsPage() {
             <Text style={sharedStyles.sectionTitle}>
               {ATTENTION_TITLES[attentionGroup.attention]}
             </Text>
-            {attentionGroup.categories.map((categoryGroup) => (
-              <View key={categoryGroup.category} style={styles.categoryGroup}>
-                <Text style={styles.categoryTitle}>
-                  {categoryGroup.category}
-                </Text>
-                <View style={styles.listCard}>
-                  {categoryGroup.items.map((signal, index) => (
-                    <View key={signal.id}>
-                      {index > 0 ? <View style={styles.divider} /> : null}
-                      <SignalRow
-                        signal={signal}
-                        now={now}
-                        onPress={() => openSignal(signal.id)}
-                        onQuickAction={() => void handleQuickAction(signal)}
-                        quickActionLabel={
-                          signal.model.kind === "activity" ? "Done" : "Update"
-                        }
-                        isSaving={savingId === signal.id}
-                      />
-                    </View>
-                  ))}
+            <View style={styles.listCard}>
+              {attentionGroup.items.map((signal, index) => (
+                <View key={signal.id}>
+                  {index > 0 ? <View style={styles.divider} /> : null}
+                  <SignalRow
+                    signal={signal}
+                    now={now}
+                    onPress={() => openSignal(signal.id)}
+                    onQuickAction={() => void handleQuickAction(signal)}
+                    quickActionLabel={
+                      signal.model.kind === "activity" ? "Done" : "Update"
+                    }
+                    isSaving={savingId === signal.id}
+                  />
                 </View>
-              </View>
-            ))}
+              ))}
+            </View>
           </View>
         ))
       )}
 
-      {(error || taskyAuth.error || signals.error) && (
+      {(error || taskyAuth.error || signals.error || tags.error) && (
         <Text style={sharedStyles.error}>
-          {error ?? taskyAuth.error ?? signals.error}
+          {error ?? taskyAuth.error ?? signals.error ?? tags.error}
         </Text>
       )}
     </ScrollView>
@@ -254,14 +318,40 @@ const styles = StyleSheet.create({
   attentionGroup: {
     gap: spacing.md,
   },
-  categoryGroup: {
+  filters: {
     gap: spacing.sm,
   },
-  categoryTitle: {
-    paddingHorizontal: spacing.xs,
+  filterRow: {
+    gap: spacing.sm,
+    paddingRight: spacing.lg,
+  },
+  filterChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.separator,
+    borderRadius: radius.pill,
+    backgroundColor: colors.secondarySystemGroupedBackground,
+  },
+  filterChipSelected: {
+    borderColor: colors.systemBlue,
+    backgroundColor: colors.systemBlue,
+  },
+  filterDot: {
+    width: 8,
+    height: 8,
+    borderRadius: radius.pill,
+  },
+  filterChipText: {
     color: colors.secondaryLabel,
-    fontSize: fontSize.small,
+    fontSize: fontSize.caption,
     fontWeight: "700",
+  },
+  filterChipTextSelected: {
+    color: "white",
   },
   listCard: {
     overflow: "hidden",

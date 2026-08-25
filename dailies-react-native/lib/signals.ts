@@ -12,6 +12,51 @@ export type SignalEntry = FunctionReturnType<
   typeof taskyApi.signals.history
 >["page"][number];
 
+export type SignalPeriodBounds = {
+  day: {
+    startAt: number;
+    endAt: number;
+  };
+  week: {
+    startAt: number;
+    endAt: number;
+  };
+};
+
+export function getSignalPeriodBounds(now: number): SignalPeriodBounds {
+  const date = new Date(now);
+  const dayStart = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+  );
+  const dayEnd = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate() + 1,
+  );
+  const weekStart = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate() - date.getDay(),
+  );
+  const weekEnd = new Date(
+    weekStart.getFullYear(),
+    weekStart.getMonth(),
+    weekStart.getDate() + 7,
+  );
+  return {
+    day: {
+      startAt: dayStart.getTime(),
+      endAt: dayEnd.getTime(),
+    },
+    week: {
+      startAt: weekStart.getTime(),
+      endAt: weekEnd.getTime(),
+    },
+  };
+}
+
 export function useSignalClock(): number {
   const [now, setNow] = useState(() => Date.now());
 
@@ -61,6 +106,13 @@ export function signalPrimaryText(
   now: number,
 ): string {
   if (signal.model.kind === "activity") {
+    if (
+      signal.model.target?.type === "period" &&
+      signal.evaluation.periodProgress
+    ) {
+      const progress = signal.evaluation.periodProgress;
+      return `${progress.completedCount}/${progress.targetCount} this ${progress.period}`;
+    }
     return signal.model.lastOccurredAt === undefined
       ? "Never recorded"
       : formatElapsed(now - signal.model.lastOccurredAt);
@@ -76,6 +128,21 @@ export function signalSecondaryText(
   signal: SignalDashboardItem,
   now: number,
 ): string {
+  if (
+    signal.model.kind === "activity" &&
+    signal.model.target?.type === "period" &&
+    signal.evaluation.periodProgress
+  ) {
+    const remaining = signal.evaluation.periodProgress.remainingCount;
+    if (remaining === 0) return "Target met";
+    const periodEnd = signal.evaluation.periodProgress.endAt;
+    const hours = Math.max(1, Math.ceil((periodEnd - now) / (60 * 60 * 1000)));
+    const ending =
+      hours < 24
+        ? `period ends in ${hours}h`
+        : `period ends in ${Math.ceil(hours / 24)}d`;
+    return `${remaining} remaining · ${ending}`;
+  }
   if (signal.evaluation.actionAt !== undefined) {
     return formatFuture(signal.evaluation.actionAt, now);
   }

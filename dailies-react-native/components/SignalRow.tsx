@@ -73,8 +73,21 @@ export function SignalRow({
         </View>
         <Text style={styles.primary}>{signalPrimaryText(signal, now)}</Text>
         <View style={styles.metaRow}>
-          {signal.category ? (
-            <Text style={styles.category}>{signal.category}</Text>
+          {signal.tags.slice(0, 2).map((tag) => (
+            <View key={tag.id} style={styles.tag}>
+              <View
+                style={[
+                  styles.tagDot,
+                  {
+                    backgroundColor: tag.color ?? colors.systemGray,
+                  },
+                ]}
+              />
+              <Text style={styles.tagText}>{tag.name}</Text>
+            </View>
+          ))}
+          {signal.tags.length > 2 ? (
+            <Text style={styles.tagMore}>+{signal.tags.length - 2}</Text>
           ) : null}
           <Text style={styles.secondary}>
             {signalSecondaryText(signal, now)}
@@ -151,11 +164,25 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: spacing.sm,
   },
-  category: {
+  tag: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+  },
+  tagDot: {
+    width: 7,
+    height: 7,
+    borderRadius: radius.pill,
+  },
+  tagText: {
     color: colors.secondaryLabel,
     fontSize: fontSize.micro,
     fontWeight: "700",
-    textTransform: "uppercase",
+  },
+  tagMore: {
+    color: colors.tertiaryLabel,
+    fontSize: fontSize.micro,
+    fontWeight: "700",
   },
   secondary: {
     color: colors.tertiaryLabel,

@@ -16,6 +16,7 @@ import { SignalRow } from "@/components/SignalRow";
 import {
   createSignalIdempotencyKey,
   formatSignalQuantity,
+  getSignalPeriodBounds,
   SIGNAL_SOON_WINDOW_MS,
   type SignalEntry,
   useSignalClock,
@@ -75,6 +76,7 @@ export default function SignalHistoryPage() {
   const taskyEnabled =
     taskyAuth.isAuthenticated && taskyAuth.convexAuthenticated;
   const now = useSignalClock();
+  const periodBounds = getSignalPeriodBounds(now);
   const signal = useTaskyQuery(
     taskyApi.signals.get,
     taskyEnabled && signalId
@@ -82,6 +84,7 @@ export default function SignalHistoryPage() {
           signalId,
           now,
           soonWindowMs: SIGNAL_SOON_WINDOW_MS,
+          periodBounds,
         }
       : "skip",
   );
@@ -138,6 +141,7 @@ export default function SignalHistoryPage() {
         idempotencyKey: createSignalIdempotencyKey("mobile-signal"),
         operation,
         soonWindowMs: SIGNAL_SOON_WINDOW_MS,
+        periodBounds,
       });
       setBackdatedAt("");
       setActivityNote("");
