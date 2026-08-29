@@ -12,6 +12,153 @@ export type SignalEntry = FunctionReturnType<
   typeof taskyApi.signals.history
 >["page"][number];
 
+type ActivitySignalModel = Extract<
+  SignalDashboardItem["model"],
+  { kind: "activity" }
+>;
+
+type ActivityEntryOperation = Extract<
+  SignalEntry["operation"],
+  { type: "activity.occurred" }
+>;
+
+export type ActivityMeasurementField = NonNullable<
+  ActivitySignalModel["measurementFields"]
+>[number];
+
+export type ActivityMeasurements = NonNullable<
+  ActivityEntryOperation["measurements"]
+>;
+
+export type ActivityMeasurementDraft = Record<ActivityMeasurementField, string>;
+
+export const ACTIVITY_MEASUREMENT_OPTIONS: Array<{
+  field: ActivityMeasurementField;
+  label: string;
+  inputLabel: string;
+  placeholder: string;
+}> = [
+  {
+    field: "weight",
+    label: "Weight",
+    inputLabel: "Weight (lb)",
+    placeholder: "135",
+  },
+  {
+    field: "reps",
+    label: "Repetitions",
+    inputLabel: "Repetitions",
+    placeholder: "8",
+  },
+  {
+    field: "sets",
+    label: "Sets",
+    inputLabel: "Sets",
+    placeholder: "3",
+  },
+  {
+    field: "durationSeconds",
+    label: "Duration",
+    inputLabel: "Duration (minutes)",
+    placeholder: "30",
+  },
+  {
+    field: "distance",
+    label: "Distance",
+    inputLabel: "Distance (mi)",
+    placeholder: "3.1",
+  },
+];
+
+export function emptyActivityMeasurementDraft(): ActivityMeasurementDraft {
+  return {
+    weight: "",
+    reps: "",
+    sets: "",
+    durationSeconds: "",
+    distance: "",
+  };
+}
+
+export function activityMeasurementDraftFromEntry(
+  measurements: ActivityMeasurements | undefined,
+): ActivityMeasurementDraft {
+  return {
+    weight: measurements?.weight?.toString() ?? "",
+    reps: measurements?.reps?.toString() ?? "",
+    sets: measurements?.sets?.toString() ?? "",
+    durationSeconds:
+      measurements?.durationSeconds === undefined
+        ? ""
+        : String(measurements.durationSeconds / 60),
+    distance: measurements?.distance?.toString() ?? "",
+  };
+}
+
+export function parseActivityMeasurements(
+  fields: ActivityMeasurementField[],
+  draft: ActivityMeasurementDraft,
+): ActivityMeasurements | undefined {
+  if (fields.length === 0) {
+    return undefined;
+  }
+  const measurements: ActivityMeasurements = {};
+  for (const field of fields) {
+    const rawValue = draft[field].trim();
+    const option = ACTIVITY_MEASUREMENT_OPTIONS.find(
+      (candidate) => candidate.field === field,
+    );
+    if (!rawValue) {
+      throw new Error(`${option?.label ?? field} is required`);
+    }
+    const parsed = Number(rawValue);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+      throw new Error(`${option?.label ?? field} must be zero or greater`);
+    }
+    if ((field === "reps" || field === "sets") && !Number.isInteger(parsed)) {
+      throw new Error(`${option?.label ?? field} must be a whole number`);
+    }
+    measurements[field] = field === "durationSeconds" ? parsed * 60 : parsed;
+  }
+  return measurements;
+}
+
+function formatDuration(totalSeconds: number): string {
+  const rounded = Math.round(totalSeconds);
+  const hours = Math.floor(rounded / 3600);
+  const minutes = Math.floor((rounded % 3600) / 60);
+  const seconds = rounded % 60;
+  return [
+    hours > 0 ? `${hours}h` : undefined,
+    minutes > 0 ? `${minutes}m` : undefined,
+    seconds > 0 || rounded === 0 ? `${seconds}s` : undefined,
+  ]
+    .filter((part): part is string => part !== undefined)
+    .join(" ");
+}
+
+export function formatActivityMeasurements(
+  measurements: ActivityMeasurements | undefined,
+): string | undefined {
+  if (!measurements) {
+    return undefined;
+  }
+  const parts = [
+    measurements.weight === undefined
+      ? undefined
+      : `${formatSignalQuantity(measurements.weight)} lb`,
+    measurements.reps === undefined ? undefined : `${measurements.reps} reps`,
+    measurements.sets === undefined ? undefined : `${measurements.sets} sets`,
+    measurements.durationSeconds === undefined
+      ? undefined
+      : formatDuration(measurements.durationSeconds),
+    measurements.distance === undefined
+      ? undefined
+      : `${formatSignalQuantity(measurements.distance)} mi`,
+  ].filter((part): part is string => part !== undefined);
+  return parts.length === 0 ? undefined : parts.join(" · ");
+}
+
 export type SignalPeriodBounds = {
   day: {
     startAt: number;
@@ -112,7 +259,8 @@ export function signalPrimaryText(
       signal.evaluation.periodProgress
     ) {
       const progress = signal.evaluation.periodProgress;
-      return `${progress.completedCount}/${progress.targetCount} this ${progress.period}`;
+      const periodLabel = progress.period === "day" ? "today" : "this week";
+      return `${progress.completedCount}/${progress.targetCount} ${periodLabel}`;
     }
     return signal.model.lastOccurredAt === undefined
       ? "Never recorded"
@@ -135,14 +283,12 @@ export function signalSecondaryText(
     signal.evaluation.periodProgress
   ) {
     const remaining = signal.evaluation.periodProgress.remainingCount;
-    if (remaining === 0) return "Target met";
+    if (remaining === 0) return "done";
     const periodEnd = signal.evaluation.periodProgress.endAt;
     const hours = Math.max(1, Math.ceil((periodEnd - now) / (60 * 60 * 1000)));
-    const ending =
-      hours < 24
-        ? `period ends in ${hours}h`
-        : `period ends in ${Math.ceil(hours / 24)}d`;
-    return `${remaining} remaining · ${ending}`;
+    return hours < 24
+      ? `ends in ${hours}h`
+      : `ends in ${Math.ceil(hours / 24)}d`;
   }
   if (signal.evaluation.actionAt !== undefined) {
     return formatFuture(signal.evaluation.actionAt, now);

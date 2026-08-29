@@ -135,7 +135,10 @@ function SignalsCard() {
   };
 
   const handleQuickAction = async (signal: SignalDashboardItem) => {
-    if (signal.model.kind === "inventory") {
+    if (
+      signal.model.kind === "inventory" ||
+      (signal.model.measurementFields?.length ?? 0) > 0
+    ) {
       openSignal(signal.id);
       return;
     }
@@ -219,7 +222,11 @@ function SignalsCard() {
                 onPress={() => openSignal(signal.id)}
                 onQuickAction={() => void handleQuickAction(signal)}
                 quickActionLabel={
-                  signal.model.kind === "activity" ? "Done" : "Update"
+                  signal.model.kind === "activity"
+                    ? (signal.model.measurementFields?.length ?? 0) > 0
+                      ? "Log"
+                      : "Done"
+                    : "Update"
                 }
                 isSaving={savingId === signal.id}
               />

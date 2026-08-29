@@ -5,19 +5,23 @@ import {
   ActivityIndicator,
   Alert,
   Keyboard,
-  KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import { KeyboardDismissBar } from "@/components/KeyboardDoneAccessory";
+import { PillButton } from "@/components/PillButton";
 import { TaskyTagPicker } from "@/components/TaskyTagPicker";
 import {
+  ACTIVITY_MEASUREMENT_OPTIONS,
   getSignalPeriodBounds,
   SIGNAL_SOON_WINDOW_MS,
+  type ActivityMeasurementField,
   useSignalClock,
 } from "@/lib/signals";
 import type { TaskyTagId } from "@/lib/taskyTags";
@@ -73,12 +77,10 @@ function Segmented<T extends string>({
   value,
   options,
   onChange,
-  disabled,
 }: {
   value: T;
   options: Array<{ value: T; label: string }>;
   onChange: (value: T) => void;
-  disabled?: boolean;
 }) {
   return (
     <View style={styles.segmented}>
@@ -87,15 +89,12 @@ function Segmented<T extends string>({
         return (
           <TouchableOpacity
             key={option.value}
-            style={[
-              styles.segment,
-              selected && styles.segmentSelected,
-              disabled && styles.controlDisabled,
-            ]}
+            style={[styles.segment, selected && styles.segmentSelected]}
             onPress={() => onChange(option.value)}
-            disabled={disabled}
+            activeOpacity={0.8}
           >
             <Text
+              numberOfLines={1}
               style={[
                 styles.segmentText,
                 selected && styles.segmentTextSelected,
@@ -147,6 +146,9 @@ export default function SignalEditPage() {
   const [activityGoalMode, setActivityGoalMode] =
     useState<ActivityGoalMode>("tracking");
   const [targetCount, setTargetCount] = useState("1");
+  const [measurementFields, setMeasurementFields] = useState<
+    ActivityMeasurementField[]
+  >([]);
   const [unit, setUnit] = useState("");
   const [initialQuantity, setInitialQuantity] = useState("");
   const [thresholdValue, setThresholdValue] = useState("");
@@ -166,6 +168,7 @@ export default function SignalEditPage() {
     setKind(signal.data.model.kind);
     if (signal.data.model.kind === "activity") {
       const target = signal.data.model.target;
+      setMeasurementFields(signal.data.model.measurementFields ?? []);
       if (target?.type === "period") {
         setActivityGoalMode(target.period === "day" ? "daily" : "weekly");
         setTargetCount(String(target.targetCount));
@@ -220,6 +223,7 @@ export default function SignalEditPage() {
             name: normalizedName,
             tagIds,
             target: target ?? null,
+            measurementFields,
           });
           router.back();
           return;
@@ -228,6 +232,7 @@ export default function SignalEditPage() {
           name: normalizedName,
           tagIds,
           target,
+          measurementFields,
         });
         if (createdId) {
           router.replace({
@@ -396,31 +401,19 @@ export default function SignalEditPage() {
               : undefined,
         }}
       />
-      <KeyboardAvoidingView
-        style={sharedStyles.screen}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
+      <View style={sharedStyles.screen}>
         <ScrollView
           style={sharedStyles.screen}
-          contentContainerStyle={sharedStyles.screenContent}
+          contentContainerStyle={[
+            sharedStyles.screenContent,
+            styles.formContent,
+          ]}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode={
             Platform.OS === "ios" ? "interactive" : "on-drag"
           }
+          automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
         >
-          <View style={styles.section}>
-            <Text style={sharedStyles.sectionTitle}>Type</Text>
-            <Segmented
-              value={kind}
-              onChange={setKind}
-              disabled={Boolean(signalId)}
-              options={[
-                { value: "activity", label: "Activity" },
-                { value: "inventory", label: "Inventory" },
-              ]}
-            />
-          </View>
-
           <View style={styles.card}>
             <View style={styles.field}>
               <Text style={styles.label}>Name</Text>
@@ -430,6 +423,7 @@ export default function SignalEditPage() {
                 onChangeText={setName}
                 placeholder={kind === "activity" ? "Run" : "Prescription name"}
                 placeholderTextColor={colors.tertiaryLabel}
+                returnKeyType="done"
               />
             </View>
             <TaskyTagPicker
@@ -440,22 +434,36 @@ export default function SignalEditPage() {
             />
           </View>
 
-          {kind === "activity" ? (
+          {!signalId ? (
             <View style={styles.section}>
-              <Text style={sharedStyles.sectionTitle}>Goal</Text>
-              <View style={styles.card}>
-                <Segmented
-                  value={activityGoalMode}
-                  onChange={setActivityGoalMode}
-                  options={[
-                    { value: "tracking", label: "Tracking only" },
-                    { value: "daily", label: "Daily" },
-                    { value: "weekly", label: "Weekly" },
-                  ]}
-                />
-                {activityGoalMode === "daily" ||
-                activityGoalMode === "weekly" ? (
-                  <>
+              <Text style={sharedStyles.sectionTitle}>Type</Text>
+              <Segmented
+                value={kind}
+                onChange={setKind}
+                options={[
+                  { value: "activity", label: "Activity" },
+                  { value: "inventory", label: "Inventory" },
+                ]}
+              />
+            </View>
+          ) : null}
+
+          {kind === "activity" ? (
+            <>
+              <View style={styles.section}>
+                <Text style={sharedStyles.sectionTitle}>Goal</Text>
+                <View style={styles.card}>
+                  <Segmented
+                    value={activityGoalMode}
+                    onChange={setActivityGoalMode}
+                    options={[
+                      { value: "tracking", label: "None" },
+                      { value: "daily", label: "Daily" },
+                      { value: "weekly", label: "Weekly" },
+                    ]}
+                  />
+                  {activityGoalMode === "daily" ||
+                  activityGoalMode === "weekly" ? (
                     <NumberField
                       label={`Completions per ${
                         activityGoalMode === "daily" ? "day" : "week"
@@ -464,18 +472,42 @@ export default function SignalEditPage() {
                       onChangeText={setTargetCount}
                       placeholder="1"
                     />
-                    <Text style={styles.helpText}>
-                      Progress resets at the start of each local{" "}
-                      {activityGoalMode === "daily" ? "day" : "week"}.
-                    </Text>
-                  </>
-                ) : (
-                  <Text style={styles.helpText}>
-                    Records history without marking the activity due.
-                  </Text>
-                )}
+                  ) : null}
+                </View>
               </View>
-            </View>
+
+              <View style={styles.section}>
+                <Text style={sharedStyles.sectionTitle}>
+                  Exercise measurements
+                </Text>
+                <View style={styles.card}>
+                  <Text style={styles.helperText}>
+                    Selected measurements are requested whenever this activity
+                    is recorded.
+                  </Text>
+                  {ACTIVITY_MEASUREMENT_OPTIONS.map((option) => {
+                    const enabled = measurementFields.includes(option.field);
+                    return (
+                      <View key={option.field} style={styles.switchRow}>
+                        <Text style={styles.switchLabel}>{option.label}</Text>
+                        <Switch
+                          value={enabled}
+                          onValueChange={(nextEnabled) =>
+                            setMeasurementFields((current) =>
+                              nextEnabled
+                                ? [...current, option.field]
+                                : current.filter(
+                                    (field) => field !== option.field,
+                                  ),
+                            )
+                          }
+                        />
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+            </>
           ) : (
             <>
               <View style={styles.section}>
@@ -489,6 +521,7 @@ export default function SignalEditPage() {
                       onChangeText={setUnit}
                       placeholder="pills"
                       placeholderTextColor={colors.tertiaryLabel}
+                      returnKeyType="done"
                     />
                   </View>
                   <NumberField
@@ -503,7 +536,7 @@ export default function SignalEditPage() {
                     disabled={Boolean(signalId)}
                   />
                   <NumberField
-                    label="Action threshold"
+                    label="Alert when quantity is…"
                     value={thresholdValue}
                     onChangeText={setThresholdValue}
                     placeholder="14"
@@ -520,41 +553,35 @@ export default function SignalEditPage() {
               </View>
 
               <View style={styles.section}>
-                <View style={styles.sectionHeadingRow}>
-                  <Text style={sharedStyles.sectionTitle}>Scheduled flow</Text>
-                  <TouchableOpacity
-                    style={[styles.toggle, flowEnabled && styles.toggleEnabled]}
-                    onPress={() => setFlowEnabled((enabled) => !enabled)}
-                  >
-                    <View
-                      style={[
-                        styles.toggleKnob,
-                        flowEnabled && styles.toggleKnobEnabled,
-                      ]}
-                    />
-                  </TouchableOpacity>
-                </View>
-                {flowEnabled ? (
-                  <View style={styles.card}>
-                    <NumberField
-                      label="Amount each interval"
-                      value={flowAmount}
-                      onChangeText={setFlowAmount}
-                      placeholder="-1 drains, +1 fills"
-                      allowNegative
-                    />
-                    <NumberField
-                      label="Every days"
-                      value={flowEveryDays}
-                      onChangeText={setFlowEveryDays}
-                      placeholder="1"
-                    />
-                    <Text style={styles.helpText}>
-                      Counts are projected. Use Set count on the detail screen
-                      to reconcile with a real count.
+                <Text style={sharedStyles.sectionTitle}>Scheduled flow</Text>
+                <View style={styles.card}>
+                  <View style={styles.switchRow}>
+                    <Text style={styles.switchLabel}>
+                      Change automatically over time
                     </Text>
+                    <Switch
+                      value={flowEnabled}
+                      onValueChange={setFlowEnabled}
+                    />
                   </View>
-                ) : null}
+                  {flowEnabled ? (
+                    <>
+                      <NumberField
+                        label="Amount each interval"
+                        value={flowAmount}
+                        onChangeText={setFlowAmount}
+                        placeholder="-1 drains, +1 fills"
+                        allowNegative
+                      />
+                      <NumberField
+                        label="Every days"
+                        value={flowEveryDays}
+                        onChangeText={setFlowEveryDays}
+                        placeholder="1"
+                      />
+                    </>
+                  ) : null}
+                </View>
               </View>
             </>
           )}
@@ -566,32 +593,25 @@ export default function SignalEditPage() {
           ) : null}
 
           {Platform.OS !== "ios" ? (
-            <TouchableOpacity
-              style={[styles.saveButton, isSaving && styles.controlDisabled]}
+            <PillButton
+              variant="primary"
+              label={signalId ? "Save changes" : "Create signal"}
               onPress={() => void handleSave()}
-              disabled={isSaving}
-            >
-              <Text style={styles.saveButtonText}>
-                {isSaving
-                  ? "Saving…"
-                  : signalId
-                    ? "Save changes"
-                    : "Create signal"}
-              </Text>
-            </TouchableOpacity>
+              loading={isSaving}
+            />
           ) : null}
 
           {signalId ? (
-            <TouchableOpacity
-              style={styles.archiveButton}
+            <PillButton
+              variant="destructive"
+              label="Archive signal"
               onPress={handleArchive}
               disabled={isSaving}
-            >
-              <Text style={styles.archiveButtonText}>Archive signal</Text>
-            </TouchableOpacity>
+            />
           ) : null}
         </ScrollView>
-      </KeyboardAvoidingView>
+        <KeyboardDismissBar />
+      </View>
     </>
   );
 }
@@ -610,16 +630,14 @@ const styles = StyleSheet.create({
   },
   headerActionText: {
     color: colors.systemBlue,
-    fontSize: fontSize.body,
-    fontWeight: "700",
+    fontSize: fontSize.bodyLg,
+    fontWeight: "600",
+  },
+  formContent: {
+    paddingBottom: 160,
   },
   section: {
     gap: spacing.sm,
-  },
-  sectionHeadingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
   },
   card: {
     gap: spacing.lg,
@@ -628,31 +646,28 @@ const styles = StyleSheet.create({
     backgroundColor: colors.secondarySystemGroupedBackground,
   },
   field: {
-    gap: spacing.xs,
+    gap: spacing.xs + 2,
   },
   label: {
     color: colors.secondaryLabel,
     fontSize: fontSize.small,
-    fontWeight: "700",
+    fontWeight: "600",
   },
   input: {
-    minHeight: 42,
+    height: 44,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.separator,
     borderRadius: radius.md,
-    backgroundColor: colors.systemBackground,
+    backgroundColor: colors.tertiarySystemGroupedBackground,
     color: colors.label,
     fontSize: fontSize.body,
   },
   disabledInput: {
     color: colors.secondaryLabel,
-    backgroundColor: colors.tertiarySystemGroupedBackground,
+    opacity: 0.6,
   },
   segmented: {
     flexDirection: "row",
-    gap: 2,
+    height: 36,
     padding: 2,
     borderRadius: radius.md,
     backgroundColor: colors.tertiarySystemGroupedBackground,
@@ -660,66 +675,40 @@ const styles = StyleSheet.create({
   segment: {
     flex: 1,
     alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.sm,
+    borderRadius: radius.md - 2,
   },
   segmentSelected: {
     backgroundColor: colors.secondarySystemGroupedBackground,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
   },
   segmentText: {
     color: colors.secondaryLabel,
     fontSize: fontSize.small,
-    fontWeight: "700",
+    fontWeight: "600",
   },
   segmentTextSelected: {
     color: colors.label,
   },
-  helpText: {
-    color: colors.tertiaryLabel,
-    fontSize: fontSize.caption,
-    lineHeight: 17,
-  },
-  toggle: {
-    width: 48,
-    height: 28,
-    padding: 3,
-    borderRadius: radius.pill,
-    backgroundColor: colors.systemGray,
-  },
-  toggleEnabled: {
-    backgroundColor: colors.systemGreen,
-  },
-  toggleKnob: {
-    width: 22,
-    height: 22,
-    borderRadius: radius.pill,
-    backgroundColor: "white",
-  },
-  toggleKnobEnabled: {
-    alignSelf: "flex-end",
-  },
-  saveButton: {
+  switchRow: {
+    flexDirection: "row",
     alignItems: "center",
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
-    backgroundColor: colors.systemBlue,
+    justifyContent: "space-between",
+    gap: spacing.md,
   },
-  saveButtonText: {
-    color: "white",
-    fontSize: fontSize.bodyLg,
-    fontWeight: "800",
-  },
-  archiveButton: {
-    alignItems: "center",
-    paddingVertical: spacing.md,
-  },
-  archiveButtonText: {
-    color: colors.systemRed,
+  switchLabel: {
+    flex: 1,
+    color: colors.label,
     fontSize: fontSize.body,
-    fontWeight: "700",
   },
-  controlDisabled: {
-    opacity: 0.45,
+  helperText: {
+    color: colors.secondaryLabel,
+    fontSize: fontSize.small,
+    lineHeight: 19,
   },
 });

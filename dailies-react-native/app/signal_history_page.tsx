@@ -1,9 +1,10 @@
+import DateTimePicker from "@react-native-community/datetimepicker";
 import type { FunctionArgs } from "convex/server";
-import { type Href, useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { type Href, Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
+  Alert,
   Platform,
   ScrollView,
   StyleSheet,
@@ -12,12 +13,20 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { ActivityMeasurementsForm } from "@/components/ActivityMeasurementsForm";
+import { KeyboardDismissBar } from "@/components/KeyboardDoneAccessory";
+import { PillButton } from "@/components/PillButton";
 import { SignalRow } from "@/components/SignalRow";
 import {
+  activityMeasurementDraftFromEntry,
   createSignalIdempotencyKey,
+  emptyActivityMeasurementDraft,
+  formatActivityMeasurements,
   formatSignalQuantity,
   getSignalPeriodBounds,
+  parseActivityMeasurements,
   SIGNAL_SOON_WINDOW_MS,
+  type ActivityMeasurementDraft,
   type SignalEntry,
   useSignalClock,
 } from "@/lib/signals";
@@ -30,6 +39,7 @@ import {
 import { colors, fontSize, radius, sharedStyles, spacing } from "@/lib/theme";
 
 type SignalId = FunctionArgs<typeof taskyApi.signals.get>["signalId"];
+type SignalEntryId = SignalEntry["id"];
 
 function formatSigned(value: number): string {
   const formatted = formatSignalQuantity(Math.abs(value));
@@ -49,8 +59,13 @@ function entryTitle(entry: SignalEntry): string {
 
 function entryDetail(entry: SignalEntry): string | undefined {
   switch (entry.operation.type) {
-    case "activity.occurred":
-      return entry.operation.note;
+    case "activity.occurred": {
+      const details = [
+        formatActivityMeasurements(entry.operation.measurements),
+        entry.operation.note,
+      ].filter((detail): detail is string => Boolean(detail));
+      return details.length === 0 ? undefined : details.join("\n");
+    }
     case "inventory.adjusted":
       return `Result: ${formatSignalQuantity(entry.operation.resultingQuantity)}`;
     case "inventory.set":
@@ -98,11 +113,48 @@ export default function SignalHistoryPage() {
       : "skip",
   );
   const recordSignal = useTaskyMutation(taskyApi.signals.record);
+  const updateActivityEntry = useTaskyMutation(
+    taskyApi.signals.updateActivityEntry,
+  );
+  const deleteActivityEntry = useTaskyMutation(
+    taskyApi.signals.deleteActivityEntry,
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [backdatedAt, setBackdatedAt] = useState("");
+  const [backdatedDate, setBackdatedDate] = useState<Date>(() => new Date());
   const [activityNote, setActivityNote] = useState("");
+  const [activityMeasurements, setActivityMeasurements] =
+    useState<ActivityMeasurementDraft>(() => emptyActivityMeasurementDraft());
+  const [editingEntryId, setEditingEntryId] = useState<SignalEntryId | null>(
+    null,
+  );
+  const [editingNote, setEditingNote] = useState("");
+  const [editingMeasurements, setEditingMeasurements] =
+    useState<ActivityMeasurementDraft>(() => emptyActivityMeasurementDraft());
   const [inventoryValue, setInventoryValue] = useState("");
+  const measurementFields =
+    signal.data?.model.kind === "activity"
+      ? signal.data.model.measurementFields ?? []
+      : [];
+  const latestMeasurementEntry = history.data?.page.find(
+    (entry) =>
+      entry.operation.type === "activity.occurred" &&
+      entry.operation.measurements !== undefined,
+  );
+  const latestMeasurements =
+    latestMeasurementEntry?.operation.type === "activity.occurred"
+      ? latestMeasurementEntry.operation.measurements
+      : undefined;
+  const measurementPrefillKey =
+    signal.data?.model.kind !== "activity"
+      ? undefined
+      : `${signalId}:${latestMeasurementEntry?.id ?? "none"}:${
+          latestMeasurementEntry?.updatedAt ??
+          latestMeasurementEntry?.recordedAt ??
+          "none"
+        }:${measurementFields.join(",")}`;
+  const appliedMeasurementPrefillKey = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     if (
@@ -116,12 +168,26 @@ export default function SignalHistoryPage() {
     }
   }, [inventoryValue, signal.data]);
 
+  useEffect(() => {
+    if (
+      measurementPrefillKey === undefined ||
+      measurementPrefillKey === appliedMeasurementPrefillKey.current
+    ) {
+      return;
+    }
+    appliedMeasurementPrefillKey.current = measurementPrefillKey;
+    setActivityMeasurements(
+      activityMeasurementDraftFromEntry(latestMeasurements),
+    );
+  }, [latestMeasurements, measurementPrefillKey]);
+
   const record = async (
     operation:
       | {
           type: "activity.occurred";
           occurredAt?: number;
           note?: string;
+          measurements?: ReturnType<typeof parseActivityMeasurements>;
         }
       | {
           type: "inventory.adjusted";
@@ -144,6 +210,7 @@ export default function SignalHistoryPage() {
         periodBounds,
       });
       setBackdatedAt("");
+      setBackdatedDate(new Date());
       setActivityNote("");
       if (operation.type !== "activity.occurred") {
         setInventoryValue("");
@@ -159,8 +226,32 @@ export default function SignalHistoryPage() {
     }
   };
 
+  const handleActivityRecord = async (occurredAt?: number) => {
+    try {
+      const measurements = parseActivityMeasurements(
+        measurementFields,
+        activityMeasurements,
+      );
+      await record({
+        type: "activity.occurred",
+        occurredAt,
+        note: activityNote.trim() || undefined,
+        measurements,
+      });
+    } catch (measurementError) {
+      setError(
+        measurementError instanceof Error
+          ? measurementError.message
+          : "Invalid exercise measurements",
+      );
+    }
+  };
+
   const handleBackdatedActivity = async () => {
-    const occurredAt = parseLocalDateTime(backdatedAt);
+    const occurredAt =
+      Platform.OS === "ios"
+        ? backdatedDate.getTime()
+        : parseLocalDateTime(backdatedAt);
     if (occurredAt === null) {
       setError("Use a local date and time such as 2026-08-23 09:30");
       return;
@@ -169,11 +260,7 @@ export default function SignalHistoryPage() {
       setError("Activity time cannot be in the future");
       return;
     }
-    await record({
-      type: "activity.occurred",
-      occurredAt,
-      note: activityNote.trim() || undefined,
-    });
+    await handleActivityRecord(occurredAt);
   };
 
   const handleInventory = async (mode: "adjust" | "set") => {
@@ -195,6 +282,86 @@ export default function SignalHistoryPage() {
       return;
     }
     await record({ type: "inventory.set", quantity: value });
+  };
+
+  const beginEditingActivityEntry = (entry: SignalEntry) => {
+    if (entry.operation.type !== "activity.occurred") {
+      return;
+    }
+    setEditingEntryId(entry.id);
+    setEditingNote(entry.operation.note ?? "");
+    setEditingMeasurements(
+      activityMeasurementDraftFromEntry(entry.operation.measurements),
+    );
+    setError(null);
+  };
+
+  const cancelEditingActivityEntry = () => {
+    setEditingEntryId(null);
+    setEditingNote("");
+    setEditingMeasurements(emptyActivityMeasurementDraft());
+  };
+
+  const saveActivityEntry = async () => {
+    if (!editingEntryId) {
+      return;
+    }
+    setIsSaving(true);
+    setError(null);
+    try {
+      const measurements = parseActivityMeasurements(
+        measurementFields,
+        editingMeasurements,
+      );
+      await updateActivityEntry({
+        entryId: editingEntryId,
+        note: editingNote.trim() || null,
+        measurements: measurements ?? null,
+      });
+      cancelEditingActivityEntry();
+    } catch (updateError) {
+      setError(
+        updateError instanceof Error
+          ? updateError.message
+          : "Failed to update activity",
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const confirmDeleteActivityEntry = (entryId: SignalEntryId) => {
+    Alert.alert(
+      "Delete activity entry?",
+      "This removes the occurrence from history and goal progress.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            void (async () => {
+              setIsSaving(true);
+              setError(null);
+              try {
+                await deleteActivityEntry({ entryId });
+                if (editingEntryId === entryId) {
+                  cancelEditingActivityEntry();
+                }
+              } catch (deleteError) {
+                setError(
+                  deleteError instanceof Error
+                    ? deleteError.message
+                    : "Failed to delete activity",
+                );
+              } finally {
+                setIsSaving(false);
+              }
+            })();
+          },
+        },
+      ],
+    );
   };
 
   if (!signalId) {
@@ -226,26 +393,11 @@ export default function SignalHistoryPage() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={sharedStyles.screen}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
-      <ScrollView
-        style={sharedStyles.screen}
-        contentContainerStyle={sharedStyles.screenContent}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={styles.detailCard}>
-          <SignalRow
-            signal={signal.data}
-            now={now}
-            compact
-            onPress={() => undefined}
-          />
-          <View style={styles.detailFooter}>
-            <Text style={styles.detailReason}>
-              {signal.data.evaluation.reason}
-            </Text>
+    <>
+      <Stack.Screen
+        options={{
+          title: signal.data.name,
+          headerRight: () => (
             <TouchableOpacity
               onPress={() =>
                 router.push({
@@ -253,148 +405,252 @@ export default function SignalHistoryPage() {
                   params: { signalId },
                 } as unknown as Href)
               }
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel="Edit signal"
             >
-              <Text style={styles.editLink}>Edit</Text>
+              <Text style={styles.headerEdit}>Edit</Text>
             </TouchableOpacity>
+          ),
+        }}
+      />
+      <View style={sharedStyles.screen}>
+        <ScrollView
+          style={sharedStyles.screen}
+          contentContainerStyle={[
+            sharedStyles.screenContent,
+            styles.pageContent,
+          ]}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={
+            Platform.OS === "ios" ? "interactive" : "on-drag"
+          }
+          automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
+        >
+          <View style={styles.detailCard}>
+            <SignalRow
+              signal={signal.data}
+              now={now}
+              compact
+              showsDisclosure={false}
+              onPress={() => undefined}
+            />
+            {signal.data.model.kind === "inventory" ? (
+              <Text style={styles.confirmedText}>
+                Last confirmed{" "}
+                {new Date(signal.data.model.confirmedAt).toLocaleString()}
+              </Text>
+            ) : null}
           </View>
-          {signal.data.model.kind === "inventory" ? (
-            <Text style={styles.confirmedText}>
-              Last confirmed{" "}
-              {new Date(signal.data.model.confirmedAt).toLocaleString()}
+
+          <View style={styles.section}>
+            <Text style={sharedStyles.sectionTitle}>Record</Text>
+            {signal.data.model.kind === "activity" ? (
+              <View style={styles.actionCard}>
+                {latestMeasurements && latestMeasurementEntry ? (
+                  <View style={styles.previousMeasurements}>
+                    <Text style={styles.previousLabel}>Most recent</Text>
+                    <Text style={styles.previousValue}>
+                      {formatActivityMeasurements(latestMeasurements)}
+                    </Text>
+                    <Text style={styles.previousDate}>
+                      {new Date(
+                        latestMeasurementEntry.effectiveAt,
+                      ).toLocaleString()}
+                    </Text>
+                  </View>
+                ) : null}
+                <ActivityMeasurementsForm
+                  fields={measurementFields}
+                  value={activityMeasurements}
+                  onChange={setActivityMeasurements}
+                  disabled={isSaving}
+                />
+                <TextInput
+                  style={styles.input}
+                  value={activityNote}
+                  onChangeText={setActivityNote}
+                  placeholder="Optional note"
+                  placeholderTextColor={colors.tertiaryLabel}
+                  returnKeyType="done"
+                />
+                <PillButton
+                  variant="primary"
+                  label="Done now"
+                  onPress={() => void handleActivityRecord()}
+                  loading={isSaving}
+                />
+                <View style={styles.divider} />
+                <Text style={styles.fieldLabel}>Earlier time</Text>
+                <View style={styles.inlineRow}>
+                  {Platform.OS === "ios" ? (
+                    <>
+                      <DateTimePicker
+                        value={backdatedDate}
+                        mode="datetime"
+                        display="compact"
+                        maximumDate={new Date()}
+                        onChange={(_event, date) => {
+                          if (date) setBackdatedDate(date);
+                        }}
+                      />
+                      <View style={styles.inlineSpacer} />
+                    </>
+                  ) : (
+                    <TextInput
+                      style={[styles.input, styles.inlineInput]}
+                      value={backdatedAt}
+                      onChangeText={setBackdatedAt}
+                      placeholder="YYYY-MM-DD HH:mm"
+                      placeholderTextColor={colors.tertiaryLabel}
+                      autoCapitalize="none"
+                    />
+                  )}
+                  <PillButton
+                    variant="tinted"
+                    label="Record"
+                    onPress={() => void handleBackdatedActivity()}
+                    disabled={isSaving}
+                  />
+                </View>
+              </View>
+            ) : (
+              <View style={styles.actionCard}>
+                <Text style={styles.fieldLabel}>
+                  Adjustment or count ({signal.data.model.unit})
+                </Text>
+                <TextInput
+                  style={styles.input}
+                  value={inventoryValue}
+                  onChangeText={setInventoryValue}
+                  placeholder="-1, +30, or exact count"
+                  placeholderTextColor={colors.tertiaryLabel}
+                  keyboardType="numbers-and-punctuation"
+                />
+                <View style={styles.buttonRow}>
+                  <PillButton
+                    variant="tinted"
+                    label="Adjust by"
+                    onPress={() => void handleInventory("adjust")}
+                    disabled={isSaving}
+                    style={styles.rowButton}
+                  />
+                  <PillButton
+                    variant="primary"
+                    label="Set count"
+                    onPress={() => void handleInventory("set")}
+                    loading={isSaving}
+                    style={styles.rowButton}
+                  />
+                </View>
+              </View>
+            )}
+          </View>
+
+          {error || signal.error || history.error ? (
+            <Text style={sharedStyles.error}>
+              {error ?? signal.error ?? history.error}
             </Text>
           ) : null}
-        </View>
 
-        <View style={styles.section}>
-          <Text style={sharedStyles.sectionTitle}>Record</Text>
-          {signal.data.model.kind === "activity" ? (
-            <View style={styles.actionCard}>
-              <TouchableOpacity
-                style={[styles.primaryButton, isSaving && styles.disabled]}
-                onPress={() =>
-                  void record({
-                    type: "activity.occurred",
-                    note: activityNote.trim() || undefined,
-                  })
-                }
-                disabled={isSaving}
-              >
-                <Text style={styles.primaryButtonText}>
-                  {isSaving ? "Saving…" : "Done now"}
-                </Text>
-              </TouchableOpacity>
-              <TextInput
-                style={styles.input}
-                value={activityNote}
-                onChangeText={setActivityNote}
-                placeholder="Optional note"
-                placeholderTextColor={colors.tertiaryLabel}
-              />
-              <View style={styles.divider} />
-              <Text style={styles.fieldLabel}>Log an earlier time</Text>
-              <TextInput
-                style={styles.input}
-                value={backdatedAt}
-                onChangeText={setBackdatedAt}
-                placeholder="YYYY-MM-DD HH:mm"
-                placeholderTextColor={colors.tertiaryLabel}
-                autoCapitalize="none"
-              />
-              <TouchableOpacity
-                style={[styles.secondaryButton, isSaving && styles.disabled]}
-                onPress={() => void handleBackdatedActivity()}
-                disabled={isSaving}
-              >
-                <Text style={styles.secondaryButtonText}>Record earlier</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <View style={styles.actionCard}>
-              <Text style={styles.fieldLabel}>
-                Adjustment or confirmed count ({signal.data.model.unit})
-              </Text>
-              <TextInput
-                style={styles.input}
-                value={inventoryValue}
-                onChangeText={setInventoryValue}
-                placeholder="-1, +30, or exact count"
-                placeholderTextColor={colors.tertiaryLabel}
-                keyboardType="numbers-and-punctuation"
-              />
-              <View style={styles.buttonRow}>
-                <TouchableOpacity
-                  style={[styles.secondaryButton, isSaving && styles.disabled]}
-                  onPress={() => void handleInventory("adjust")}
-                  disabled={isSaving}
-                >
-                  <Text style={styles.secondaryButtonText}>Adjust by</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.primaryButton, isSaving && styles.disabled]}
-                  onPress={() => void handleInventory("set")}
-                  disabled={isSaving}
-                >
-                  <Text style={styles.primaryButtonText}>Set count</Text>
-                </TouchableOpacity>
+          <View style={styles.section}>
+            <Text style={sharedStyles.sectionTitle}>History</Text>
+            {history.isLoading ? (
+              <View style={sharedStyles.inlineLoading}>
+                <ActivityIndicator />
+                <Text style={sharedStyles.muted}>Loading history…</Text>
               </View>
-              <Text style={styles.helpText}>
-                Setting the count reconciles any scheduled projection with a
-                real count.
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {error || signal.error || history.error ? (
-          <Text style={sharedStyles.error}>
-            {error ?? signal.error ?? history.error}
-          </Text>
-        ) : null}
-
-        <View style={styles.section}>
-          <Text style={sharedStyles.sectionTitle}>History</Text>
-          {history.isLoading ? (
-            <View style={sharedStyles.inlineLoading}>
-              <ActivityIndicator />
-              <Text style={sharedStyles.muted}>Loading history…</Text>
-            </View>
-          ) : (history.data?.page.length ?? 0) === 0 ? (
-            <View style={styles.emptyHistory}>
-              <Text style={sharedStyles.muted}>No entries yet.</Text>
-            </View>
-          ) : (
-            <View style={styles.historyCard}>
-              {history.data?.page.map((entry, index) => (
-                <View key={entry.id}>
-                  {index > 0 ? <View style={styles.divider} /> : null}
-                  <View style={styles.historyRow}>
-                    <View style={styles.historyMain}>
-                      <Text style={styles.historyTitle}>
-                        {entryTitle(entry)}
-                      </Text>
-                      {entryDetail(entry) ? (
-                        <Text style={styles.historyDetail}>
-                          {entryDetail(entry)}
+            ) : (history.data?.page.length ?? 0) === 0 ? (
+              <View style={styles.emptyHistory}>
+                <Text style={sharedStyles.muted}>No entries yet.</Text>
+              </View>
+            ) : (
+              <View style={styles.historyCard}>
+                {history.data?.page.map((entry, index) => (
+                  <View key={entry.id}>
+                    {index > 0 ? <View style={styles.divider} /> : null}
+                    <View style={styles.historyRow}>
+                      <View style={styles.historyMain}>
+                        <Text style={styles.historyTitle}>
+                          {entryTitle(entry)}
                         </Text>
-                      ) : null}
-                      <Text style={styles.historyDate}>
-                        {new Date(entry.effectiveAt).toLocaleString()}
-                      </Text>
+                        {entryDetail(entry) ? (
+                          <Text style={styles.historyDetail}>
+                            {entryDetail(entry)}
+                          </Text>
+                        ) : null}
+                        <Text style={styles.historyDate}>
+                          {new Date(entry.effectiveAt).toLocaleString()}
+                        </Text>
+                      </View>
+                      <View style={styles.historyActions}>
+                        <Text style={styles.source}>{entry.source}</Text>
+                        {entry.operation.type === "activity.occurred" ? (
+                          <TouchableOpacity
+                            onPress={() => beginEditingActivityEntry(entry)}
+                            hitSlop={8}
+                          >
+                            <Text style={styles.editEntryText}>Edit</Text>
+                          </TouchableOpacity>
+                        ) : null}
+                      </View>
                     </View>
-                    <Text style={styles.source}>{entry.source}</Text>
+                    {editingEntryId === entry.id &&
+                    entry.operation.type === "activity.occurred" ? (
+                      <View style={styles.editEntryCard}>
+                        <Text style={styles.fieldLabel}>Edit entry</Text>
+                        <ActivityMeasurementsForm
+                          fields={measurementFields}
+                          value={editingMeasurements}
+                          onChange={setEditingMeasurements}
+                          disabled={isSaving}
+                        />
+                        <TextInput
+                          style={styles.input}
+                          value={editingNote}
+                          onChangeText={setEditingNote}
+                          placeholder="Optional note"
+                          placeholderTextColor={colors.tertiaryLabel}
+                          returnKeyType="done"
+                        />
+                        <View style={styles.buttonRow}>
+                          <PillButton
+                            variant="tinted"
+                            label="Cancel"
+                            onPress={cancelEditingActivityEntry}
+                            disabled={isSaving}
+                            style={styles.rowButton}
+                          />
+                          <PillButton
+                            variant="primary"
+                            label="Save"
+                            onPress={() => void saveActivityEntry()}
+                            loading={isSaving}
+                            style={styles.rowButton}
+                          />
+                        </View>
+                        <PillButton
+                          variant="destructive"
+                          label="Delete entry"
+                          onPress={() => confirmDeleteActivityEntry(entry.id)}
+                          disabled={isSaving}
+                        />
+                      </View>
+                    ) : null}
                   </View>
-                </View>
-              ))}
-              {history.data && !history.data.isDone ? (
-                <Text style={styles.historyLimit}>
-                  Showing the latest 100 entries
-                </Text>
-              ) : null}
-            </View>
-          )}
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+                ))}
+                {history.data && !history.data.isDone ? (
+                  <Text style={styles.historyLimit}>
+                    Showing the latest 100 entries
+                  </Text>
+                ) : null}
+              </View>
+            )}
+          </View>
+        </ScrollView>
+        <KeyboardDismissBar />
+      </View>
+    </>
   );
 }
 
@@ -405,35 +661,26 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     padding: spacing.xl,
   },
+  headerEdit: {
+    color: colors.systemBlue,
+    fontSize: fontSize.bodyLg,
+    fontWeight: "600",
+  },
   emptyTitle: {
     color: colors.label,
     fontSize: fontSize.subhead,
-    fontWeight: "800",
+    fontWeight: "700",
+  },
+  pageContent: {
+    paddingBottom: 120,
   },
   detailCard: {
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.lg,
     borderRadius: radius.lg,
     backgroundColor: colors.secondarySystemGroupedBackground,
   },
-  detailFooter: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing.md,
-  },
-  detailReason: {
-    flex: 1,
-    color: colors.secondaryLabel,
-    fontSize: fontSize.small,
-  },
-  editLink: {
-    color: colors.systemBlue,
-    fontSize: fontSize.body,
-    fontWeight: "700",
-  },
   confirmedText: {
-    marginTop: spacing.sm,
+    paddingBottom: spacing.md,
     color: colors.tertiaryLabel,
     fontSize: fontSize.caption,
   },
@@ -446,56 +693,57 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     backgroundColor: colors.secondarySystemGroupedBackground,
   },
+  previousMeasurements: {
+    gap: 2,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.separator,
+  },
+  previousLabel: {
+    color: colors.secondaryLabel,
+    fontSize: fontSize.caption,
+    fontWeight: "600",
+    textTransform: "uppercase",
+  },
+  previousValue: {
+    color: colors.label,
+    fontSize: fontSize.body,
+    fontWeight: "600",
+  },
+  previousDate: {
+    color: colors.tertiaryLabel,
+    fontSize: fontSize.caption,
+  },
   fieldLabel: {
     color: colors.secondaryLabel,
     fontSize: fontSize.small,
-    fontWeight: "700",
+    fontWeight: "600",
   },
   input: {
-    minHeight: 42,
+    height: 44,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.separator,
     borderRadius: radius.md,
-    backgroundColor: colors.systemBackground,
+    backgroundColor: colors.tertiarySystemGroupedBackground,
     color: colors.label,
     fontSize: fontSize.body,
+  },
+  inlineRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  inlineInput: {
+    flex: 1,
+  },
+  inlineSpacer: {
+    flex: 1,
   },
   buttonRow: {
     flexDirection: "row",
     gap: spacing.md,
   },
-  primaryButton: {
+  rowButton: {
     flex: 1,
-    alignItems: "center",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
-    backgroundColor: colors.systemBlue,
-  },
-  primaryButtonText: {
-    color: "white",
-    fontSize: fontSize.body,
-    fontWeight: "800",
-  },
-  secondaryButton: {
-    flex: 1,
-    alignItems: "center",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
-    backgroundColor: colors.tertiarySystemGroupedBackground,
-  },
-  secondaryButtonText: {
-    color: colors.label,
-    fontSize: fontSize.body,
-    fontWeight: "700",
-  },
-  helpText: {
-    color: colors.tertiaryLabel,
-    fontSize: fontSize.caption,
-    lineHeight: 17,
   },
   historyCard: {
     overflow: "hidden",
@@ -513,10 +761,14 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 2,
   },
+  historyActions: {
+    alignItems: "flex-end",
+    gap: spacing.sm,
+  },
   historyTitle: {
     color: colors.label,
     fontSize: fontSize.body,
-    fontWeight: "700",
+    fontWeight: "600",
   },
   historyDetail: {
     color: colors.secondaryLabel,
@@ -529,8 +781,21 @@ const styles = StyleSheet.create({
   source: {
     color: colors.tertiaryLabel,
     fontSize: fontSize.micro,
-    fontWeight: "700",
+    fontWeight: "600",
     textTransform: "uppercase",
+  },
+  editEntryText: {
+    color: colors.systemBlue,
+    fontSize: fontSize.small,
+    fontWeight: "600",
+  },
+  editEntryCard: {
+    gap: spacing.md,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.md,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.tertiarySystemGroupedBackground,
   },
   historyLimit: {
     padding: spacing.md,
@@ -547,8 +812,5 @@ const styles = StyleSheet.create({
   divider: {
     height: StyleSheet.hairlineWidth,
     backgroundColor: colors.separator,
-  },
-  disabled: {
-    opacity: 0.45,
   },
 });

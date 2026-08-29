@@ -1,4 +1,4 @@
-import { type Href, useRouter } from "expo-router";
+import { type Href, Stack, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { PillButton } from "@/components/PillButton";
 import { SignalRow } from "@/components/SignalRow";
 import {
   createSignalIdempotencyKey,
@@ -31,7 +32,7 @@ const ATTENTION_ORDER: SignalAttention[] = ["due", "soon", "unknown", "ok"];
 const ATTENTION_TITLES: Record<SignalAttention, string> = {
   due: "Due",
   soon: "Coming up",
-  unknown: "Needs a first entry",
+  unknown: "New",
   ok: "On track",
 };
 
@@ -107,7 +108,10 @@ export default function SignalsPage() {
   };
 
   const handleQuickAction = async (signal: SignalDashboardItem) => {
-    if (signal.model.kind === "inventory") {
+    if (
+      signal.model.kind === "inventory" ||
+      (signal.model.measurementFields?.length ?? 0) > 0
+    ) {
       openSignal(signal.id);
       return;
     }
@@ -136,45 +140,42 @@ export default function SignalsPage() {
     return (
       <View style={[sharedStyles.screen, styles.center]}>
         <View style={sharedStyles.card}>
-          <Text style={styles.emptyTitle}>Connect Tasky for signals</Text>
+          <Text style={styles.emptyTitle}>Connect Tasky</Text>
           <Text style={sharedStyles.muted}>
-            Signals use your existing Tasky account so they are also available
-            to approved MCP clients.
+            Signals are stored in your Tasky account.
           </Text>
-          <TouchableOpacity
-            style={styles.primaryButton}
+          <PillButton
+            variant="primary"
+            label="Open Settings"
             onPress={() => router.push("/settings_page")}
-          >
-            <Text style={styles.primaryButtonText}>Open Settings</Text>
-          </TouchableOpacity>
+            style={styles.emptyButton}
+          />
         </View>
       </View>
     );
   }
 
   return (
-    <ScrollView
-      style={sharedStyles.screen}
-      contentContainerStyle={sharedStyles.screenContent}
-    >
-      <View style={styles.pageHeader}>
-        <View style={styles.pageHeaderText}>
-          <Text style={styles.pageTitle}>Life signals</Text>
-          <Text style={sharedStyles.muted}>
-            Activities and inventories ordered by when they need attention.
-          </Text>
-        </View>
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => router.push("/signal_edit_page" as Href)}
-        >
-          <Text style={styles.addButtonText}>Add</Text>
-        </TouchableOpacity>
-      </View>
-
-      {orderedTags.length > 0 ? (
-        <View style={styles.filters}>
-          <Text style={sharedStyles.sectionTitle}>Filter by tag</Text>
+    <>
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={() => router.push("/signal_edit_page" as Href)}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel="Add signal"
+            >
+              <Text style={styles.headerAdd}>Add</Text>
+            </TouchableOpacity>
+          ),
+        }}
+      />
+      <ScrollView
+        style={sharedStyles.screen}
+        contentContainerStyle={sharedStyles.screenContent}
+      >
+        {orderedTags.length > 0 ? (
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -227,61 +228,63 @@ export default function SignalsPage() {
               );
             })}
           </ScrollView>
-        </View>
-      ) : null}
+        ) : null}
 
-      {!taskyEnabled || signals.isLoading ? (
-        <View style={sharedStyles.inlineLoading}>
-          <ActivityIndicator />
-          <Text style={sharedStyles.muted}>Loading signals…</Text>
-        </View>
-      ) : grouped.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyTitle}>No signals yet</Text>
-          <Text style={sharedStyles.muted}>
-            Add an activity such as running, or an inventory such as a
-            prescription.
-          </Text>
-          <TouchableOpacity
-            style={styles.primaryButton}
-            onPress={() => router.push("/signal_edit_page" as Href)}
-          >
-            <Text style={styles.primaryButtonText}>Create first signal</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        grouped.map((attentionGroup) => (
-          <View key={attentionGroup.attention} style={styles.attentionGroup}>
-            <Text style={sharedStyles.sectionTitle}>
-              {ATTENTION_TITLES[attentionGroup.attention]}
-            </Text>
-            <View style={styles.listCard}>
-              {attentionGroup.items.map((signal, index) => (
-                <View key={signal.id}>
-                  {index > 0 ? <View style={styles.divider} /> : null}
-                  <SignalRow
-                    signal={signal}
-                    now={now}
-                    onPress={() => openSignal(signal.id)}
-                    onQuickAction={() => void handleQuickAction(signal)}
-                    quickActionLabel={
-                      signal.model.kind === "activity" ? "Done" : "Update"
-                    }
-                    isSaving={savingId === signal.id}
-                  />
-                </View>
-              ))}
-            </View>
+        {!taskyEnabled || signals.isLoading ? (
+          <View style={sharedStyles.inlineLoading}>
+            <ActivityIndicator />
+            <Text style={sharedStyles.muted}>Loading signals…</Text>
           </View>
-        ))
-      )}
+        ) : grouped.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyTitle}>No signals yet</Text>
+            <Text style={sharedStyles.muted}>
+              Track a recurring activity or a running count.
+            </Text>
+            <PillButton
+              variant="primary"
+              label="Create signal"
+              onPress={() => router.push("/signal_edit_page" as Href)}
+            />
+          </View>
+        ) : (
+          grouped.map((attentionGroup) => (
+            <View key={attentionGroup.attention} style={styles.attentionGroup}>
+              <Text style={sharedStyles.sectionTitle}>
+                {ATTENTION_TITLES[attentionGroup.attention]}
+              </Text>
+              <View style={styles.listCard}>
+                {attentionGroup.items.map((signal, index) => (
+                  <View key={signal.id}>
+                    {index > 0 ? <View style={styles.divider} /> : null}
+                    <SignalRow
+                      signal={signal}
+                      now={now}
+                      onPress={() => openSignal(signal.id)}
+                      onQuickAction={() => void handleQuickAction(signal)}
+                      quickActionLabel={
+                        signal.model.kind === "activity"
+                          ? (signal.model.measurementFields?.length ?? 0) > 0
+                            ? "Log"
+                            : "Done"
+                          : "Update"
+                      }
+                      isSaving={savingId === signal.id}
+                    />
+                  </View>
+                ))}
+              </View>
+            </View>
+          ))
+        )}
 
-      {(error || taskyAuth.error || signals.error || tags.error) && (
-        <Text style={sharedStyles.error}>
-          {error ?? taskyAuth.error ?? signals.error ?? tags.error}
-        </Text>
-      )}
-    </ScrollView>
+        {(error || taskyAuth.error || signals.error || tags.error) && (
+          <Text style={sharedStyles.error}>
+            {error ?? taskyAuth.error ?? signals.error ?? tags.error}
+          </Text>
+        )}
+      </ScrollView>
+    </>
   );
 }
 
@@ -290,35 +293,12 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
     justifyContent: "center",
   },
-  pageHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  pageHeaderText: {
-    flex: 1,
-    gap: spacing.xs,
-  },
-  pageTitle: {
-    color: colors.label,
-    fontSize: fontSize.title,
-    fontWeight: "800",
-  },
-  addButton: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.md,
-    backgroundColor: colors.systemBlue,
-  },
-  addButtonText: {
-    color: "white",
-    fontSize: fontSize.body,
-    fontWeight: "800",
+  headerAdd: {
+    color: colors.systemBlue,
+    fontSize: fontSize.bodyLg,
+    fontWeight: "600",
   },
   attentionGroup: {
-    gap: spacing.md,
-  },
-  filters: {
     gap: spacing.sm,
   },
   filterRow: {
@@ -329,15 +309,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs,
+    height: 32,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.separator,
     borderRadius: radius.pill,
     backgroundColor: colors.secondarySystemGroupedBackground,
   },
   filterChipSelected: {
-    borderColor: colors.systemBlue,
     backgroundColor: colors.systemBlue,
   },
   filterDot: {
@@ -347,8 +324,8 @@ const styles = StyleSheet.create({
   },
   filterChipText: {
     color: colors.secondaryLabel,
-    fontSize: fontSize.caption,
-    fontWeight: "700",
+    fontSize: fontSize.small,
+    fontWeight: "600",
   },
   filterChipTextSelected: {
     color: "white",
@@ -360,7 +337,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    marginLeft: spacing.xl,
+    marginLeft: spacing.lg,
     backgroundColor: colors.separator,
   },
   emptyState: {
@@ -372,18 +349,9 @@ const styles = StyleSheet.create({
   emptyTitle: {
     color: colors.label,
     fontSize: fontSize.subhead,
-    fontWeight: "800",
+    fontWeight: "700",
   },
-  primaryButton: {
+  emptyButton: {
     alignSelf: "flex-start",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.md,
-    backgroundColor: colors.systemBlue,
-  },
-  primaryButtonText: {
-    color: "white",
-    fontSize: fontSize.body,
-    fontWeight: "800",
   },
 });

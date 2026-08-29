@@ -44,6 +44,7 @@ export function TaskyTagPicker({
           .toLocaleLowerCase()
           .includes(normalizedSearch)),
   );
+  const showSearch = tags.length > 6;
 
   const toggleTag = (tagId: TaskyTagId) => {
     const selected = selectedTagIds.includes(tagId);
@@ -60,57 +61,45 @@ export function TaskyTagPicker({
       {isLoading ? (
         <View style={styles.loading}>
           <ActivityIndicator size="small" />
-          <Text style={styles.helpText}>Loading Tasky tags…</Text>
         </View>
       ) : tags.length === 0 ? (
-        <Text style={styles.helpText}>
-          No Tasky tags yet. Create tags in Tasky to organize signals.
-        </Text>
+        <Text style={styles.helpText}>No Tasky tags yet.</Text>
       ) : (
         <>
-          <View style={styles.selection}>
-            <View style={styles.selectionHeading}>
-              <Text style={styles.selectionTitle}>
-                Selected for this signal
-              </Text>
-              <Text style={styles.selectionCount}>{selectedTags.length}</Text>
-            </View>
-            {selectedTags.length === 0 ? (
-              <Text style={styles.emptySelection}>No tags selected</Text>
-            ) : (
-              <View style={styles.selectedTags}>
-                {selectedTags.map((tag) => {
-                  const color = tag.color ?? colors.systemGray;
-                  return (
-                    <TouchableOpacity
-                      key={tag._id}
-                      style={styles.selectedTag}
-                      onPress={() => toggleTag(tag._id)}
-                      activeOpacity={0.7}
-                      accessibilityLabel={`Remove ${taskyTagPath(tag, tagsById)}`}
-                    >
-                      <View style={[styles.dot, { backgroundColor: color }]} />
-                      <Text style={styles.selectedTagText}>
-                        {taskyTagPath(tag, tagsById)}
-                      </Text>
-                      <Text style={styles.removeTag}>×</Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            )}
-          </View>
-          <Text style={styles.addLabel}>Add tags</Text>
-          <TextInput
-            style={styles.search}
-            value={search}
-            onChangeText={setSearch}
-            placeholder="Find a tag"
-            placeholderTextColor={colors.tertiaryLabel}
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
+          {showSearch ? (
+            <TextInput
+              style={styles.search}
+              value={search}
+              onChangeText={setSearch}
+              placeholder="Find a tag"
+              placeholderTextColor={colors.tertiaryLabel}
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="done"
+            />
+          ) : null}
           <View style={styles.tags}>
+            {selectedTags.map((tag) => {
+              const color = tag.color ?? colors.systemGray;
+              return (
+                <TouchableOpacity
+                  key={tag._id}
+                  style={[styles.tag, styles.tagSelected]}
+                  onPress={() => toggleTag(tag._id)}
+                  activeOpacity={0.7}
+                  accessibilityLabel={`Remove ${taskyTagPath(tag, tagsById)}`}
+                >
+                  <View style={[styles.dot, { backgroundColor: color }]} />
+                  <Text
+                    style={[styles.tagText, styles.tagTextSelected]}
+                    numberOfLines={1}
+                  >
+                    {taskyTagPath(tag, tagsById)}
+                  </Text>
+                  <Text style={styles.removeMark}>×</Text>
+                </TouchableOpacity>
+              );
+            })}
             {availableTags.map((tag) => {
               const color = tag.color ?? colors.systemGray;
               return (
@@ -120,21 +109,18 @@ export function TaskyTagPicker({
                   onPress={() => toggleTag(tag._id)}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.addTag}>+</Text>
                   <View style={[styles.dot, { backgroundColor: color }]} />
-                  <Text style={styles.tagText}>
+                  <Text style={styles.tagText} numberOfLines={1}>
                     {taskyTagPath(tag, tagsById)}
                   </Text>
                 </TouchableOpacity>
               );
             })}
           </View>
-          {availableTags.length === 0 ? (
-            <Text style={styles.helpText}>
-              {normalizedSearch === ""
-                ? "All available tags are selected."
-                : "No matching tags."}
-            </Text>
+          {selectedTags.length === 0 &&
+          availableTags.length === 0 &&
+          normalizedSearch !== "" ? (
+            <Text style={styles.helpText}>No matching tags.</Text>
           ) : null}
         </>
       )}
@@ -149,87 +135,18 @@ const styles = StyleSheet.create({
   label: {
     color: colors.secondaryLabel,
     fontSize: fontSize.small,
-    fontWeight: "700",
-  },
-  selection: {
-    gap: spacing.sm,
-    padding: spacing.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.systemBlue,
-    borderRadius: radius.md,
-    backgroundColor: colors.tertiarySystemGroupedBackground,
-  },
-  selectionHeading: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  selectionTitle: {
-    color: colors.label,
-    fontSize: fontSize.caption,
-    fontWeight: "800",
-  },
-  selectionCount: {
-    minWidth: 22,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 2,
-    borderRadius: radius.pill,
-    overflow: "hidden",
-    backgroundColor: colors.systemBlue,
-    color: "white",
-    fontSize: fontSize.micro,
-    fontWeight: "800",
-    textAlign: "center",
-  },
-  emptySelection: {
-    color: colors.tertiaryLabel,
-    fontSize: fontSize.caption,
-  },
-  selectedTags: {
-    gap: spacing.xs,
-  },
-  selectedTag: {
-    minHeight: 36,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.sm,
-    backgroundColor: colors.secondarySystemGroupedBackground,
-  },
-  selectedTagText: {
-    flex: 1,
-    color: colors.label,
-    fontSize: fontSize.caption,
-    fontWeight: "700",
-  },
-  removeTag: {
-    color: colors.systemBlue,
-    fontSize: fontSize.bodyLg,
-    fontWeight: "700",
-  },
-  addLabel: {
-    marginTop: spacing.xs,
-    color: colors.secondaryLabel,
-    fontSize: fontSize.caption,
-    fontWeight: "700",
-  },
-  search: {
-    minHeight: 42,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.separator,
-    borderRadius: radius.md,
-    backgroundColor: colors.systemBackground,
-    color: colors.label,
-    fontSize: fontSize.body,
+    fontWeight: "600",
   },
   loading: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
+    alignItems: "flex-start",
+  },
+  search: {
+    height: 40,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.tertiarySystemGroupedBackground,
+    color: colors.label,
+    fontSize: fontSize.body,
   },
   tags: {
     flexDirection: "row",
@@ -238,20 +155,16 @@ const styles = StyleSheet.create({
   },
   tag: {
     maxWidth: "100%",
+    height: 32,
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderWidth: 1,
-    borderColor: colors.separator,
+    gap: spacing.xs + 2,
+    paddingHorizontal: spacing.md,
     borderRadius: radius.pill,
-    backgroundColor: colors.systemBackground,
+    backgroundColor: colors.tertiarySystemGroupedBackground,
   },
-  addTag: {
-    color: colors.systemBlue,
-    fontSize: fontSize.caption,
-    fontWeight: "800",
+  tagSelected: {
+    backgroundColor: colors.systemBlue,
   },
   dot: {
     width: 8,
@@ -261,12 +174,19 @@ const styles = StyleSheet.create({
   tagText: {
     flexShrink: 1,
     color: colors.secondaryLabel,
-    fontSize: fontSize.caption,
+    fontSize: fontSize.small,
+    fontWeight: "600",
+  },
+  tagTextSelected: {
+    color: "white",
+  },
+  removeMark: {
+    color: "white",
+    fontSize: fontSize.body,
     fontWeight: "600",
   },
   helpText: {
     color: colors.tertiaryLabel,
     fontSize: fontSize.caption,
-    lineHeight: 17,
   },
 });
