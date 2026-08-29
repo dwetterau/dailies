@@ -35,10 +35,11 @@ export function getSignalPeriodBounds(now: number): SignalPeriodBounds {
     date.getMonth(),
     date.getDate() + 1,
   );
+  const daysSinceMonday = (date.getDay() + 6) % 7;
   const weekStart = new Date(
     date.getFullYear(),
     date.getMonth(),
-    date.getDate() - date.getDay(),
+    date.getDate() - daysSinceMonday,
   );
   const weekEnd = new Date(
     weekStart.getFullYear(),
