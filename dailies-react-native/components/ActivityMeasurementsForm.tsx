@@ -21,12 +21,17 @@ export function ActivityMeasurementsForm({
     return null;
   }
 
+  const options = ACTIVITY_MEASUREMENT_OPTIONS.filter((option) =>
+    fields.includes(option.field),
+  );
+
   return (
     <View style={styles.container}>
-      {ACTIVITY_MEASUREMENT_OPTIONS.filter((option) =>
-        fields.includes(option.field),
-      ).map((option) => (
-        <View key={option.field} style={styles.field}>
+      {options.map((option) => (
+        <View
+          key={option.field}
+          style={[styles.field, options.length === 1 && styles.fieldSolo]}
+        >
           <Text style={styles.label}>{option.inputLabel}</Text>
           <TextInput
             style={[styles.input, disabled && styles.disabledInput]}
@@ -51,10 +56,18 @@ export function ActivityMeasurementsForm({
 
 const styles = StyleSheet.create({
   container: {
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: spacing.md,
   },
   field: {
+    flexGrow: 1,
+    flexBasis: "46%",
+    minWidth: 140,
     gap: spacing.xs + 2,
+  },
+  fieldSolo: {
+    flexBasis: "100%",
   },
   label: {
     color: colors.secondaryLabel,

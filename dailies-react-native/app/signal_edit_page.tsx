@@ -477,34 +477,40 @@ export default function SignalEditPage() {
               </View>
 
               <View style={styles.section}>
-                <Text style={sharedStyles.sectionTitle}>
-                  Exercise measurements
-                </Text>
+                <Text style={sharedStyles.sectionTitle}>Measurements</Text>
                 <View style={styles.card}>
-                  <Text style={styles.helperText}>
-                    Selected measurements are requested whenever this activity
-                    is recorded.
-                  </Text>
-                  {ACTIVITY_MEASUREMENT_OPTIONS.map((option) => {
-                    const enabled = measurementFields.includes(option.field);
-                    return (
-                      <View key={option.field} style={styles.switchRow}>
-                        <Text style={styles.switchLabel}>{option.label}</Text>
-                        <Switch
-                          value={enabled}
-                          onValueChange={(nextEnabled) =>
+                  <View style={styles.chipRow}>
+                    {ACTIVITY_MEASUREMENT_OPTIONS.map((option) => {
+                      const enabled = measurementFields.includes(option.field);
+                      return (
+                        <TouchableOpacity
+                          key={option.field}
+                          style={[styles.chip, enabled && styles.chipSelected]}
+                          activeOpacity={0.7}
+                          accessibilityRole="button"
+                          accessibilityState={{ selected: enabled }}
+                          onPress={() =>
                             setMeasurementFields((current) =>
-                              nextEnabled
-                                ? [...current, option.field]
-                                : current.filter(
+                              enabled
+                                ? current.filter(
                                     (field) => field !== option.field,
-                                  ),
+                                  )
+                                : [...current, option.field],
                             )
                           }
-                        />
-                      </View>
-                    );
-                  })}
+                        >
+                          <Text
+                            style={[
+                              styles.chipText,
+                              enabled && styles.chipTextSelected,
+                            ]}
+                          >
+                            {option.label}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
                 </View>
               </View>
             </>
@@ -706,9 +712,27 @@ const styles = StyleSheet.create({
     color: colors.label,
     fontSize: fontSize.body,
   },
-  helperText: {
+  chipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+  },
+  chip: {
+    height: 32,
+    justifyContent: "center",
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.pill,
+    backgroundColor: colors.tertiarySystemGroupedBackground,
+  },
+  chipSelected: {
+    backgroundColor: colors.systemBlue,
+  },
+  chipText: {
     color: colors.secondaryLabel,
     fontSize: fontSize.small,
-    lineHeight: 19,
+    fontWeight: "600",
+  },
+  chipTextSelected: {
+    color: "white",
   },
 });
