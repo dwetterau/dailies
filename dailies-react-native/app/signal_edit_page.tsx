@@ -1,9 +1,10 @@
 import type { FunctionArgs } from "convex/server";
-import { type Href, useLocalSearchParams, useRouter } from "expo-router";
+import { type Href, Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -39,12 +40,14 @@ function NumberField({
   onChangeText,
   placeholder,
   disabled,
+  allowNegative = false,
 }: {
   label: string;
   value: string;
   onChangeText: (value: string) => void;
   placeholder?: string;
   disabled?: boolean;
+  allowNegative?: boolean;
 }) {
   return (
     <View style={styles.field}>
@@ -55,7 +58,11 @@ function NumberField({
         onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor={colors.tertiaryLabel}
-        keyboardType="decimal-pad"
+        keyboardType={
+          allowNegative && Platform.OS === "ios"
+            ? "numbers-and-punctuation"
+            : "decimal-pad"
+        }
         editable={!disabled}
       />
     </View>
@@ -362,191 +369,230 @@ export default function SignalEditPage() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={sharedStyles.screen}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
-      <ScrollView
+    <>
+      <Stack.Screen
+        options={{
+          headerRight:
+            Platform.OS === "ios"
+              ? () => (
+                  <TouchableOpacity
+                    style={styles.headerAction}
+                    onPress={() => {
+                      Keyboard.dismiss();
+                      void handleSave();
+                    }}
+                    disabled={isSaving}
+                    hitSlop={8}
+                  >
+                    {isSaving ? (
+                      <ActivityIndicator size="small" />
+                    ) : (
+                      <Text style={styles.headerActionText}>
+                        {signalId ? "Save" : "Create"}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                )
+              : undefined,
+        }}
+      />
+      <KeyboardAvoidingView
         style={sharedStyles.screen}
-        contentContainerStyle={sharedStyles.screenContent}
-        keyboardShouldPersistTaps="handled"
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <View style={styles.section}>
-          <Text style={sharedStyles.sectionTitle}>Type</Text>
-          <Segmented
-            value={kind}
-            onChange={setKind}
-            disabled={Boolean(signalId)}
-            options={[
-              { value: "activity", label: "Activity" },
-              { value: "inventory", label: "Inventory" },
-            ]}
-          />
-        </View>
-
-        <View style={styles.card}>
-          <View style={styles.field}>
-            <Text style={styles.label}>Name</Text>
-            <TextInput
-              style={styles.input}
-              value={name}
-              onChangeText={setName}
-              placeholder={kind === "activity" ? "Run" : "Prescription name"}
-              placeholderTextColor={colors.tertiaryLabel}
+        <ScrollView
+          style={sharedStyles.screen}
+          contentContainerStyle={sharedStyles.screenContent}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={
+            Platform.OS === "ios" ? "interactive" : "on-drag"
+          }
+        >
+          <View style={styles.section}>
+            <Text style={sharedStyles.sectionTitle}>Type</Text>
+            <Segmented
+              value={kind}
+              onChange={setKind}
+              disabled={Boolean(signalId)}
+              options={[
+                { value: "activity", label: "Activity" },
+                { value: "inventory", label: "Inventory" },
+              ]}
             />
           </View>
-          <TaskyTagPicker
-            tags={tags.data ?? []}
-            selectedTagIds={tagIds}
-            onChange={setTagIds}
-            isLoading={tags.isLoading}
-          />
-        </View>
 
-        {kind === "activity" ? (
-          <View style={styles.section}>
-            <Text style={sharedStyles.sectionTitle}>Goal</Text>
-            <View style={styles.card}>
-              <Segmented
-                value={activityGoalMode}
-                onChange={setActivityGoalMode}
-                options={[
-                  { value: "tracking", label: "Tracking only" },
-                  { value: "daily", label: "Daily" },
-                  { value: "weekly", label: "Weekly" },
-                ]}
+          <View style={styles.card}>
+            <View style={styles.field}>
+              <Text style={styles.label}>Name</Text>
+              <TextInput
+                style={styles.input}
+                value={name}
+                onChangeText={setName}
+                placeholder={kind === "activity" ? "Run" : "Prescription name"}
+                placeholderTextColor={colors.tertiaryLabel}
               />
-              {activityGoalMode === "daily" || activityGoalMode === "weekly" ? (
-                <>
-                  <NumberField
-                    label={`Completions per ${
-                      activityGoalMode === "daily" ? "day" : "week"
-                    }`}
-                    value={targetCount}
-                    onChangeText={setTargetCount}
-                    placeholder="1"
-                  />
-                  <Text style={styles.helpText}>
-                    Progress resets at the start of each local{" "}
-                    {activityGoalMode === "daily" ? "day" : "week"}.
-                  </Text>
-                </>
-              ) : (
-                <Text style={styles.helpText}>
-                  Records history without marking the activity due.
-                </Text>
-              )}
             </View>
+            <TaskyTagPicker
+              tags={tags.data ?? []}
+              selectedTagIds={tagIds}
+              onChange={setTagIds}
+              isLoading={tags.isLoading}
+            />
           </View>
-        ) : (
-          <>
+
+          {kind === "activity" ? (
             <View style={styles.section}>
-              <Text style={sharedStyles.sectionTitle}>Inventory</Text>
+              <Text style={sharedStyles.sectionTitle}>Goal</Text>
               <View style={styles.card}>
-                <View style={styles.field}>
-                  <Text style={styles.label}>Unit</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={unit}
-                    onChangeText={setUnit}
-                    placeholder="pills"
-                    placeholderTextColor={colors.tertiaryLabel}
-                  />
-                </View>
-                <NumberField
-                  label={
-                    signalId
-                      ? "Current confirmed quantity"
-                      : "Starting quantity"
-                  }
-                  value={initialQuantity}
-                  onChangeText={setInitialQuantity}
-                  placeholder="60"
-                  disabled={Boolean(signalId)}
-                />
-                <NumberField
-                  label="Action threshold"
-                  value={thresholdValue}
-                  onChangeText={setThresholdValue}
-                  placeholder="14"
-                />
                 <Segmented
-                  value={comparison}
-                  onChange={setComparison}
+                  value={activityGoalMode}
+                  onChange={setActivityGoalMode}
                   options={[
-                    { value: "atOrBelow", label: "At or below" },
-                    { value: "atOrAbove", label: "At or above" },
+                    { value: "tracking", label: "Tracking only" },
+                    { value: "daily", label: "Daily" },
+                    { value: "weekly", label: "Weekly" },
                   ]}
                 />
+                {activityGoalMode === "daily" ||
+                activityGoalMode === "weekly" ? (
+                  <>
+                    <NumberField
+                      label={`Completions per ${
+                        activityGoalMode === "daily" ? "day" : "week"
+                      }`}
+                      value={targetCount}
+                      onChangeText={setTargetCount}
+                      placeholder="1"
+                    />
+                    <Text style={styles.helpText}>
+                      Progress resets at the start of each local{" "}
+                      {activityGoalMode === "daily" ? "day" : "week"}.
+                    </Text>
+                  </>
+                ) : (
+                  <Text style={styles.helpText}>
+                    Records history without marking the activity due.
+                  </Text>
+                )}
               </View>
             </View>
-
-            <View style={styles.section}>
-              <View style={styles.sectionHeadingRow}>
-                <Text style={sharedStyles.sectionTitle}>Scheduled flow</Text>
-                <TouchableOpacity
-                  style={[styles.toggle, flowEnabled && styles.toggleEnabled]}
-                  onPress={() => setFlowEnabled((enabled) => !enabled)}
-                >
-                  <View
-                    style={[
-                      styles.toggleKnob,
-                      flowEnabled && styles.toggleKnobEnabled,
+          ) : (
+            <>
+              <View style={styles.section}>
+                <Text style={sharedStyles.sectionTitle}>Inventory</Text>
+                <View style={styles.card}>
+                  <View style={styles.field}>
+                    <Text style={styles.label}>Unit</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={unit}
+                      onChangeText={setUnit}
+                      placeholder="pills"
+                      placeholderTextColor={colors.tertiaryLabel}
+                    />
+                  </View>
+                  <NumberField
+                    label={
+                      signalId
+                        ? "Current confirmed quantity"
+                        : "Starting quantity"
+                    }
+                    value={initialQuantity}
+                    onChangeText={setInitialQuantity}
+                    placeholder="60"
+                    disabled={Boolean(signalId)}
+                  />
+                  <NumberField
+                    label="Action threshold"
+                    value={thresholdValue}
+                    onChangeText={setThresholdValue}
+                    placeholder="14"
+                  />
+                  <Segmented
+                    value={comparison}
+                    onChange={setComparison}
+                    options={[
+                      { value: "atOrBelow", label: "At or below" },
+                      { value: "atOrAbove", label: "At or above" },
                     ]}
                   />
-                </TouchableOpacity>
-              </View>
-              {flowEnabled ? (
-                <View style={styles.card}>
-                  <NumberField
-                    label="Amount each interval"
-                    value={flowAmount}
-                    onChangeText={setFlowAmount}
-                    placeholder="-1 drains, +1 fills"
-                  />
-                  <NumberField
-                    label="Every days"
-                    value={flowEveryDays}
-                    onChangeText={setFlowEveryDays}
-                    placeholder="1"
-                  />
-                  <Text style={styles.helpText}>
-                    Counts are projected. Use Set count on the detail screen to
-                    reconcile with a real count.
-                  </Text>
                 </View>
-              ) : null}
-            </View>
-          </>
-        )}
+              </View>
 
-        {error || signal.error || tags.error ? (
-          <Text style={sharedStyles.error}>
-            {error ?? signal.error ?? tags.error}
-          </Text>
-        ) : null}
+              <View style={styles.section}>
+                <View style={styles.sectionHeadingRow}>
+                  <Text style={sharedStyles.sectionTitle}>Scheduled flow</Text>
+                  <TouchableOpacity
+                    style={[styles.toggle, flowEnabled && styles.toggleEnabled]}
+                    onPress={() => setFlowEnabled((enabled) => !enabled)}
+                  >
+                    <View
+                      style={[
+                        styles.toggleKnob,
+                        flowEnabled && styles.toggleKnobEnabled,
+                      ]}
+                    />
+                  </TouchableOpacity>
+                </View>
+                {flowEnabled ? (
+                  <View style={styles.card}>
+                    <NumberField
+                      label="Amount each interval"
+                      value={flowAmount}
+                      onChangeText={setFlowAmount}
+                      placeholder="-1 drains, +1 fills"
+                      allowNegative
+                    />
+                    <NumberField
+                      label="Every days"
+                      value={flowEveryDays}
+                      onChangeText={setFlowEveryDays}
+                      placeholder="1"
+                    />
+                    <Text style={styles.helpText}>
+                      Counts are projected. Use Set count on the detail screen
+                      to reconcile with a real count.
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+            </>
+          )}
 
-        <TouchableOpacity
-          style={[styles.saveButton, isSaving && styles.controlDisabled]}
-          onPress={() => void handleSave()}
-          disabled={isSaving}
-        >
-          <Text style={styles.saveButtonText}>
-            {isSaving ? "Saving…" : signalId ? "Save changes" : "Create signal"}
-          </Text>
-        </TouchableOpacity>
+          {error || signal.error || tags.error ? (
+            <Text style={sharedStyles.error}>
+              {error ?? signal.error ?? tags.error}
+            </Text>
+          ) : null}
 
-        {signalId ? (
-          <TouchableOpacity
-            style={styles.archiveButton}
-            onPress={handleArchive}
-            disabled={isSaving}
-          >
-            <Text style={styles.archiveButtonText}>Archive signal</Text>
-          </TouchableOpacity>
-        ) : null}
-      </ScrollView>
-    </KeyboardAvoidingView>
+          {Platform.OS !== "ios" ? (
+            <TouchableOpacity
+              style={[styles.saveButton, isSaving && styles.controlDisabled]}
+              onPress={() => void handleSave()}
+              disabled={isSaving}
+            >
+              <Text style={styles.saveButtonText}>
+                {isSaving
+                  ? "Saving…"
+                  : signalId
+                    ? "Save changes"
+                    : "Create signal"}
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+
+          {signalId ? (
+            <TouchableOpacity
+              style={styles.archiveButton}
+              onPress={handleArchive}
+              disabled={isSaving}
+            >
+              <Text style={styles.archiveButtonText}>Archive signal</Text>
+            </TouchableOpacity>
+          ) : null}
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </>
   );
 }
 
@@ -555,6 +601,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: spacing.md,
+  },
+  headerAction: {
+    minWidth: 52,
+    minHeight: 32,
+    alignItems: "flex-end",
+    justifyContent: "center",
+  },
+  headerActionText: {
+    color: colors.systemBlue,
+    fontSize: fontSize.body,
+    fontWeight: "700",
   },
   section: {
     gap: spacing.sm,
