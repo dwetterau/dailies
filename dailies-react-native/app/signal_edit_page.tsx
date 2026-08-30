@@ -17,6 +17,7 @@ import {
 import { KeyboardDismissBar } from "@/components/KeyboardDoneAccessory";
 import { PillButton } from "@/components/PillButton";
 import { TaskyTagPicker } from "@/components/TaskyTagPicker";
+import { automaticKeyboardInsets, iosHeaderTextItems } from "@/lib/headerItems";
 import {
   ACTIVITY_MEASUREMENT_OPTIONS,
   getSignalPeriodBounds,
@@ -399,6 +400,18 @@ export default function SignalEditPage() {
                   </TouchableOpacity>
                 )
               : undefined,
+          unstable_headerRightItems: () =>
+            iosHeaderTextItems([
+              {
+                label: signalId ? "Save" : "Create",
+                variant: "done",
+                disabled: isSaving,
+                onPress: () => {
+                  Keyboard.dismiss();
+                  void handleSave();
+                },
+              },
+            ]),
         }}
       />
       <View style={sharedStyles.screen}>
@@ -413,6 +426,7 @@ export default function SignalEditPage() {
             Platform.OS === "ios" ? "interactive" : "on-drag"
           }
           automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
+          {...automaticKeyboardInsets}
         >
           <View style={styles.card}>
             <View style={styles.field}>

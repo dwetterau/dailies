@@ -19,6 +19,7 @@ import {
   PlatformColor,
 } from "react-native";
 import { useToast } from "react-native-toast-notifications";
+import { automaticKeyboardInsets, iosHeaderTextItems } from "@/lib/headerItems";
 
 function getFieldOptionsForType(type: EntityType): string[] {
   switch (type) {
@@ -146,11 +147,24 @@ export default function EntityEditScreen() {
           color={isInvalid() ? PlatformColor("systemGray") : undefined}
         />
       ),
+      unstable_headerRightItems: () =>
+        iosHeaderTextItems([
+          {
+            label: "Save",
+            variant: "done",
+            disabled: isInvalid(),
+            tintColor: isInvalid() ? PlatformColor("systemGray") : undefined,
+            onPress: handleSave,
+          },
+        ]),
     });
   }, [handleSave, isInvalid, navigation]);
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView
+      contentContainerStyle={styles.container}
+      {...automaticKeyboardInsets}
+    >
       <Text style={styles.sectionTitle}>Name</Text>
       <TextInput
         placeholder="Entity..."

@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useNavigation, useRouter } from "expo-router";
+import { automaticKeyboardInsets, iosHeaderTextItems } from "@/lib/headerItems";
 import {
   getCategoryCompletionRatio,
   getColorForCategory,
@@ -88,6 +89,17 @@ export default function DailiesPage() {
           </TouchableOpacity>
         );
       },
+      unstable_headerRightItems: () =>
+        iosHeaderTextItems([
+          {
+            label: "New",
+            onPress: () => {
+              router.push({
+                pathname: "/entity_edit_page",
+              });
+            },
+          },
+        ]),
     });
   }, [navigation, router]);
 
@@ -99,6 +111,7 @@ export default function DailiesPage() {
     <ScrollView
       style={DAILIES_PAGE_STYLES.container}
       contentContainerStyle={DAILIES_PAGE_STYLES.content}
+      {...automaticKeyboardInsets}
     >
       <Text style={DAILIES_PAGE_STYLES.title}>Dailies</Text>
       {ORDERED_CATEGORIES.filter((category) =>

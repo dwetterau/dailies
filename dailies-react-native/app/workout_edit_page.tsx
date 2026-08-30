@@ -30,6 +30,7 @@ import {
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { useToast } from "react-native-toast-notifications";
+import { iosHeaderTextItems } from "@/lib/headerItems";
 
 const useRecentEvents = (
   entity: Entity,
@@ -343,6 +344,27 @@ function WorkoutEditPageInner({ entity }: { entity: Entity }) {
           </View>
         );
       },
+      unstable_headerRightItems: () =>
+        iosHeaderTextItems([
+          ...(currentEvent
+            ? [
+                {
+                  label: "Delete",
+                  tintColor: PlatformColor("systemRed"),
+                  onPress: handleDelete,
+                },
+              ]
+            : []),
+          {
+            label: "Save",
+            variant: "done" as const,
+            disabled: !isSaveEnabled,
+            tintColor: isSaveEnabled
+              ? PlatformColor("systemBlue")
+              : PlatformColor("systemGray"),
+            onPress: handleSave,
+          },
+        ]),
     });
   }, [currentEvent, handleDelete, handleSave, isSaveEnabled, navigation]);
 

@@ -19,6 +19,7 @@ import {
   useTaskyQuery,
 } from "@/lib/tasky";
 import { colors, fontSize, radius, sharedStyles, spacing } from "@/lib/theme";
+import { automaticKeyboardInsets } from "@/lib/headerItems";
 
 type Capture = FunctionReturnType<typeof taskyApi.captures.list>[number];
 type Task = FunctionReturnType<typeof taskyApi.tasks.list>[number];
@@ -489,6 +490,7 @@ export default function TaskyCapturesPage() {
       <ScrollView
         style={sharedStyles.screen}
         contentContainerStyle={sharedStyles.screenContent}
+        {...automaticKeyboardInsets}
       >
         <NotConnected
           onConnect={() => void handleConnect()}
@@ -523,6 +525,7 @@ export default function TaskyCapturesPage() {
           { paddingTop: spacing.md },
         ]}
         keyboardShouldPersistTaps="handled"
+        {...automaticKeyboardInsets}
       >
         <SegmentedControl
           value={tab}

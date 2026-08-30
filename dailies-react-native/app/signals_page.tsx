@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { PillButton } from "@/components/PillButton";
 import { SignalRow } from "@/components/SignalRow";
+import { automaticKeyboardInsets, iosHeaderTextItems } from "@/lib/headerItems";
 import {
   createSignalIdempotencyKey,
   getSignalPeriodBounds,
@@ -169,11 +170,19 @@ export default function SignalsPage() {
               <Text style={styles.headerAdd}>Add</Text>
             </TouchableOpacity>
           ),
+          unstable_headerRightItems: () =>
+            iosHeaderTextItems([
+              {
+                label: "Add",
+                onPress: () => router.push("/signal_edit_page" as Href),
+              },
+            ]),
         }}
       />
       <ScrollView
         style={sharedStyles.screen}
         contentContainerStyle={sharedStyles.screenContent}
+        {...automaticKeyboardInsets}
       >
         {orderedTags.length > 0 ? (
           <ScrollView

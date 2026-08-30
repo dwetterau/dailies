@@ -11,6 +11,7 @@ import {
 import { useAuth0 } from "react-native-auth0";
 import { useTaskyAuth } from "@/lib/tasky";
 import { colors, fontSize, radius, sharedStyles, spacing } from "@/lib/theme";
+import { automaticKeyboardInsets } from "@/lib/headerItems";
 
 type AccountStatus = "connected" | "disconnected" | "loading";
 
@@ -193,6 +194,7 @@ export default function SettingsPage() {
     <ScrollView
       style={sharedStyles.screen}
       contentContainerStyle={sharedStyles.screenContent}
+      {...automaticKeyboardInsets}
     >
       <SectionHeader title="Linked accounts" />
       <View style={styles.card}>

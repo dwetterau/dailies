@@ -25,6 +25,7 @@ import {
   saveGenericObject,
 } from "./storage";
 import { useToast } from "react-native-toast-notifications";
+import { iosHeaderTextItems } from "@/lib/headerItems";
 
 type EventForUpsert = {
   entityId: EntityId;
@@ -376,10 +377,9 @@ export default function FlashCardPage() {
   // Setup the menu options
   const hasFlashCards = !!flashCards;
   useLayoutEffect(() => {
+    const isSaveEnabled = hasFlashCards && !isSaving;
     navigation.setOptions({
       headerRight: () => {
-        const isSaveEnabled = hasFlashCards && !isSaving;
-
         return (
           <View style={{ flexDirection: "row", gap: 30 }}>
             <TouchableOpacity onPress={handleLoad}>
@@ -404,6 +404,21 @@ export default function FlashCardPage() {
           </View>
         );
       },
+      unstable_headerRightItems: () =>
+        iosHeaderTextItems([
+          {
+            label: "Load",
+            onPress: handleLoad,
+          },
+          {
+            label: "Save",
+            disabled: !isSaveEnabled,
+            tintColor: isSaveEnabled
+              ? PlatformColor("systemBlue")
+              : PlatformColor("systemGray"),
+            onPress: handleSave,
+          },
+        ]),
     });
   }, [handleLoad, handleSave, hasFlashCards, isSaving, navigation]);
 

@@ -18,6 +18,7 @@ import {
   spacing,
   tone,
 } from "@/lib/theme";
+import { automaticKeyboardInsets } from "@/lib/headerItems";
 
 type PortfolioSnapshot = FunctionReturnType<
   typeof taskyApi.portfolio.getSnapshot
@@ -580,6 +581,7 @@ export default function PortfolioPage() {
       <ScrollView
         style={sharedStyles.screen}
         contentContainerStyle={sharedStyles.screenContent}
+        {...automaticKeyboardInsets}
       >
         <View style={sharedStyles.card}>
           <Text style={styles.notConnectedTitle}>Tasky not connected</Text>
@@ -611,6 +613,7 @@ export default function PortfolioPage() {
       <ScrollView
         style={sharedStyles.screen}
         contentContainerStyle={sharedStyles.screenContent}
+        {...automaticKeyboardInsets}
       >
         <View style={sharedStyles.card}>
           <Text style={styles.notConnectedTitle}>No portfolio credentials</Text>
@@ -628,6 +631,7 @@ export default function PortfolioPage() {
       <ScrollView
         style={sharedStyles.screen}
         contentContainerStyle={sharedStyles.screenContent}
+        {...automaticKeyboardInsets}
       >
         <Text style={sharedStyles.error}>
           {portfolio?.message ?? error ?? "Portfolio data unavailable."}
@@ -640,6 +644,7 @@ export default function PortfolioPage() {
     <ScrollView
       style={sharedStyles.screen}
       contentContainerStyle={sharedStyles.screenContent}
+      {...automaticKeyboardInsets}
     >
       <SummaryStrip
         summary={portfolio.summary}

@@ -10,6 +10,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ToastProvider } from "react-native-toast-notifications";
 import { Provider as PaperProvider } from "react-native-paper";
+import { iosHeaderScreenOptions } from "@/lib/headerItems";
 import { TaskyAuthProvider } from "@/lib/tasky";
 
 const { EXPO_PUBLIC_CONVEX_URL } = Constants.expoConfig?.extra ?? {};
@@ -60,7 +61,7 @@ export default function RootLayout() {
             <SafeAreaProvider>
               <PaperProvider>
                 <ToastProvider>
-                  <Stack>
+                  <Stack screenOptions={iosHeaderScreenOptions}>
                     <Stack.Screen name="index" options={{ title: "" }} />
                     <Stack.Screen
                       name="settings_page"

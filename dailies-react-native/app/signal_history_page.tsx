@@ -17,6 +17,7 @@ import { ActivityMeasurementsForm } from "@/components/ActivityMeasurementsForm"
 import { KeyboardDismissBar } from "@/components/KeyboardDoneAccessory";
 import { PillButton } from "@/components/PillButton";
 import { SignalRow } from "@/components/SignalRow";
+import { automaticKeyboardInsets, iosHeaderTextItems } from "@/lib/headerItems";
 import {
   activityMeasurementDraftFromEntry,
   createSignalIdempotencyKey,
@@ -412,6 +413,17 @@ export default function SignalHistoryPage() {
               <Text style={styles.headerEdit}>Edit</Text>
             </TouchableOpacity>
           ),
+          unstable_headerRightItems: () =>
+            iosHeaderTextItems([
+              {
+                label: "Edit",
+                onPress: () =>
+                  router.push({
+                    pathname: "/signal_edit_page",
+                    params: { signalId },
+                  } as unknown as Href),
+              },
+            ]),
         }}
       />
       <View style={sharedStyles.screen}>
@@ -426,6 +438,7 @@ export default function SignalHistoryPage() {
             Platform.OS === "ios" ? "interactive" : "on-drag"
           }
           automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
+          {...automaticKeyboardInsets}
         >
           <View style={styles.detailCard}>
             <SignalRow
