@@ -326,7 +326,11 @@ export default function ScorecardPage() {
           onQuickAction={(signal) => void handleQuickAction(signal)}
         />
         <MemberSection
-          title="Optional"
+          title={
+            optional.length > 0
+              ? `Optional · ${optional.filter((member) => member.evaluation.isComplete).length} of ${optional.length} done`
+              : "Optional"
+          }
           members={optional}
           signalById={signalById}
           now={now}

@@ -264,6 +264,11 @@ export function signalPrimaryText(
     ) {
       const progress = signal.evaluation.periodProgress;
       const periodLabel = progress.period === "day" ? "today" : "this week";
+      if (progress.targetCount <= 0) {
+        return progress.completedCount > 0
+          ? `logged ${periodLabel}`
+          : `none ${periodLabel}`;
+      }
       return `${progress.completedCount}/${progress.targetCount} ${periodLabel}`;
     }
     return signal.model.lastOccurredAt === undefined

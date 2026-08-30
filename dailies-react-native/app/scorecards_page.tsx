@@ -39,16 +39,30 @@ function formatPercent(ratio: number): string {
 
 function ScorecardRow({ scorecard }: { scorecard: ScorecardItem }) {
   const router = useRouter();
-  const requiredCount = scorecard.members.filter(
+  const required = scorecard.members.filter(
     (member) => member.role === "required",
+  );
+  const optional = scorecard.members.filter(
+    (member) => member.role === "optional",
+  );
+  const optionalDone = optional.filter(
+    (member) => member.evaluation.isComplete,
   ).length;
-  const optionalCount = scorecard.members.length - requiredCount;
+  const optionalNames = [...optional]
+    .sort((left, right) => {
+      if (left.evaluation.isComplete === right.evaluation.isComplete) {
+        return 0;
+      }
+      return left.evaluation.isComplete ? 1 : -1;
+    })
+    .map((member) => member.name)
+    .join(" · ");
   const subtitle =
     scorecard.optionalQuota > 0
       ? `${scorecard.evaluation.optionalDoneCount} of ${scorecard.optionalQuota} optionals`
-      : optionalCount > 0
-        ? `${requiredCount} required · ${optionalCount} optional`
-        : `${requiredCount} required`;
+      : required.length > 0
+        ? `${required.length} required`
+        : undefined;
 
   return (
     <TouchableOpacity
@@ -59,9 +73,11 @@ function ScorecardRow({ scorecard }: { scorecard: ScorecardItem }) {
       <View style={styles.cardHeader}>
         <View style={styles.cardHeaderText}>
           <Text style={styles.cardTitle}>{scorecard.name}</Text>
-          <Text style={styles.cardSubtitle}>
-            {scorecard.evaluation.isComplete ? "Done" : subtitle}
-          </Text>
+          {scorecard.evaluation.isComplete || subtitle ? (
+            <Text style={styles.cardSubtitle}>
+              {scorecard.evaluation.isComplete ? "Done" : subtitle}
+            </Text>
+          ) : null}
         </View>
         <Text style={styles.percent}>
           {formatPercent(scorecard.evaluation.ratio)}
@@ -80,20 +96,32 @@ function ScorecardRow({ scorecard }: { scorecard: ScorecardItem }) {
           ]}
         />
       </View>
-      <View style={styles.members}>
-        {scorecard.members.map((member) => (
-          <Text
-            key={member.signalId}
-            style={[
-              styles.member,
-              member.evaluation.isComplete && styles.memberDone,
-            ]}
-          >
-            {member.evaluation.isComplete ? "✓" : "○"} {member.name}
-            {member.role === "optional" ? " · optional" : ""}
+      {required.length > 0 ? (
+        <View style={styles.members}>
+          {required.map((member) => (
+            <Text
+              key={member.signalId}
+              style={[
+                styles.member,
+                member.evaluation.isComplete && styles.memberDone,
+              ]}
+            >
+              {member.evaluation.isComplete ? "✓ " : "○ "}
+              {member.name}
+            </Text>
+          ))}
+        </View>
+      ) : null}
+      {optional.length > 0 ? (
+        <View style={styles.optionalBlock}>
+          <Text style={styles.optionalTitle}>
+            Optional · {optionalDone} of {optional.length} done
           </Text>
-        ))}
-      </View>
+          <Text style={styles.optionalNames} numberOfLines={2}>
+            {optionalNames}
+          </Text>
+        </View>
+      ) : null}
     </TouchableOpacity>
   );
 }
@@ -253,6 +281,18 @@ const styles = StyleSheet.create({
   },
   memberDone: {
     color: colors.label,
+  },
+  optionalBlock: {
+    gap: 2,
+  },
+  optionalTitle: {
+    color: colors.secondaryLabel,
+    fontSize: fontSize.small,
+    fontWeight: "600",
+  },
+  optionalNames: {
+    color: colors.tertiaryLabel,
+    fontSize: fontSize.small,
   },
   emptyState: {
     alignItems: "center",

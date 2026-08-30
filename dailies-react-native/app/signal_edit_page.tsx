@@ -207,9 +207,9 @@ export default function SignalEditPage() {
           | undefined;
         if (activityGoalMode === "daily" || activityGoalMode === "weekly") {
           const parsedTargetCount = Number(targetCount);
-          if (!Number.isInteger(parsedTargetCount) || parsedTargetCount <= 0) {
+          if (!Number.isInteger(parsedTargetCount) || parsedTargetCount < 0) {
             throw new Error(
-              "Completion target must be a positive whole number",
+              "Completion target must be a whole number, 0 or greater",
             );
           }
           target = {
@@ -486,6 +486,10 @@ export default function SignalEditPage() {
                       onChangeText={setTargetCount}
                       placeholder="1"
                     />
+                    <Text style={sharedStyles.muted}>
+                      0 keeps the {activityGoalMode === "daily" ? "day" : "week"}{" "}
+                      window without making this signal due.
+                    </Text>
                   ) : null}
                 </View>
               </View>
