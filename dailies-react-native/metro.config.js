@@ -3,7 +3,6 @@ const fs = require("fs");
 const path = require("path");
 
 const projectRoot = __dirname;
-const convexRoot = path.resolve(projectRoot, "../convex");
 const taskyConvexRoot = path.resolve(projectRoot, "vendor/tasky-convex");
 
 if (!fs.existsSync(path.join(taskyConvexRoot, "_generated/api.js"))) {
@@ -14,12 +13,11 @@ if (!fs.existsSync(path.join(taskyConvexRoot, "_generated/api.js"))) {
 
 const config = getDefaultConfig(projectRoot);
 
-config.watchFolders = [convexRoot, taskyConvexRoot];
+config.watchFolders = [taskyConvexRoot];
 
 config.resolver = {
   ...config.resolver,
   extraNodeModules: {
-    "@convex": convexRoot,
     "tasky-convex": taskyConvexRoot,
   },
   nodeModulesPaths: [path.resolve(projectRoot, "node_modules")],

@@ -3,9 +3,6 @@
   "compilerOptions": {
     "strict": true,
     "paths": {
-      "@convex/*": [
-        "./convex/*"
-      ],
       "tasky-convex/*": [
         "./vendor/tasky-convex/*",
         "../../tasky/convex/*"

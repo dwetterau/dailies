@@ -1,6 +1,3 @@
-import { api } from "@convex/_generated/api";
-import { EntityCategory } from "@convex/entities";
-import { useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
 import { type Href, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -13,12 +10,6 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import {
-  getCategoryCompletionRatio,
-  getColorForCategory,
-  getDisplayNameForCategory,
-} from "@/model/entities/category_helpers";
-import { useCurrentTimeRanges } from "@/model/time/timestamps";
 import {
   taskyApi,
   useTaskyAction,
@@ -42,14 +33,6 @@ import {
   spacing,
   tone,
 } from "@/lib/theme";
-
-const ORDERED_CATEGORIES: Array<EntityCategory> = [
-  EntityCategory.LEARNING,
-  EntityCategory.CARE,
-  EntityCategory.EXERCISE,
-  EntityCategory.TIDYING,
-  EntityCategory.THINKING,
-];
 
 type PortfolioSnapshot = FunctionReturnType<
   typeof taskyApi.portfolio.getSnapshot
@@ -241,7 +224,14 @@ function SignalsCard() {
   );
 }
 
-function ScorecardsCard() {
+function scorecardDetailRoute(scorecardId: string) {
+  return {
+    pathname: "/scorecard_page" as const,
+    params: { scorecardId },
+  } as unknown as Href;
+}
+
+function TodayCard() {
   const router = useRouter();
   const taskyAuth = useTaskyAuth();
   const now = useSignalClock();
@@ -259,9 +249,6 @@ function ScorecardsCard() {
       : "skip",
   );
   const items = scorecards.data ?? [];
-  const completedCount = items.filter(
-    (scorecard) => scorecard.evaluation.isComplete,
-  ).length;
 
   if (!taskyAuth.isAuthenticated) {
     return (
@@ -271,8 +258,7 @@ function ScorecardsCard() {
         onPress={() => router.push("/settings_page")}
       >
         <CardHeader
-          title="Scorecards"
-          subtitle="Connect Tasky to track daily done-ness"
+          title="Today"
           trailing={<Text style={styles.connectLink}>Connect</Text>}
         />
       </TouchableOpacity>
@@ -280,21 +266,13 @@ function ScorecardsCard() {
   }
 
   return (
-    <TouchableOpacity
-      style={[sharedStyles.card, styles.heroCard]}
-      activeOpacity={0.85}
-      onPress={() => router.push("/scorecards_page" as Href)}
-    >
-      <CardHeader
-        title="Scorecards"
-        subtitle={
-          !taskyEnabled || scorecards.isLoading
-            ? "Loading…"
-            : items.length === 0
-              ? "No scorecards yet"
-              : `${completedCount} of ${items.length} complete`
-        }
-      />
+    <View style={[sharedStyles.card, styles.heroCard]}>
+      <TouchableOpacity
+        activeOpacity={0.7}
+        onPress={() => router.push("/scorecards_page" as Href)}
+      >
+        <CardHeader title="Today" />
+      </TouchableOpacity>
       {!taskyEnabled || scorecards.isLoading ? (
         <View style={sharedStyles.inlineLoading}>
           <ActivityIndicator />
@@ -302,7 +280,12 @@ function ScorecardsCard() {
       ) : (
         <View style={styles.dailiesBars}>
           {items.map((scorecard) => (
-            <View key={scorecard.id} style={styles.dailiesBarRow}>
+            <TouchableOpacity
+              key={scorecard.id}
+              style={styles.dailiesBarRow}
+              activeOpacity={0.7}
+              onPress={() => router.push(scorecardDetailRoute(scorecard.id))}
+            >
               <Text style={styles.dailiesBarLabel} numberOfLines={1}>
                 {scorecard.name}
               </Text>
@@ -313,7 +296,7 @@ function ScorecardsCard() {
                     {
                       backgroundColor: scorecard.evaluation.isComplete
                         ? colors.systemGreen
-                        : colors.systemBlue,
+                        : (scorecard.tags[0]?.color ?? colors.systemBlue),
                       width: `${Math.min(100, Math.max(0, scorecard.evaluation.ratio * 100))}%`,
                     },
                   ]}
@@ -325,85 +308,14 @@ function ScorecardsCard() {
                 )}
                 %
               </Text>
-            </View>
+            </TouchableOpacity>
           ))}
         </View>
       )}
-    </TouchableOpacity>
-  );
-}
-
-function DailiesCard() {
-  const router = useRouter();
-  const { timeRanges } = useCurrentTimeRanges();
-  const entities = useQuery(api.entities.list, { ...timeRanges });
-
-  const categoryProgress = useMemo(() => {
-    if (!entities) return null;
-    return ORDERED_CATEGORIES.filter((category) =>
-      entities.entities.some((entity) => entity.category === category),
-    ).map((category) => ({
-      category,
-      label: getDisplayNameForCategory(category),
-      color: getColorForCategory(category),
-      ratio: getCategoryCompletionRatio(
-        entities.entities,
-        entities.entityIdToCompletionRatio,
-        category,
-      ),
-    }));
-  }, [entities]);
-
-  const completedCount = useMemo(
-    () => categoryProgress?.filter((entry) => entry.ratio >= 0.999).length ?? 0,
-    [categoryProgress],
-  );
-  const totalCount = categoryProgress?.length ?? 0;
-
-  return (
-    <TouchableOpacity
-      style={[sharedStyles.card, styles.heroCard]}
-      activeOpacity={0.85}
-      onPress={() => router.push("/dailies_page")}
-    >
-      <CardHeader
-        title="Today"
-        subtitle={
-          entities === undefined
-            ? "Loading…"
-            : totalCount === 0
-              ? "No tracked activities yet"
-              : `${completedCount} of ${totalCount} categories complete`
-        }
-      />
-      {entities === undefined ? (
-        <View style={sharedStyles.inlineLoading}>
-          <ActivityIndicator />
-        </View>
-      ) : (
-        <View style={styles.dailiesBars}>
-          {categoryProgress?.map((entry) => (
-            <View key={entry.category} style={styles.dailiesBarRow}>
-              <Text style={styles.dailiesBarLabel}>{entry.label}</Text>
-              <View style={styles.dailiesBarTrack}>
-                <View
-                  style={[
-                    styles.dailiesBarFill,
-                    {
-                      backgroundColor: entry.color,
-                      width: `${Math.min(100, Math.max(0, entry.ratio * 100))}%`,
-                    },
-                  ]}
-                />
-              </View>
-              <Text style={styles.dailiesBarValue}>
-                {Math.round(Math.min(1, Math.max(0, entry.ratio)) * 100)}%
-              </Text>
-            </View>
-          ))}
-        </View>
-      )}
-    </TouchableOpacity>
+      {scorecards.error ? (
+        <Text style={sharedStyles.error}>{scorecards.error}</Text>
+      ) : null}
+    </View>
   );
 }
 
@@ -666,8 +578,7 @@ export default function HomePage() {
         ]}
       >
         <SignalsCard />
-        <ScorecardsCard />
-        <DailiesCard />
+        <TodayCard />
         <TaskyCard />
         <PortfolioCard />
       </ScrollView>

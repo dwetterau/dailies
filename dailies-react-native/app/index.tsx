@@ -7,13 +7,13 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useAuth0 } from "react-native-auth0";
 import { colors, fontSize, radius, spacing } from "@/lib/theme";
+import { useTaskyAuth } from "@/lib/tasky";
 import HomePage from "./home_page";
 import LoadingScreen from "./loading_screen";
 
 function LoginScreen() {
-  const { authorize } = useAuth0();
+  const taskyAuth = useTaskyAuth();
   const [error, setError] = useState<string | null>(null);
   const [isBusy, setIsBusy] = useState(false);
 
@@ -21,7 +21,7 @@ function LoginScreen() {
     setIsBusy(true);
     setError(null);
     try {
-      await authorize({ scope: "openid email profile offline_access" });
+      await taskyAuth.connect();
     } catch (loginError) {
       setError(
         loginError instanceof Error ? loginError.message : "Failed to log in",
@@ -29,7 +29,7 @@ function LoginScreen() {
     } finally {
       setIsBusy(false);
     }
-  }, [authorize]);
+  }, [taskyAuth]);
 
   return (
     <View style={styles.loginContainer}>
@@ -46,10 +46,12 @@ function LoginScreen() {
           {isBusy ? (
             <ActivityIndicator color="white" />
           ) : (
-            <Text style={styles.primaryButtonText}>Log in</Text>
+            <Text style={styles.primaryButtonText}>Log in with Tasky</Text>
           )}
         </TouchableOpacity>
-        {error ? <Text style={styles.loginError}>{error}</Text> : null}
+        {error || taskyAuth.error ? (
+          <Text style={styles.loginError}>{error ?? taskyAuth.error}</Text>
+        ) : null}
       </View>
     </View>
   );
@@ -66,13 +68,13 @@ function AuthenticatedHome() {
 }
 
 export default function Index() {
-  const { user, isLoading } = useAuth0();
+  const taskyAuth = useTaskyAuth();
 
-  if (isLoading) {
+  if (taskyAuth.isPending) {
     return <LoadingScreen message="Logging in..." />;
   }
 
-  if (user) {
+  if (taskyAuth.isAuthenticated) {
     return <AuthenticatedHome />;
   }
 

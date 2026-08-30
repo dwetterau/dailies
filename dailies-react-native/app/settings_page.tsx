@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useAuth0 } from "react-native-auth0";
 import { useTaskyAuth } from "@/lib/tasky";
 import { colors, fontSize, radius, sharedStyles, spacing } from "@/lib/theme";
 import { automaticKeyboardInsets } from "@/lib/headerItems";
@@ -95,14 +94,11 @@ function SectionHeader({ title }: { title: string }) {
 }
 
 export default function SettingsPage() {
-  const { user, clearCredentials, isLoading: auth0Loading } = useAuth0();
   const taskyAuth = useTaskyAuth();
 
   const [isConnectingTasky, setIsConnectingTasky] = useState(false);
   const [isDisconnectingTasky, setIsDisconnectingTasky] = useState(false);
   const [taskyError, setTaskyError] = useState<string | null>(null);
-  const [auth0Error, setAuth0Error] = useState<string | null>(null);
-  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const backendEnv =
     (Constants.expoConfig?.extra as { BACKEND_ENV?: string } | undefined)
@@ -116,21 +112,6 @@ export default function SettingsPage() {
       ".convex.cloud",
       "",
     ) ?? null;
-  const dailiesDeployment =
-    (
-      Constants.expoConfig?.extra as
-        | { EXPO_PUBLIC_CONVEX_URL?: string }
-        | undefined
-    )?.EXPO_PUBLIC_CONVEX_URL?.replace("https://", "").replace(
-      ".convex.cloud",
-      "",
-    ) ?? null;
-
-  const dailiesStatus: AccountStatus = auth0Loading
-    ? "loading"
-    : user
-      ? "connected"
-      : "disconnected";
 
   const taskyStatus: AccountStatus = taskyAuth.isPending
     ? "loading"
@@ -168,27 +149,13 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSignOutDailies = async () => {
-    setIsSigningOut(true);
-    setAuth0Error(null);
-    try {
-      await clearCredentials();
-    } catch (error) {
-      setAuth0Error(
-        error instanceof Error ? error.message : "Failed to sign out",
-      );
-    } finally {
-      setIsSigningOut(false);
-    }
-  };
-
   const taskyActionLabel = !taskyAuth.isAuthenticated
     ? isConnectingTasky
       ? "Connecting…"
       : "Connect"
     : isDisconnectingTasky
       ? "Disconnecting…"
-      : "Disconnect";
+      : "Sign out";
 
   return (
     <ScrollView
@@ -196,24 +163,8 @@ export default function SettingsPage() {
       contentContainerStyle={sharedStyles.screenContent}
       {...automaticKeyboardInsets}
     >
-      <SectionHeader title="Linked accounts" />
+      <SectionHeader title="Account" />
       <View style={styles.card}>
-        <AccountRow
-          title="Dailies"
-          subtitle={user?.email ?? user?.name ?? "Not signed in"}
-          status={dailiesStatus}
-          detail={
-            dailiesDeployment
-              ? `Convex · ${dailiesDeployment}`
-              : "Convex deployment not configured"
-          }
-          actionLabel={isSigningOut ? "Signing out…" : "Sign out"}
-          onPressAction={() => void handleSignOutDailies()}
-          actionDisabled={!user || isSigningOut}
-          destructive
-          error={auth0Error}
-        />
-        <View style={styles.divider} />
         <AccountRow
           title="Tasky"
           subtitle={
@@ -260,7 +211,7 @@ export default function SettingsPage() {
           <Text style={styles.metaValue}>
             {Array.isArray(Constants.expoConfig?.scheme)
               ? Constants.expoConfig?.scheme[0]
-              : Constants.expoConfig?.scheme ?? "myapp"}
+              : (Constants.expoConfig?.scheme ?? "myapp")}
           </Text>
         </View>
       </View>
@@ -324,10 +275,6 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: radius.pill,
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.separator,
   },
   metaRow: {
     flexDirection: "row",

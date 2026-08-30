@@ -26,6 +26,13 @@ function scorecardEditRoute(scorecardId?: string) {
   } as unknown as Href;
 }
 
+function scorecardDetailRoute(scorecardId: string) {
+  return {
+    pathname: "/scorecard_page" as const,
+    params: { scorecardId },
+  } as unknown as Href;
+}
+
 function formatPercent(ratio: number): string {
   return `${Math.round(Math.min(1, Math.max(0, ratio)) * 100)}%`;
 }
@@ -47,7 +54,7 @@ function ScorecardRow({ scorecard }: { scorecard: ScorecardItem }) {
     <TouchableOpacity
       style={styles.card}
       activeOpacity={0.8}
-      onPress={() => router.push(scorecardEditRoute(scorecard.id))}
+      onPress={() => router.push(scorecardDetailRoute(scorecard.id))}
     >
       <View style={styles.cardHeader}>
         <View style={styles.cardHeaderText}>

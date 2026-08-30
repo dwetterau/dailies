@@ -2,11 +2,8 @@ import { PlatformColor, StyleSheet } from "react-native";
 
 /**
  * Shared design tokens used by the React Native client to keep
- * surface-level UI consistent across the Tasky-backed screens
- * (home / captures / tasks / portfolio / settings).
- *
- * The legacy Dailies screens (`dailies_page`, `category_page`, etc.)
- * intentionally still use their own styling for now.
+ * surface-level UI consistent across home, signals, scorecards,
+ * captures, portfolio, and settings.
  */
 
 export const spacing = {
