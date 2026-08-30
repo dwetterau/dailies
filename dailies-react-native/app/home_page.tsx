@@ -241,6 +241,98 @@ function SignalsCard() {
   );
 }
 
+function ScorecardsCard() {
+  const router = useRouter();
+  const taskyAuth = useTaskyAuth();
+  const now = useSignalClock();
+  const periodBounds = getSignalPeriodBounds(now);
+  const taskyEnabled =
+    taskyAuth.isAuthenticated && taskyAuth.convexAuthenticated;
+  const scorecards = useTaskyQuery(
+    taskyApi.scorecards.list,
+    taskyEnabled
+      ? {
+          now,
+          soonWindowMs: SIGNAL_SOON_WINDOW_MS,
+          periodBounds,
+        }
+      : "skip",
+  );
+  const items = scorecards.data ?? [];
+  const completedCount = items.filter(
+    (scorecard) => scorecard.evaluation.isComplete,
+  ).length;
+
+  if (!taskyAuth.isAuthenticated) {
+    return (
+      <TouchableOpacity
+        style={[sharedStyles.card, styles.heroCard]}
+        activeOpacity={0.85}
+        onPress={() => router.push("/settings_page")}
+      >
+        <CardHeader
+          title="Scorecards"
+          subtitle="Connect Tasky to track daily done-ness"
+          trailing={<Text style={styles.connectLink}>Connect</Text>}
+        />
+      </TouchableOpacity>
+    );
+  }
+
+  return (
+    <TouchableOpacity
+      style={[sharedStyles.card, styles.heroCard]}
+      activeOpacity={0.85}
+      onPress={() => router.push("/scorecards_page" as Href)}
+    >
+      <CardHeader
+        title="Scorecards"
+        subtitle={
+          !taskyEnabled || scorecards.isLoading
+            ? "Loading…"
+            : items.length === 0
+              ? "No scorecards yet"
+              : `${completedCount} of ${items.length} complete`
+        }
+      />
+      {!taskyEnabled || scorecards.isLoading ? (
+        <View style={sharedStyles.inlineLoading}>
+          <ActivityIndicator />
+        </View>
+      ) : (
+        <View style={styles.dailiesBars}>
+          {items.map((scorecard) => (
+            <View key={scorecard.id} style={styles.dailiesBarRow}>
+              <Text style={styles.dailiesBarLabel} numberOfLines={1}>
+                {scorecard.name}
+              </Text>
+              <View style={styles.dailiesBarTrack}>
+                <View
+                  style={[
+                    styles.dailiesBarFill,
+                    {
+                      backgroundColor: scorecard.evaluation.isComplete
+                        ? colors.systemGreen
+                        : colors.systemBlue,
+                      width: `${Math.min(100, Math.max(0, scorecard.evaluation.ratio * 100))}%`,
+                    },
+                  ]}
+                />
+              </View>
+              <Text style={styles.dailiesBarValue}>
+                {Math.round(
+                  Math.min(1, Math.max(0, scorecard.evaluation.ratio)) * 100,
+                )}
+                %
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+}
+
 function DailiesCard() {
   const router = useRouter();
   const { timeRanges } = useCurrentTimeRanges();
@@ -574,6 +666,7 @@ export default function HomePage() {
         ]}
       >
         <SignalsCard />
+        <ScorecardsCard />
         <DailiesCard />
         <TaskyCard />
         <PortfolioCard />

@@ -27,6 +27,7 @@ export function TaskyTagPicker({
   isLoading?: boolean;
 }) {
   const [search, setSearch] = useState("");
+  const [expanded, setExpanded] = useState(false);
   const orderedTags = useMemo(() => sortTaskyTags(tags), [tags]);
   const tagsById = useMemo(
     () => new Map(tags.map((tag) => [String(tag._id), tag])),
@@ -44,7 +45,12 @@ export function TaskyTagPicker({
           .toLocaleLowerCase()
           .includes(normalizedSearch)),
   );
-  const showSearch = tags.length > 6;
+  const showSearch = tags.length > 3;
+  const collapsed = normalizedSearch === "" && !expanded;
+  const visibleTags = collapsed
+    ? availableTags.slice(0, Math.max(0, 3 - selectedTags.length))
+    : availableTags;
+  const hiddenCount = availableTags.length - visibleTags.length;
 
   const toggleTag = (tagId: TaskyTagId) => {
     const selected = selectedTagIds.includes(tagId);
@@ -100,7 +106,7 @@ export function TaskyTagPicker({
                 </TouchableOpacity>
               );
             })}
-            {availableTags.map((tag) => {
+            {visibleTags.map((tag) => {
               const color = tag.color ?? colors.systemGray;
               return (
                 <TouchableOpacity
@@ -116,6 +122,17 @@ export function TaskyTagPicker({
                 </TouchableOpacity>
               );
             })}
+            {hiddenCount > 0 ? (
+              <TouchableOpacity
+                style={styles.tag}
+                onPress={() => setExpanded(true)}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={`Show ${hiddenCount} more tags`}
+              >
+                <Text style={styles.tagText}>+{hiddenCount} more</Text>
+              </TouchableOpacity>
+            ) : null}
           </View>
           {selectedTags.length === 0 &&
           availableTags.length === 0 &&

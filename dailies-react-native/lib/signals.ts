@@ -12,6 +12,10 @@ export type SignalEntry = FunctionReturnType<
   typeof taskyApi.signals.history
 >["page"][number];
 
+export type ScorecardItem = FunctionReturnType<
+  typeof taskyApi.scorecards.list
+>[number];
+
 type ActivitySignalModel = Extract<
   SignalDashboardItem["model"],
   { kind: "activity" }
@@ -282,8 +286,7 @@ export function signalSecondaryText(
     signal.model.target?.type === "period" &&
     signal.evaluation.periodProgress
   ) {
-    const remaining = signal.evaluation.periodProgress.remainingCount;
-    if (remaining === 0) return "done";
+    if (signal.evaluation.isComplete) return "done";
     const periodEnd = signal.evaluation.periodProgress.endAt;
     const hours = Math.max(1, Math.ceil((periodEnd - now) / (60 * 60 * 1000)));
     return hours < 24

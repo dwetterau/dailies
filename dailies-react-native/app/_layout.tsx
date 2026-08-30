@@ -84,6 +84,20 @@ export default function RootLayout() {
                       options={{ title: "Signals" }}
                     />
                     <Stack.Screen
+                      name="scorecards_page"
+                      options={{ title: "Scorecards" }}
+                    />
+                    <Stack.Screen
+                      name="scorecard_edit_page"
+                      options={({ route }) => ({
+                        title: (
+                          route.params as { scorecardId?: string } | undefined
+                        )?.scorecardId
+                          ? "Edit Scorecard"
+                          : "New Scorecard",
+                      })}
+                    />
+                    <Stack.Screen
                       name="signal_edit_page"
                       options={({ route }) => ({
                         title: (
