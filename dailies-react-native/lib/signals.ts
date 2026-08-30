@@ -172,6 +172,10 @@ export type SignalPeriodBounds = {
     startAt: number;
     endAt: number;
   };
+  month: {
+    startAt: number;
+    endAt: number;
+  };
 };
 
 export function getSignalPeriodBounds(now: number): SignalPeriodBounds {
@@ -197,6 +201,8 @@ export function getSignalPeriodBounds(now: number): SignalPeriodBounds {
     weekStart.getMonth(),
     weekStart.getDate() + 7,
   );
+  const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+  const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 1);
   return {
     day: {
       startAt: dayStart.getTime(),
@@ -205,6 +211,10 @@ export function getSignalPeriodBounds(now: number): SignalPeriodBounds {
     week: {
       startAt: weekStart.getTime(),
       endAt: weekEnd.getTime(),
+    },
+    month: {
+      startAt: monthStart.getTime(),
+      endAt: monthEnd.getTime(),
     },
   };
 }
@@ -263,7 +273,12 @@ export function signalPrimaryText(
       signal.evaluation.periodProgress
     ) {
       const progress = signal.evaluation.periodProgress;
-      const periodLabel = progress.period === "day" ? "today" : "this week";
+      const periodLabel =
+        progress.period === "day"
+          ? "today"
+          : progress.period === "month"
+            ? "this month"
+            : "this week";
       if (progress.targetCount <= 0) {
         return progress.completedCount > 0
           ? `logged ${periodLabel}`

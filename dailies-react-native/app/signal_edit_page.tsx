@@ -36,7 +36,25 @@ import { colors, fontSize, radius, sharedStyles, spacing } from "@/lib/theme";
 
 type SignalId = FunctionArgs<typeof taskyApi.signals.get>["signalId"];
 type SignalKind = "activity" | "inventory";
-type ActivityGoalMode = "tracking" | "daily" | "weekly";
+type ActivityGoalMode = "tracking" | "daily" | "weekly" | "monthly";
+type ActivityPeriod = "day" | "week" | "month";
+
+function periodForGoalMode(
+  mode: Exclude<ActivityGoalMode, "tracking">,
+): ActivityPeriod {
+  if (mode === "daily") return "day";
+  if (mode === "weekly") return "week";
+  return "month";
+}
+
+function goalModeForPeriod(
+  period: ActivityPeriod,
+): Exclude<ActivityGoalMode, "tracking"> {
+  if (period === "day") return "daily";
+  if (period === "week") return "weekly";
+  return "monthly";
+}
+
 type InventoryComparison = "atOrBelow" | "atOrAbove";
 
 function NumberField({
@@ -171,7 +189,7 @@ export default function SignalEditPage() {
       const target = signal.data.model.target;
       setMeasurementFields(signal.data.model.measurementFields ?? []);
       if (target?.type === "period") {
-        setActivityGoalMode(target.period === "day" ? "daily" : "weekly");
+        setActivityGoalMode(goalModeForPeriod(target.period));
         setTargetCount(String(target.targetCount));
       } else {
         setActivityGoalMode("tracking");
@@ -201,11 +219,11 @@ export default function SignalEditPage() {
         let target:
           | {
               type: "period";
-              period: "day" | "week";
+              period: ActivityPeriod;
               targetCount: number;
             }
           | undefined;
-        if (activityGoalMode === "daily" || activityGoalMode === "weekly") {
+        if (activityGoalMode !== "tracking") {
           const parsedTargetCount = Number(targetCount);
           if (!Number.isInteger(parsedTargetCount) || parsedTargetCount < 0) {
             throw new Error(
@@ -214,7 +232,7 @@ export default function SignalEditPage() {
           }
           target = {
             type: "period",
-            period: activityGoalMode === "daily" ? "day" : "week",
+            period: periodForGoalMode(activityGoalMode),
             targetCount: parsedTargetCount,
           };
         }
@@ -474,22 +492,22 @@ export default function SignalEditPage() {
                       { value: "tracking", label: "None" },
                       { value: "daily", label: "Daily" },
                       { value: "weekly", label: "Weekly" },
+                      { value: "monthly", label: "Monthly" },
                     ]}
                   />
-                  {activityGoalMode === "daily" ||
-                  activityGoalMode === "weekly" ? (
-                    <NumberField
-                      label={`Completions per ${
-                        activityGoalMode === "daily" ? "day" : "week"
-                      }`}
-                      value={targetCount}
-                      onChangeText={setTargetCount}
-                      placeholder="1"
-                    />
-                    <Text style={sharedStyles.muted}>
-                      0 keeps the {activityGoalMode === "daily" ? "day" : "week"}{" "}
-                      window without making this signal due.
-                    </Text>
+                  {activityGoalMode !== "tracking" ? (
+                    <>
+                      <NumberField
+                        label={`Completions per ${periodForGoalMode(activityGoalMode)}`}
+                        value={targetCount}
+                        onChangeText={setTargetCount}
+                        placeholder="1"
+                      />
+                      <Text style={sharedStyles.muted}>
+                        0 keeps the {periodForGoalMode(activityGoalMode)} window
+                        without making this signal due.
+                      </Text>
+                    </>
                   ) : null}
                 </View>
               </View>
