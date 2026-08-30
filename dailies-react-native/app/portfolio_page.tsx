@@ -19,9 +19,13 @@ import {
   tone,
 } from "@/lib/theme";
 import { automaticKeyboardInsets } from "@/lib/headerItems";
+import { PortfolioHistoryChart } from "@/components/PortfolioHistoryChart";
 
 type PortfolioSnapshot = FunctionReturnType<
   typeof taskyApi.portfolio.getSnapshot
+>;
+type PriceHistoryResult = FunctionReturnType<
+  typeof taskyApi.portfolio.getPriceHistory
 >;
 type Holding = PortfolioSnapshot["holdings"][number];
 
@@ -495,10 +499,16 @@ export default function PortfolioPage() {
   const taskyEnabled =
     taskyAuth.isAuthenticated && taskyAuth.convexAuthenticated;
   const getPortfolioSnapshot = useTaskyAction(taskyApi.portfolio.getSnapshot);
+  const getPriceHistory = useTaskyAction(taskyApi.portfolio.getPriceHistory);
   const syncPriceHistory = useTaskyAction(taskyApi.portfolio.syncPriceHistory);
 
   const [portfolio, setPortfolio] = useState<PortfolioSnapshot | null>(null);
+  const [priceHistory, setPriceHistory] = useState<PriceHistoryResult | null>(
+    null,
+  );
   const [isLoading, setIsLoading] = useState(false);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncFeedback, setSyncFeedback] = useState<SyncFeedback | null>(null);
@@ -523,9 +533,40 @@ export default function PortfolioPage() {
     }
   }, [getPortfolioSnapshot, taskyEnabled]);
 
+  const refreshHistory = useCallback(async () => {
+    if (!taskyEnabled) return;
+    setIsHistoryLoading(true);
+    setHistoryError(null);
+    try {
+      const history = await getPriceHistory({});
+      if (!history) {
+        setHistoryError("Tasky session is unavailable.");
+        return;
+      }
+      setPriceHistory(history);
+      if (history.status !== "ok") {
+        setHistoryError(history.message ?? "Price history unavailable.");
+      }
+    } catch (refreshError) {
+      setHistoryError(
+        refreshError instanceof Error
+          ? refreshError.message
+          : "Failed to load price history",
+      );
+    } finally {
+      setIsHistoryLoading(false);
+    }
+  }, [getPriceHistory, taskyEnabled]);
+
   useEffect(() => {
     void refreshPortfolio();
   }, [refreshPortfolio]);
+
+  useEffect(() => {
+    if (portfolio?.status === "ok") {
+      void refreshHistory();
+    }
+  }, [portfolio?.status, refreshHistory]);
 
   const handleSyncPrices = useCallback(async () => {
     if (!taskyEnabled || isSyncing || isLoading) return;
@@ -548,6 +589,7 @@ export default function PortfolioPage() {
       });
       if (result.success) {
         await refreshPortfolio();
+        await refreshHistory();
       }
     } catch (syncError) {
       setSyncFeedback({
@@ -560,7 +602,14 @@ export default function PortfolioPage() {
     } finally {
       setIsSyncing(false);
     }
-  }, [taskyEnabled, isSyncing, isLoading, syncPriceHistory, refreshPortfolio]);
+  }, [
+    taskyEnabled,
+    isSyncing,
+    isLoading,
+    syncPriceHistory,
+    refreshPortfolio,
+    refreshHistory,
+  ]);
 
   const handleSort = (key: SortKey) => {
     if (key === sortKey) {
@@ -648,11 +697,21 @@ export default function PortfolioPage() {
     >
       <SummaryStrip
         summary={portfolio.summary}
-        onRefresh={() => void refreshPortfolio()}
+        onRefresh={() => {
+          void refreshPortfolio();
+          void refreshHistory();
+        }}
         onSync={() => void handleSyncPrices()}
         isLoading={isLoading}
         isSyncing={isSyncing}
         canSync={taskyEnabled}
+      />
+      <PortfolioHistoryChart
+        points={priceHistory?.status === "ok" ? priceHistory.points : []}
+        holdings={portfolio.holdings}
+        startDate={priceHistory?.startDate ?? null}
+        isLoading={isHistoryLoading && !priceHistory}
+        error={historyError}
       />
       {syncFeedback ? (
         <SyncFeedbackBanner
